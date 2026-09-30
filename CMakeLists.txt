@@ -18,6 +18,7 @@
 #   - system     : System-level utilities (critical sections, system management)
 #   - sqlite     : SQLite database management layer
 #   - linux_io   : Linux-specific I/O (GPIO, LEDs)
+#   - property   : Engine-agnostic persistent configuration store
 #
 # =============================================================================
 
@@ -49,6 +50,7 @@ add_subdirectory(lib/act_files)
 add_subdirectory(lib/act_foundation)
 add_subdirectory(lib/act_linux_io)
 add_subdirectory(lib/act_logger)
+add_subdirectory(lib/act_property_core)
 add_subdirectory(lib/act_db_sqlite)
 add_subdirectory(lib/act_system)
 add_subdirectory(lib/act_text)
