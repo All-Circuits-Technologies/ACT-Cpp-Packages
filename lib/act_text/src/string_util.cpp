@@ -61,11 +61,11 @@ std::string BinToHex(const std::string &bin)
 {
     std::ostringstream hex;
 
-    /* configure hex output */
-    hex << std::hex << std::setw(2) << std::setfill('0');
+    /* configure hex output; the width is reset by each insertion, so it is set for every byte */
+    hex << std::hex << std::setfill('0');
     for (unsigned char c : bin)
     {
-        hex << (int)c;
+        hex << std::setw(2) << (int)c;
     }
     return hex.str();
 }
