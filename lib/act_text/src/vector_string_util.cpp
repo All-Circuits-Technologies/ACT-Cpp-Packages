@@ -46,6 +46,16 @@ std::vector<std::string> split(const std::string &str, const std::string &separa
     std::vector<std::string> tmpList;
     std::string element;
 
+    if (separator.empty())
+    {
+        // An empty separator is found at every position and would never advance the search
+        if (!str.empty())
+        {
+            tmpList.push_back(str);
+        }
+        return tmpList;
+    }
+
     if (!str.empty())
     {
         int start = 0;
