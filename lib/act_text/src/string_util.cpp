@@ -85,8 +85,9 @@ std::string BinToHex(const std::string &bin)
 
 std::optional<std::string> HexToBin(const std::string &hex)
 {
-    if (!IsHexOnly(hex))
+    if (!IsHexOnly(hex) || (hex.length() % act::foundation::HexConstants::HEX_CHARS_PER_BYTE) != 0)
     {
+        // Each byte is written with two digits: an odd length leaves half a byte
         return std::nullopt;
     }
 

@@ -162,8 +162,9 @@ std::string BinToHex(const std::string &bin);
 
 /**
  * @brief Convert a hexadecimal string to its binary representation
- * @param hex The hexadecimal string to convert
- * @return A binary string representation of the input
+ * @param hex The hexadecimal string to convert, two digits per byte
+ * @return A binary string representation of the input, or an empty optional if it holds a
+ *         character which is not an hexadecimal digit or an odd number of digits
  */
 std::optional<std::string> HexToBin(const std::string &hex);
 
