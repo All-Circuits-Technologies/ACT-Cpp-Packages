@@ -33,6 +33,11 @@ LinuxSystemCriticalSection::LinuxSystemCriticalSection(const char *slug,
 LinuxSystemCriticalSection::~LinuxSystemCriticalSection()
 {
     UNUSED(leave());
+
+    if (m_fd >= 0)
+    {
+        ::close(m_fd);
+    }
 }
 
 bool LinuxSystemCriticalSection::enter() const
