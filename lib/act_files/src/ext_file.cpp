@@ -62,6 +62,12 @@ bool ExtFile::open(std::ios::openmode mode)
         return true;
     }
 
+    if (m_fstream->is_open())
+    {
+        // std::fstream::open fails on an open stream; closing also flushes what was written
+        close();
+    }
+
     auto openResult = OpenFile(*m_fstream, m_filePath, mode, m_logger);
     if (!openResult)
     {
