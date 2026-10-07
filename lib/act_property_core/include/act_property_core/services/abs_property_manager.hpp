@@ -10,9 +10,13 @@
 #include <memory>
 #include <vector>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
+} // namespace act::foundation
+
+namespace act::logger
+{
 class LoggerManager;
 } // namespace act::logger
 
@@ -65,7 +69,7 @@ class AbsPropertyManager : public act::foundation::AbsManager, protected AbsProp
      * @brief Access the manager sub-logger
      * @return The logger
      */
-    [[nodiscard]] act::logger::AbsLogger &accessLogger() const;
+    [[nodiscard]] act::foundation::AbsLogger &accessLogger() const;
 
   private:
     /** @copydoc AbsPropertyRegistry::registerProperty */
@@ -76,7 +80,7 @@ class AbsPropertyManager : public act::foundation::AbsManager, protected AbsProp
     std::vector<AbsRegisteredProperty *> m_properties;
 
     /** @brief The manager sub-logger */
-    std::shared_ptr<act::logger::AbsLogger> m_logger;
+    std::shared_ptr<act::foundation::AbsLogger> m_logger;
 };
 
 } // namespace act::property
