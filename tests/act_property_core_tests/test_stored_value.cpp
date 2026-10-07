@@ -157,6 +157,17 @@ namespace
         EXPECT_TRUE(StoredValue(std::string("a")) == StoredValue(std::string("a")));
     }
 
+    TEST(StoredValueTest, NanPayloadsAreEqual)
+    {
+        const StoredValue floatNan(std::numeric_limits<float>::quiet_NaN());
+        const StoredValue doubleNan(std::numeric_limits<double>::quiet_NaN());
+
+        EXPECT_EQ(floatNan, StoredValue(std::numeric_limits<float>::quiet_NaN()));
+        EXPECT_EQ(doubleNan, StoredValue(std::numeric_limits<double>::quiet_NaN()));
+        EXPECT_NE(floatNan, doubleNan);
+        EXPECT_NE(doubleNan, StoredValue(0.0));
+    }
+
     TEST(StoredValueTest, DifferentPayloadsAreNotEqual)
     {
         EXPECT_FALSE(StoredValue(std::int32_t{7}) == StoredValue(std::int32_t{8}));

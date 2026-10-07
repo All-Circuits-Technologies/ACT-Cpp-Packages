@@ -32,6 +32,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -46,6 +47,7 @@ namespace
     const std::string NAME_KEY{"device.name"};
     const std::string BRIGHTNESS_KEY{"ui.brightness"};
     const std::string LAST_USER_KEY{"session.lastUser"};
+    const std::string RATIO_KEY{"sensor.ratio"};
 
     constexpr std::int32_t RETRIES_SEED = 3;
     constexpr std::int32_t BRIGHTNESS_DEFAULT = 50;
@@ -84,6 +86,17 @@ namespace
       private:
         RProperty<std::int32_t> m_retries;
         RProperty<std::string> m_name;
+    };
+
+    /** @brief Manager whose only descriptor is seeded with NaN */
+    class NanSeedManager : public test::StoreBackedManager
+    {
+      public:
+        using StoreBackedManager::StoreBackedManager;
+
+      private:
+        RProperty<double> m_ratio{
+            *this, RATIO_KEY, Seed::of(std::numeric_limits<double>::quiet_NaN())};
     };
 
     /** @brief Manager with a default backed descriptor and a descriptor without provider */
@@ -185,6 +198,20 @@ namespace
         const int setCountAfterFirstStart = getStore().getSetCount();
 
         SeededManager nextStart(getLoggerManager(), getStore(), RETRIES_SEED, "device");
+        ASSERT_TRUE(nextStart.init());
+
+        EXPECT_EQ(getStore().getSetCount(), setCountAfterFirstStart);
+    }
+
+    TEST_F(AbsPropertyManagerTest, InitSkipsTheWriteOfAnAlignedNanSeed)
+    {
+        {
+            NanSeedManager firstStart(getLoggerManager(), getStore());
+            ASSERT_TRUE(firstStart.init());
+        }
+        const int setCountAfterFirstStart = getStore().getSetCount();
+
+        NanSeedManager nextStart(getLoggerManager(), getStore());
         ASSERT_TRUE(nextStart.init());
 
         EXPECT_EQ(getStore().getSetCount(), setCountAfterFirstStart);
