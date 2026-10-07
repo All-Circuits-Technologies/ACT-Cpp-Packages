@@ -9,6 +9,7 @@
 #include "act_logger/helpers/logger_helper.hpp"
 
 #include <gpiod.hpp>
+#include <system_error>
 #include <thread>
 
 /* # Macros */
@@ -33,10 +34,11 @@ namespace act::linux_io
 LinuxGpio::LinuxGpio(const std::string &chipName,
                      unsigned int lineNum,
                      act::logger::LoggerHelper &parentLogger)
-    : m_chip(std::make_unique<gpiod::chip>(std::string(CHIPS_DEV_DIR) + "/" + chipName)),
+    : m_chip(OpenChip(std::string(CHIPS_DEV_DIR) + "/" + chipName)),
       m_lineNum(lineNum),
       m_lineSettings(std::make_unique<gpiod::line_settings>()),
-      m_found(*m_chip && (m_lineNum < static_cast<unsigned int>(m_chip->get_info().num_lines())))
+      m_found(m_chip && *m_chip &&
+              (m_lineNum < static_cast<unsigned int>(m_chip->get_info().num_lines())))
 {
     // Compute an accurate and user-friendly logger category, then create logger
     std::string gpioLogName = chipName + ":" + std::to_string(lineNum);
@@ -176,12 +178,17 @@ LinuxGpio *LinuxGpio::FindGpioByName(const std::string &lineName,
     {
         if (::gpiod::is_gpiochip_device(entry.path()))
         {
-            ::gpiod::chip chip(entry.path());
+            const auto chip = OpenChip(entry.path());
+            if (!chip)
+            {
+                // A chip which cannot be opened cannot hold the line we look for
+                continue;
+            }
 
-            auto offset = chip.get_line_offset_from_name(lineName);
+            auto offset = chip->get_line_offset_from_name(lineName);
             if (offset >= 0)
             {
-                return new LinuxGpio(chip.get_info().name(),
+                return new LinuxGpio(chip->get_info().name(),
                                      static_cast<unsigned int>(offset),
                                      parentLogger);
             }
@@ -190,6 +197,19 @@ LinuxGpio *LinuxGpio::FindGpioByName(const std::string &lineName,
 
     parentLogger.warningStream() << "GPIO '" << lineName << "' not found";
     return nullptr;
+}
+
+std::unique_ptr<gpiod::chip> LinuxGpio::OpenChip(const std::string &chipPath)
+{
+    try
+    {
+        return std::make_unique<gpiod::chip>(chipPath);
+    }
+    catch (const std::system_error &)
+    {
+        // libgpiod throws when the device cannot be opened
+        return nullptr;
+    }
 }
 
 } // namespace act::linux_io
