@@ -4,7 +4,9 @@
 
 #include "act_property_core/stored_value.hpp"
 
+#include <cmath>
 #include <utility>
+#include <variant>
 
 namespace act::property
 {
@@ -213,7 +215,24 @@ std::optional<std::string> StoredValue::asString() const
 
 bool StoredValue::operator==(const StoredValue &other) const
 {
-    return m_type == other.m_type && m_payload == other.m_payload;
+    if (m_type != other.m_type)
+    {
+        return false;
+    }
+
+    // NaN never equals itself as a number, but two NaN payloads hold the same stored content
+    if (m_type == StoredType::FLOAT && std::isnan(std::get<float>(m_payload)) &&
+        std::isnan(std::get<float>(other.m_payload)))
+    {
+        return true;
+    }
+    if (m_type == StoredType::DOUBLE && std::isnan(std::get<double>(m_payload)) &&
+        std::isnan(std::get<double>(other.m_payload)))
+    {
+        return true;
+    }
+
+    return m_payload == other.m_payload;
 }
 
 bool StoredValue::operator!=(const StoredValue &other) const

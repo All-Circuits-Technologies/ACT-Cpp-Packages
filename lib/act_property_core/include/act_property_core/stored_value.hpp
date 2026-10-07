@@ -162,6 +162,8 @@ class StoredValue
     /**
      * @brief Equality by (type, payload)
      * @note Used to write only when the value actually differs, sparing flash wear.
+     * @note Two NaN payloads are equal, although NaN never equals itself as a number: they hold
+     *       the same stored content.
      * @param other The value to compare with
      * @return True if both the type tag and the payload are equal
      */
