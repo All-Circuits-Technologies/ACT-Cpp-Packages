@@ -99,7 +99,7 @@ class AbsLogger
 
     /**
      * @brief Test if a log message with the given level would be logged
-     * @note The method also tests the external logger if set
+     * @note The method also tests the external logger; without one, nothing would be logged
      * @param level The logs level
      * @return True if the message would be logged, false otherwise
      */

@@ -61,7 +61,8 @@ bool LoggerHelper::wouldBeLogged(LogsLevel::Enum level) const
         return logger->isLoggable(level, m_categories);
     }
 
-    return true;
+    // Without an external logger, log() drops every message
+    return false;
 }
 
 void LoggerHelper::log(LogsLevel::Enum level, const std::string &message) const
