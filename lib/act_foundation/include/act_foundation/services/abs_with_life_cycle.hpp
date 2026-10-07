@@ -15,11 +15,10 @@ namespace act::foundation
  */
 class AbsWithLifeCycle
 {
-  protected:
+  public:
     /** @brief Nothing special for default destructor */
     virtual ~AbsWithLifeCycle() = default;
 
-  public:
     /**
      * @brief Initialize the entity.
      *
