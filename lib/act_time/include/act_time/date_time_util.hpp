@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include <functional>
+#include <cstddef>
 #include <string>
-
-class tm;
 
 namespace act::time
 {
@@ -31,14 +29,13 @@ class DateTimeUtil
 
   private:
     /**
-     * @brief Get the current date and time in ISO 8601 format using the specified time
-     * converter.
-     * @param timeConverter A function that converts a time_t pointer to a tm pointer.
+     * @brief Get the current date and time in ISO 8601 format, as UTC or as local time.
+     * @param utc True to give the UTC time, false to give the local time.
      * @param pattern The strftime pattern to format the date and time with.
-     * @return A string representing the current date and time in ISO 8601 format.
+     * @return A string representing the current date and time in ISO 8601 format, or an empty
+     *         string if the current time cannot be converted.
      */
-    static std::string GetCurrentIsoDateTime(
-        const std::function<tm *(const time_t *)> &timeConverter, const char *pattern);
+    static std::string GetCurrentIsoDateTime(bool utc, const char *pattern);
 
   private:
     /** @brief ISO time pattern for UTC date-time formatting, with the UTC designator */
