@@ -63,6 +63,14 @@ class StoredValue
     /** @brief Build a string value (tag @ref StoredType::String) */
     explicit StoredValue(std::string value);
 
+    /**
+     * @brief Build a string value from a C string (tag @ref StoredType::STRING)
+     * @note Without it, a string literal would convert to bool, a standard conversion preferred
+     *       to the user-defined one to std::string, and be stored as a boolean
+     * @param value The C string to store, which must not be null
+     */
+    explicit StoredValue(const char *value);
+
   public:
     /**
      * @brief Get the type tag of the stored value

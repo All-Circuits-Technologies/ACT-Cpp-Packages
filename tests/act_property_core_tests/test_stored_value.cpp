@@ -129,6 +129,15 @@ namespace
         EXPECT_EQ(CountReadableAccessors(value), 1);
     }
 
+    TEST(StoredValueTest, StringLiteralIsTaggedAndReadAsString)
+    {
+        const StoredValue value("text");
+
+        EXPECT_EQ(value.type(), StoredType::STRING);
+        EXPECT_EQ(value.asString(), std::optional<std::string>("text"));
+        EXPECT_EQ(value, StoredValue(std::string("text")));
+    }
+
     TEST(StoredValueTest, AccessorOfAnotherWidthReturnsNothing)
     {
         const StoredValue value(std::int32_t{1});
