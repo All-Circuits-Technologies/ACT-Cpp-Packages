@@ -176,6 +176,7 @@ bool IsHexOnly(const std::string &data);
 
 /**
  * @brief Validate if a string is a valid IPv4 address
+ * @note The address must be written in dotted decimal, each byte without leading zeros
  * @param ipAddress The string to validate
  * @return true if the string is a valid IPv4 address, false otherwise
  */
