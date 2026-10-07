@@ -81,6 +81,11 @@ StoredValue::StoredValue(std::string value)
 {
 }
 
+StoredValue::StoredValue(const char *value)
+    : StoredValue(std::string(value))
+{
+}
+
 StoredType StoredValue::type() const
 {
     return m_type;
