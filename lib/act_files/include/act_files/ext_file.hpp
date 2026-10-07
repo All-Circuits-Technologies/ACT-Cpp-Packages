@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "act_foundation/not_copiable_not_movable.hpp"
+
 #include <cstdio>
 #include <fstream>
 #include <optional>
@@ -17,8 +19,11 @@ class AbsLogger;
 namespace act::files
 {
 
-/** @brief This defines an useful file class to act on file and get its path */
-class ExtFile
+/**
+ * @brief This defines an useful file class to act on file and get its path
+ * @note The class owns its file stream, so it can neither be copied nor moved
+ */
+class ExtFile : private act::foundation::NotCopiableNotMovable
 {
   public:
     /**
