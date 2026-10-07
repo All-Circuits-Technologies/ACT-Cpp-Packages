@@ -172,8 +172,7 @@ inline ReusableThreadResult::Enum ReusableThread::start(
                             auto conditionOpt = preconditionFunc();
                             if (!conditionOpt.has_value())
                             {
-                                logger.warningStream()
-                                    << "Precondition failed: " << conditionOpt.value();
+                                logger.warning("Precondition failed, the thread is not started");
                                 return nullptr;
                             }
 
