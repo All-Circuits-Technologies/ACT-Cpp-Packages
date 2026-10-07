@@ -5,7 +5,7 @@
 #include "act_text/csv_util.hpp"
 
 #include "act_files/ext_file.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
 
@@ -25,7 +25,7 @@ std::string CreateCsvLine(const std::vector<std::string> &values, const std::str
 }
 
 bool AddCsvLine(const std::vector<std::string> &values,
-                const act::logger::AbsLogger &logger,
+                const act::foundation::AbsLogger &logger,
                 act::files::ExtFile &file,
                 const std::string &separator)
 {

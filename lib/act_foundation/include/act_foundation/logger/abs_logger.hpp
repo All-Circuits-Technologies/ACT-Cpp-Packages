@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include "act_logger/helpers/logger_stream.hpp"
-#include "act_logger/types/logs_level.hpp"
+#include "act_foundation/logger/logger_stream.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 #include <memory>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 
 class AbsLogger
@@ -123,4 +123,4 @@ class AbsLogger
         LogsLevel::Enum minLevel) = 0;
 };
 
-} // namespace act::logger
+} // namespace act::foundation

@@ -10,10 +10,10 @@
 #include <sstream>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 /** @brief Set of String helpers */
 namespace act::text::StringUtil

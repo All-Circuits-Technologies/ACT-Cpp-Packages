@@ -12,7 +12,7 @@ namespace act::logger
 
 LoggerHelper::LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLogger,
                            const std::string &category,
-                           LogsLevel::Enum minLevel)
+                           act::foundation::LogsLevel::Enum minLevel)
     : m_categories{category},
       m_minLevel{minLevel},
       m_externalLogger{externalLogger}
@@ -20,32 +20,34 @@ LoggerHelper::LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLog
 }
 
 LoggerHelper::LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLogger,
-                           LogsLevel::Enum minLevel)
+                           act::foundation::LogsLevel::Enum minLevel)
     : m_categories{},
       m_minLevel{minLevel},
       m_externalLogger{externalLogger}
 {
 }
 
-LoggerHelper::LoggerHelper(const std::vector<std::string> &categories, LogsLevel::Enum minLevel)
+LoggerHelper::LoggerHelper(const std::vector<std::string> &categories,
+                           act::foundation::LogsLevel::Enum minLevel)
     : m_categories{categories},
       m_minLevel{minLevel},
       m_externalLogger{nullptr}
 {
 }
 
-std::shared_ptr<LoggerHelper> LoggerHelper::createSubLogger(const std::string &category,
-                                                            LogsLevel::Enum minLevel)
+std::shared_ptr<LoggerHelper> LoggerHelper::createSubLogger(
+    const std::string &category, act::foundation::LogsLevel::Enum minLevel)
 {
     return std::shared_ptr<LoggerHelper>(new SubLoggerHelper(category, *this, minLevel));
 }
 
-std::shared_ptr<LoggerHelper> LoggerHelper::createSubLogger(LogsLevel::Enum minLevel)
+std::shared_ptr<LoggerHelper> LoggerHelper::createSubLogger(
+    act::foundation::LogsLevel::Enum minLevel)
 {
     return std::shared_ptr<LoggerHelper>(new SubLoggerHelper(*this, minLevel));
 }
 
-bool LoggerHelper::wouldBeLogged(LogsLevel::Enum level) const
+bool LoggerHelper::wouldBeLogged(act::foundation::LogsLevel::Enum level) const
 {
     if (!testIfLoggable(level))
     {
@@ -65,7 +67,7 @@ bool LoggerHelper::wouldBeLogged(LogsLevel::Enum level) const
     return false;
 }
 
-void LoggerHelper::log(LogsLevel::Enum level, const std::string &message) const
+void LoggerHelper::log(act::foundation::LogsLevel::Enum level, const std::string &message) const
 {
     if (!testIfLoggable(level))
     {

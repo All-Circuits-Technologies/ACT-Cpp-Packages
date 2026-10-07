@@ -11,18 +11,19 @@ namespace act::logger
 {
 
 AbsExternalLogger::AbsExternalLogger(
-    LogsLevel::Enum minLevel, const std::map<std::string, LogsLevel::Enum> &minLevelByCategory)
+    act::foundation::LogsLevel::Enum minLevel,
+    const std::map<std::string, act::foundation::LogsLevel::Enum> &minLevelByCategory)
     : m_minLevel{minLevel},
       m_minLevelByCategory{minLevelByCategory}
 {
 }
 
-bool AbsExternalLogger::isLoggable(LogsLevel::Enum level,
+bool AbsExternalLogger::isLoggable(act::foundation::LogsLevel::Enum level,
                                    const std::vector<std::string> &categories) const
 {
     // The categories found in the map override the global minimum; when several are found, the
     // highest of their levels applies
-    std::optional<LogsLevel::Enum> categoryMinLevel;
+    std::optional<act::foundation::LogsLevel::Enum> categoryMinLevel;
     for (const auto &category : categories)
     {
         auto it = m_minLevelByCategory.find(category);
@@ -35,7 +36,7 @@ bool AbsExternalLogger::isLoggable(LogsLevel::Enum level,
     return level >= categoryMinLevel.value_or(m_minLevel);
 }
 
-void AbsExternalLogger::log(LogsLevel::Enum level,
+void AbsExternalLogger::log(act::foundation::LogsLevel::Enum level,
                             const std::string &message,
                             const std::vector<std::string> &categories)
 {

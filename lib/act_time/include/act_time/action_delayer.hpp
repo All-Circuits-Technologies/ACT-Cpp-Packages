@@ -8,10 +8,10 @@
 #include <mutex>
 #include <optional>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::time
 {
@@ -42,7 +42,7 @@ class ActionDelayer
      * @param startImmediately Flag indicating whether the delay should start immediately upon
      *                         construction
      */
-    explicit ActionDelayer(const act::logger::AbsLogger &logger,
+    explicit ActionDelayer(const act::foundation::AbsLogger &logger,
                            unsigned int delayMs,
                            const std::function<void()> &callback,
                            std::optional<unsigned int> maxDelayMs = std::nullopt,
@@ -104,7 +104,7 @@ class ActionDelayer
 
   private:
     /** @brief Logger instance */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 
     /** @brief Callback function to be called when the timer expires */
     std::function<void()> m_callback;

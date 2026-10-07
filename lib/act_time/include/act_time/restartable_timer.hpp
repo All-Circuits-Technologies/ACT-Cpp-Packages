@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <atomic>
 #include <condition_variable>
@@ -12,10 +12,10 @@
 #include <mutex>
 #include <thread>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::time
 {
@@ -52,7 +52,7 @@ class RestartableTimer
      * @param startImmediately Flag indicating whether the timer should start immediately upon
      *                         construction
      */
-    explicit RestartableTimer(const act::logger::AbsLogger &logger,
+    explicit RestartableTimer(const act::foundation::AbsLogger &logger,
                               unsigned int durationMs,
                               const std::function<void()> &callback,
                               bool periodic = false,
@@ -152,7 +152,7 @@ class RestartableTimer
 
   private:
     /** @brief Logger instance */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 
     /** @brief Callback function to be called when the timer expires */
     std::function<void()> m_callback;

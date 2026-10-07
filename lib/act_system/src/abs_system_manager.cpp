@@ -4,7 +4,7 @@
 
 #include "act_system/abs_system_manager.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/vector_string_util.hpp"
 #include "act_threading/reusable_thread.hpp"
 
@@ -14,9 +14,9 @@
 namespace act::system
 {
 
-AbsSystemManager::AbsSystemManager(act::logger::AbsLogger &parentLogger)
+AbsSystemManager::AbsSystemManager(act::foundation::AbsLogger &parentLogger)
     : AbsManager(),
-      m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::logger::LogsLevel::TRACE)},
+      m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::foundation::LogsLevel::TRACE)},
       m_rebootThread{new act::threading::ReusableThread()}
 {
 }
@@ -42,7 +42,7 @@ act::threading::ReusableThreadResult::Enum AbsSystemManager::askReboot(int delay
 
 int AbsSystemManager::callCommand(const std::string &cmd,
                                   std::ostream &output,
-                                  const act::logger::AbsLogger &logger)
+                                  const act::foundation::AbsLogger &logger)
 {
     FILE *pipe = nullptr;
     try
@@ -95,7 +95,7 @@ std::string AbsSystemManager::EscapeCmdArgument(const std::string &arg, char esc
 
 int AbsSystemManager::callCommand(const std::vector<std::string> &cmdParts,
                                   std::ostream &output,
-                                  const act::logger::AbsLogger &logger)
+                                  const act::foundation::AbsLogger &logger)
 {
     auto cmd = act::text::VectorStringUtil::join(cmdParts, CMD_PART_SEPARATOR);
     return callCommand(cmd, output, logger);

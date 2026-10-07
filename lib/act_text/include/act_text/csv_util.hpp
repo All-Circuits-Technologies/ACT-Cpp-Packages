@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::files
 {
@@ -41,7 +41,7 @@ std::string CreateCsvLine(const std::vector<std::string> &values,
  * @return true upon success, false otherwise
  */
 bool AddCsvLine(const std::vector<std::string> &values,
-                const act::logger::AbsLogger &logger,
+                const act::foundation::AbsLogger &logger,
                 act::files::ExtFile &file,
                 const std::string &separator = DefaultCsvSeparator);
 

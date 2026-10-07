@@ -7,7 +7,7 @@
 #include "act_files/file_util.hpp"
 
 #include "act_files/ext_file.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -29,7 +29,7 @@ constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
 namespace act::files::FileUtil
 {
 std::optional<std::string> ReadFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode)
 {
     std::ifstream file(path, mode);
@@ -48,7 +48,7 @@ std::optional<std::string> ReadFile(const std::string &path,
 }
 
 std::optional<int> ReadFileAsInt(const std::string &path,
-                                 const act::logger::AbsLogger &logger,
+                                 const act::foundation::AbsLogger &logger,
                                  std::ios::openmode mode)
 {
     auto optContent = ReadFile(path, logger, mode);
@@ -91,7 +91,7 @@ std::optional<int> ReadFileAsInt(const std::string &path,
 
 bool WriteFile(const std::string &path,
                const std::string &content,
-               const act::logger::AbsLogger &logger,
+               const act::foundation::AbsLogger &logger,
                std::ios::openmode mode)
 {
     std::ofstream file(path, mode);
@@ -122,7 +122,7 @@ bool WriteFile(const std::string &path,
 }
 
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode,
                                     bool isTemp)
 {
@@ -136,7 +136,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 }
 
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     bool isTemp)
 {
     auto extFile = new ExtFile(path, logger, isTemp);
@@ -145,7 +145,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 
 bool ArePathsEqual(const std::string &path1,
                    const std::string &path2,
-                   const act::logger::AbsLogger &logger)
+                   const act::foundation::AbsLogger &logger)
 {
     if (path1 == path2)
     {

@@ -11,10 +11,10 @@
 #include <optional>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::files
 {
@@ -33,7 +33,7 @@ class ExtFile : private act::foundation::NotCopiableNotMovable
      * @param isTemp Whether the file is temporary and should be deleted upon closing
      */
     explicit ExtFile(std::string filePath,
-                     const act::logger::AbsLogger &logger,
+                     const act::foundation::AbsLogger &logger,
                      bool isTemp = false);
 
     /**
@@ -51,7 +51,7 @@ class ExtFile : private act::foundation::NotCopiableNotMovable
      */
     explicit ExtFile(std::fstream *fstream,
                      std::string filePath,
-                     const act::logger::AbsLogger &logger,
+                     const act::foundation::AbsLogger &logger,
                      std::ios::openmode mode,
                      bool isTemp = false);
 
@@ -106,7 +106,7 @@ class ExtFile : private act::foundation::NotCopiableNotMovable
      */
     static ExtFile *CreateFileAndTryToOpenIt(const std::string &filePath,
                                              std::ios::openmode mode,
-                                             const act::logger::AbsLogger &logger,
+                                             const act::foundation::AbsLogger &logger,
                                              bool isTemp = false);
 
   private:
@@ -121,11 +121,11 @@ class ExtFile : private act::foundation::NotCopiableNotMovable
     static bool OpenFile(std::fstream &fstream,
                          const std::string &filePath,
                          std::ios::openmode mode,
-                         const act::logger::AbsLogger &logger);
+                         const act::foundation::AbsLogger &logger);
 
   private:
     /** @brief Logger instance */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 
     /** @brief This is the pointer to the file stream  */
     std::fstream *m_fstream{nullptr};

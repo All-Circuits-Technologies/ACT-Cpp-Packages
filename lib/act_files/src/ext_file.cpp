@@ -4,7 +4,7 @@
 
 #include "act_files/ext_file.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -12,7 +12,7 @@
 namespace act::files
 {
 
-ExtFile::ExtFile(std::string filePath, const act::logger::AbsLogger &logger, bool isTemp)
+ExtFile::ExtFile(std::string filePath, const act::foundation::AbsLogger &logger, bool isTemp)
     : m_logger{logger},
       m_fstream{new std::fstream()},
       m_filePath(std::move(filePath)),
@@ -37,7 +37,7 @@ ExtFile::~ExtFile()
 
 ExtFile::ExtFile(std::fstream *fstream,
                  std::string filePath,
-                 const act::logger::AbsLogger &logger,
+                 const act::foundation::AbsLogger &logger,
                  std::ios::openmode mode,
                  bool isTemp)
     : m_logger{logger},
@@ -93,7 +93,7 @@ bool ExtFile::isOpen() const
 
 ExtFile *ExtFile::CreateFileAndTryToOpenIt(const std::string &filePath,
                                            std::ios::openmode mode,
-                                           const act::logger::AbsLogger &logger,
+                                           const act::foundation::AbsLogger &logger,
                                            bool isTemp)
 {
     auto fstream = new std::fstream();
@@ -110,7 +110,7 @@ ExtFile *ExtFile::CreateFileAndTryToOpenIt(const std::string &filePath,
 bool ExtFile::OpenFile(std::fstream &fstream,
                        const std::string &filePath,
                        std::ios::openmode mode,
-                       const act::logger::AbsLogger &logger)
+                       const act::foundation::AbsLogger &logger)
 {
     fstream.open(filePath, mode);
     if (!fstream.is_open())

@@ -12,10 +12,10 @@
 #include <optional>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::files
 {
@@ -33,7 +33,7 @@ namespace act::files::FileUtil
  * @return The file content
  */
 std::optional<std::string> ReadFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode = std::ios::in);
 
 /**
@@ -47,7 +47,7 @@ std::optional<std::string> ReadFile(const std::string &path,
  *       included.
  */
 std::optional<int> ReadFileAsInt(const std::string &path,
-                                 const act::logger::AbsLogger &logger,
+                                 const act::foundation::AbsLogger &logger,
                                  std::ios::openmode mode = std::ios::in);
 
 /** @brief Write content to a file
@@ -59,7 +59,7 @@ std::optional<int> ReadFileAsInt(const std::string &path,
  */
 bool WriteFile(const std::string &path,
                const std::string &content,
-               const act::logger::AbsLogger &logger,
+               const act::foundation::AbsLogger &logger,
                std::ios::openmode mode = std::ios::out);
 
 /**
@@ -73,7 +73,7 @@ bool WriteFile(const std::string &path,
 template <typename T>
 bool WriteFile(const std::string &path,
                const T &value,
-               const act::logger::AbsLogger &logger,
+               const act::foundation::AbsLogger &logger,
                std::ios::openmode mode = std::ios::out)
 {
     return WriteFile(path, std::to_string(value), logger, mode);
@@ -88,7 +88,7 @@ bool WriteFile(const std::string &path,
  * @return The file handle, or nullptr upon failure
  */
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode,
                                     bool isTemp = false);
 
@@ -100,7 +100,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
  * @return The file handle, or nullptr upon failure
  */
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     bool isTemp = false);
 
 /**
@@ -112,7 +112,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
  */
 bool ArePathsEqual(const std::string &path1,
                    const std::string &path2,
-                   const act::logger::AbsLogger &logger);
+                   const act::foundation::AbsLogger &logger);
 
 /**
  * @brief Extract the filename from a file path

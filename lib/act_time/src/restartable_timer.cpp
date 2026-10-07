@@ -7,7 +7,7 @@
 namespace act::time
 {
 
-RestartableTimer::RestartableTimer(const act::logger::AbsLogger &logger,
+RestartableTimer::RestartableTimer(const act::foundation::AbsLogger &logger,
                                    unsigned int durationMs,
                                    const std::function<void()> &callback,
                                    bool periodic,

@@ -12,15 +12,16 @@
 namespace act::logger
 {
 
-StdConsoleLogger::StdConsoleLogger(LogsLevel::Enum minLevel,
-                                   LogsLevel::Enum minLevelToPrintToStdErr,
-                                   const std::map<std::string, LogsLevel::Enum> &minLevelByCategory)
+StdConsoleLogger::StdConsoleLogger(
+    act::foundation::LogsLevel::Enum minLevel,
+    act::foundation::LogsLevel::Enum minLevelToPrintToStdErr,
+    const std::map<std::string, act::foundation::LogsLevel::Enum> &minLevelByCategory)
     : AbsExternalLogger(minLevel, minLevelByCategory),
       m_minLevelToPrintToStdErr{minLevelToPrintToStdErr}
 {
 }
 
-void StdConsoleLogger::logToExternal(LogsLevel::Enum level,
+void StdConsoleLogger::logToExternal(act::foundation::LogsLevel::Enum level,
                                      const std::string &message,
                                      const std::vector<std::string> &categories)
 {
@@ -37,14 +38,14 @@ void StdConsoleLogger::logToExternal(LogsLevel::Enum level,
     }
 }
 
-std::string StdConsoleLogger::FormatLogMessage(LogsLevel::Enum level,
+std::string StdConsoleLogger::FormatLogMessage(act::foundation::LogsLevel::Enum level,
                                                const std::string &message,
                                                const std::vector<std::string> &categories)
 {
     std::string formattedMessage;
 
     // Add level
-    formattedMessage += "[" + LogsLevel::ToString(level) + "] ";
+    formattedMessage += "[" + act::foundation::LogsLevel::ToString(level) + "] ";
 
     // Add categories if any
     if (!categories.empty())

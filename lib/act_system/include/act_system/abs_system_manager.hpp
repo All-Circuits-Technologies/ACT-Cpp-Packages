@@ -13,10 +13,10 @@
 #include <string_view>
 #include <vector>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::threading
 {
@@ -39,7 +39,7 @@ class AbsSystemManager : public act::foundation::AbsManager
      * @brief Constructor
      * @param parentLogger Parent logger used to create this manager's sub-logger
      */
-    explicit AbsSystemManager(act::logger::AbsLogger &parentLogger);
+    explicit AbsSystemManager(act::foundation::AbsLogger &parentLogger);
 
     /** @brief Destructor */
     ~AbsSystemManager() override;
@@ -79,7 +79,7 @@ class AbsSystemManager : public act::foundation::AbsManager
      */
     int callCommand(const std::string &cmd,
                     std::ostream &output,
-                    const act::logger::AbsLogger &logger);
+                    const act::foundation::AbsLogger &logger);
 
     /**
      * @brief Call a system command with arguments and capture its output
@@ -93,7 +93,7 @@ class AbsSystemManager : public act::foundation::AbsManager
      */
     int callCommand(const std::vector<std::string> &cmdParts,
                     std::ostream &output,
-                    const act::logger::AbsLogger &logger);
+                    const act::foundation::AbsLogger &logger);
 
     /**
      * @brief Escape a command argument, so that a POSIX shell reads it as one word, as is
@@ -171,7 +171,7 @@ class AbsSystemManager : public act::foundation::AbsManager
 
   private:
     /** @brief Logger helper */
-    std::shared_ptr<act::logger::AbsLogger> m_logger;
+    std::shared_ptr<act::foundation::AbsLogger> m_logger;
 
     /** @brief Whether a reboot has been asked */
     bool m_rebootAsked = false;

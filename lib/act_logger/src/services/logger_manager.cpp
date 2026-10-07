@@ -10,7 +10,7 @@
 namespace act::logger
 {
 
-LoggerManager::LoggerManager(LogsLevel::Enum minLevelToPrintToStdErr)
+LoggerManager::LoggerManager(act::foundation::LogsLevel::Enum minLevelToPrintToStdErr)
     : AbsLoggerManager(),
       m_minLevelToPrintToStdErr{minLevelToPrintToStdErr}
 {
@@ -24,7 +24,7 @@ bool LoggerManager::init()
     return AbsLoggerManager::init();
 }
 
-void LoggerManager::setCslMinLogLevel(LogsLevel::Enum minLevel)
+void LoggerManager::setCslMinLogLevel(act::foundation::LogsLevel::Enum minLevel)
 {
     if (m_consoleLogger)
     {
@@ -32,7 +32,8 @@ void LoggerManager::setCslMinLogLevel(LogsLevel::Enum minLevel)
     }
 }
 
-void LoggerManager::setCslCategoryMinLogLevel(const std::string &category, LogsLevel::Enum minLevel)
+void LoggerManager::setCslCategoryMinLogLevel(const std::string &category,
+                                              act::foundation::LogsLevel::Enum minLevel)
 {
     if (m_consoleLogger)
     {

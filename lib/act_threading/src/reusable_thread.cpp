@@ -33,7 +33,7 @@ bool ReusableThread::isRunning() const
 
 ReusableThreadResult::Enum ReusableThread::startProcess(
     bool waitToJoin,
-    const act::logger::AbsLogger &logger,
+    const act::foundation::AbsLogger &logger,
     const std::function<std::thread *()> &threadFactory)
 {
     // This mutex protects the start process in case start() is called from different threads

@@ -18,17 +18,19 @@ class SubLoggerHelper : public LoggerHelper
      * @param parentLogger The parent logger
      * @param minLevel The minimum logs level for this sub-logger
      */
-    explicit SubLoggerHelper(const std::string &category,
-                             LoggerHelper &parentLogger,
-                             LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+    explicit SubLoggerHelper(
+        const std::string &category,
+        LoggerHelper &parentLogger,
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /**
      * @brief Class constructor
      * @param parentLogger The parent logger
      * @param minLevel The minimum logs level for this sub-logger
      */
-    explicit SubLoggerHelper(LoggerHelper &parentLogger,
-                             LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+    explicit SubLoggerHelper(
+        LoggerHelper &parentLogger,
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /** @brief Class destructor */
     ~SubLoggerHelper() override = default;
@@ -43,7 +45,7 @@ class SubLoggerHelper : public LoggerHelper
      */
     explicit SubLoggerHelper(std::vector<std::string> categories,
                              LoggerHelper &parentLogger,
-                             LogsLevel::Enum minLevel);
+                             act::foundation::LogsLevel::Enum minLevel);
 
   public:
     /**

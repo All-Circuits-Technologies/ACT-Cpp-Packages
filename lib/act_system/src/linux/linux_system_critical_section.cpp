@@ -5,7 +5,7 @@
 #include "act_system/linux/linux_system_critical_section.hpp"
 
 #include "act_foundation/constants/def_soft.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <cerrno>  // errno
 #include <cstring> // std::strerror
@@ -17,7 +17,7 @@ namespace act::system
 {
 
 LinuxSystemCriticalSection::LinuxSystemCriticalSection(const char *slug,
-                                                       const act::logger::AbsLogger &logger)
+                                                       const act::foundation::AbsLogger &logger)
     : AbsSystemCriticalSection(slug, logger)
 {
     const std::string lockFilePath = ComputeLockFilePath(slug);

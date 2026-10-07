@@ -9,7 +9,7 @@
 namespace act::time
 {
 
-ActionDelayer::ActionDelayer(const act::logger::AbsLogger &logger,
+ActionDelayer::ActionDelayer(const act::foundation::AbsLogger &logger,
                              unsigned int delayMs,
                              const std::function<void()> &callback,
                              std::optional<unsigned int> maxDelayMs,

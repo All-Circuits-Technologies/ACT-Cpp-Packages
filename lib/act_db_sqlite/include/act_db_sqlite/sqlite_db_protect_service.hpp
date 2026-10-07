@@ -12,7 +12,7 @@ namespace act::db::sqlite
 class SQLiteDbProtectService : public act::db::core::DbProtectService<ASqLiteDbManager>
 {
   public:
-    explicit SQLiteDbProtectService(ASqLiteDbManager &db, act::logger::AbsLogger &parentLogger)
+    explicit SQLiteDbProtectService(ASqLiteDbManager &db, act::foundation::AbsLogger &parentLogger)
         : DbProtectService(db, parentLogger)
     {
     }

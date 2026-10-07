@@ -14,7 +14,6 @@
 add_library(act_logger STATIC
     # Helpers
     src/helpers/logger_helper.cpp
-    src/helpers/logger_stream.cpp
     src/helpers/multi_external_logger.cpp
     src/helpers/sub_logger_helper.cpp
 

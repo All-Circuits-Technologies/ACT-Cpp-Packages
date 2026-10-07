@@ -4,14 +4,9 @@
 
 #pragma once
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <utility>
-
-namespace act::logger
-{
-class AbsLogger;
-} // namespace act::logger
 
 namespace act::foundation
 {
@@ -36,7 +31,7 @@ class Finally
      *       @p logger. Any other exception leaves the destructor, which is noexcept, so the
      *       program terminates.
      */
-    explicit Finally(F &&func, act::logger::AbsLogger &logger)
+    explicit Finally(F &&func, act::foundation::AbsLogger &logger)
         : m_enabled(true),
           m_func(std::forward<F>(func)),
           m_logger(logger)
@@ -95,7 +90,7 @@ class Finally
     /**
      * @brief Logger
      */
-    act::logger::AbsLogger &m_logger;
+    act::foundation::AbsLogger &m_logger;
 };
 
 } // namespace act::foundation
