@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Benoit Rolandeau <benoit.rolandeau@allcircuits.com>
+#
+# SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
+
+name: Unit Tests
+
+on: [ push ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    # Same distribution as the development container, so the packaged libgpiod and SQLiteCpp are
+    # the versions the libraries are developed against.
+    container: debian:trixie
+    steps:
+      - name: Install the build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            cmake \
+            git \
+            ninja-build \
+            pkg-config \
+            libgpiod-dev \
+            libsqlitecpp-dev
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure
+        run: cmake --preset dev
+
+      - name: Build
+        run: cmake --build --preset dev
+
+      - name: Test
+        run: ctest --preset dev

@@ -32,7 +32,7 @@ project(act_cpp_packages
 )
 
 # -----------------------------------------------------------------------------
-# Build Options (DOCUMENTATION ONLY)
+# Build Options
 # -----------------------------------------------------------------------------
 
 option(BUILD_DEMOS "Build demo applications" OFF)
@@ -69,7 +69,7 @@ if(BUILD_DEMOS)
 endif()
 
 # -----------------------------------------------------------------------------
-# Tests (TODO)
+# Tests
 # -----------------------------------------------------------------------------
 # tests/
 #   <module>_tests/
@@ -77,7 +77,6 @@ endif()
 #     test_*.cpp
 
 if(BUILD_TESTS)
-    message(STATUS "Tests not yet implemented")
-    # enable_testing()
-    # add_subdirectory(tests)
+    enable_testing()
+    add_subdirectory(tests)
 endif()
