@@ -30,7 +30,8 @@ class LinuxSystemManager : public AbsSystemManager
     /**
      * @brief Close a pipe using the POSIX pclose() call
      * @param pipe The pipe to close
-     * @return The exit code of the underlying process
+     * @return The exit code of the underlying process, or -1 if the pipe cannot be closed or the
+     *         process was killed by a signal
      */
     int closePipe(FILE *pipe) override;
 

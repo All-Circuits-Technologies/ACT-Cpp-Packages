@@ -74,7 +74,8 @@ class AbsSystemManager : public act::foundation::AbsManager
      * @param cmd The command to execute
      * @param output Stream that receives the command output
      * @param logger Logger used to report errors
-     * @return The exit code of the command, or -1 on failure
+     * @return The exit code of the command, or -1 on failure (including a command killed by a
+     *         signal)
      */
     int callCommand(const std::string &cmd,
                     std::ostream &output,
@@ -87,7 +88,8 @@ class AbsSystemManager : public act::foundation::AbsManager
      * @param cmdParts The command and its arguments as a list of strings
      * @param output Stream that receives the command output
      * @param logger Logger used to report errors
-     * @return The exit code of the command, or -1 on failure
+     * @return The exit code of the command, or -1 on failure (including a command killed by a
+     *         signal)
      */
     int callCommand(const std::vector<std::string> &cmdParts,
                     std::ostream &output,
@@ -120,7 +122,7 @@ class AbsSystemManager : public act::foundation::AbsManager
     /**
      * @brief Close a pipe previously opened by openPipe()
      * @param pipe The pipe to close
-     * @return The exit code of the underlying process
+     * @return The exit code of the underlying process, or -1 if there is none
      */
     virtual int closePipe(FILE *pipe) = 0;
 
