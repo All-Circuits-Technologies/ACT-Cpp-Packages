@@ -69,6 +69,30 @@ int AbsSystemManager::callCommand(const std::string &cmd,
     return closePipe(pipe);
 }
 
+std::string AbsSystemManager::EscapeCmdArgument(const std::string &arg, char escapeChar)
+{
+    std::string escaped(1, escapeChar);
+    for (const char character : arg)
+    {
+        if (escapeChar == SINGLE_QUOTE_CHAR && character == SINGLE_QUOTE_CHAR)
+        {
+            // Nothing can be escaped between single quotes
+            escaped += SINGLE_QUOTE_IN_SINGLE_QUOTES;
+            continue;
+        }
+
+        if (escapeChar == DOUBLE_QUOTE_CHAR &&
+            DOUBLE_QUOTED_SPECIAL_CHARS.find(character) != std::string_view::npos)
+        {
+            escaped += BACKSLASH_CHAR;
+        }
+
+        escaped += character;
+    }
+    escaped += escapeChar;
+    return escaped;
+}
+
 int AbsSystemManager::callCommand(const std::vector<std::string> &cmdParts,
                                   std::ostream &output,
                                   const act::logger::AbsLogger &logger)

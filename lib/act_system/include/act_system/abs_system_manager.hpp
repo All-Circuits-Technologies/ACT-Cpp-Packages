@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace act::logger
@@ -93,16 +94,20 @@ class AbsSystemManager : public act::foundation::AbsManager
                     const act::logger::AbsLogger &logger);
 
     /**
-     * @brief Escape a command argument
+     * @brief Escape a command argument, so that a POSIX shell reads it as one word, as is
+     * @note With single quotes, a single quote of the argument is written '\'' (the quoted part is
+     *       closed, an escaped quote follows, and a new quoted part opens). With double quotes, the
+     *       characters a POSIX shell still interprets between double quotes (", \, $ and `) are
+     *       escaped with a backslash.
+     * @note The rules are the ones of a POSIX shell, which runs the commands on Linux; the Windows
+     *       command interpreter quotes differently.
      * @param arg The argument to escape
-     * @param escapeChar The character to use for escaping (default: single quote)
+     * @param escapeChar The quote to wrap the argument in: SINGLE_QUOTE_CHAR (default) or
+     *                   DOUBLE_QUOTE_CHAR
      * @return The escaped argument
      */
     static std::string EscapeCmdArgument(const std::string &arg,
-                                         char escapeChar = SINGLE_QUOTE_CHAR)
-    {
-        return escapeChar + arg + escapeChar;
-    }
+                                         char escapeChar = SINGLE_QUOTE_CHAR);
 
   protected:
     /**
@@ -152,6 +157,15 @@ class AbsSystemManager : public act::foundation::AbsManager
 
     /** @brief Reboot command name */
     static constexpr const char *REBOOT_CMD_NAME = "reboot";
+
+    /** @brief A single quote written between single quotes: they close around an escaped quote */
+    static constexpr std::string_view SINGLE_QUOTE_IN_SINGLE_QUOTES = "'\\''";
+
+    /** @brief The character escaping the next one in a POSIX shell */
+    static constexpr char BACKSLASH_CHAR = '\\';
+
+    /** @brief The characters a POSIX shell still interprets between double quotes */
+    static constexpr std::string_view DOUBLE_QUOTED_SPECIAL_CHARS = "\"\\$`";
 
   private:
     /** @brief Logger helper */
