@@ -4,6 +4,9 @@
 
 #include "act_logger/printers/abs_external_logger.hpp"
 
+#include <algorithm>
+#include <optional>
+
 namespace act::logger
 {
 
@@ -17,37 +20,19 @@ AbsExternalLogger::AbsExternalLogger(
 bool AbsExternalLogger::isLoggable(LogsLevel::Enum level,
                                    const std::vector<std::string> &categories) const
 {
-    bool categoryMatched = false;
-    if (m_minLevelByCategory.size() > 0)
+    // The categories found in the map override the global minimum; when several are found, the
+    // highest of their levels applies
+    std::optional<LogsLevel::Enum> categoryMinLevel;
+    for (const auto &category : categories)
     {
-        // Check if any category has a specific min level
-        for (const auto &category : categories)
+        auto it = m_minLevelByCategory.find(category);
+        if (it != m_minLevelByCategory.end())
         {
-            auto it = m_minLevelByCategory.find(category);
-            if (it != m_minLevelByCategory.end())
-            {
-                // Found a matching category, check its min level
-                if (level < it->second)
-                {
-                    // We skip log because the level is lower than the category's minLevel
-                    // Continue to check other categories
-                    continue;
-                }
-                // We found a matching category and its log level match the requirement, no
-                // need to check further
-                categoryMatched = true;
-                break;
-            }
+            categoryMinLevel = std::max(categoryMinLevel.value_or(it->second), it->second);
         }
     }
 
-    if (!categoryMatched && level < m_minLevel)
-    {
-        // We skip log because the level is lower than the minLevel
-        return false;
-    }
-
-    return true;
+    return level >= categoryMinLevel.value_or(m_minLevel);
 }
 
 void AbsExternalLogger::log(LogsLevel::Enum level,
