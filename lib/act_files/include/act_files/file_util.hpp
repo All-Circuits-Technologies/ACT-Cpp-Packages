@@ -42,7 +42,9 @@ std::optional<std::string> ReadFile(const std::string &path,
  * @param logger The logger to use for logging errors
  * @param mode The file open mode
  * @return The integer read from the file, or empty optional upon failure
- * @note File must contain a number as decimal string
+ * @note The file must hold a decimal number, in ASCII or UTF-8 (a leading UTF-8 byte order mark
+ *       is skipped), possibly surrounded by whitespace. Anything else fails, an UTF-16 file
+ *       included.
  */
 std::optional<int> ReadFileAsInt(const std::string &path,
                                  const act::logger::AbsLogger &logger,
