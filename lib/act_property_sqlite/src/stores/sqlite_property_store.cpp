@@ -7,7 +7,7 @@
 #include "act_db_sqlite/sqlite_db_constants.hpp"
 #include "act_db_sqlite/sqlite_db_manager.hpp"
 #include "act_db_sqlite/sqlite_db_protect_service.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <bit>
@@ -174,7 +174,7 @@ namespace
      * @param column The column
      * @param expected The SQLite name of the expected storage class
      */
-    void logStorageClassMismatch(const act::logger::AbsLogger &logger,
+    void logStorageClassMismatch(const act::foundation::AbsLogger &logger,
                                  const SQLite::Column &column,
                                  const char *expected)
     {
@@ -207,7 +207,7 @@ namespace
      * @return The value, or an empty optional if the column is not an integer or does not fit @p T
      */
     template <typename T>
-    std::optional<StoredValue> readInteger(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readInteger(const act::foundation::AbsLogger &logger,
                                            const SQLite::Column &column)
     {
         if (!column.isInteger())
@@ -232,7 +232,7 @@ namespace
      * @param column The value column
      * @return The value, or an empty optional if the column is not an integer equal to 0 or 1
      */
-    std::optional<StoredValue> readBool(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readBool(const act::foundation::AbsLogger &logger,
                                         const SQLite::Column &column)
     {
         if (!column.isInteger())
@@ -264,7 +264,7 @@ namespace
      * @param column The value column
      * @return The value, or an empty optional if the column is not an integer
      */
-    std::optional<StoredValue> readUInt64(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readUInt64(const act::foundation::AbsLogger &logger,
                                           const SQLite::Column &column)
     {
         if (!column.isInteger())
@@ -283,7 +283,7 @@ namespace
      * @return The value, or an empty optional if the column is not a real or a finite value is out
      * of the float range
      */
-    std::optional<StoredValue> readFloat(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readFloat(const act::foundation::AbsLogger &logger,
                                          const SQLite::Column &column)
     {
         if (!column.isFloat())
@@ -309,7 +309,7 @@ namespace
      * @param column The value column
      * @return The value, or an empty optional if the column is not a real
      */
-    std::optional<StoredValue> readDouble(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readDouble(const act::foundation::AbsLogger &logger,
                                           const SQLite::Column &column)
     {
         if (!column.isFloat())
@@ -327,7 +327,7 @@ namespace
      * @param column The value column
      * @return The value, or an empty optional if the column is not a text
      */
-    std::optional<StoredValue> readString(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readString(const act::foundation::AbsLogger &logger,
                                           const SQLite::Column &column)
     {
         if (!column.isText())
@@ -346,7 +346,7 @@ namespace
      * @param valueColumn The value column
      * @return The value, or an empty optional if the tag is unknown or the value does not match it
      */
-    std::optional<StoredValue> readRow(const act::logger::AbsLogger &logger,
+    std::optional<StoredValue> readRow(const act::foundation::AbsLogger &logger,
                                        const SQLite::Column &typeColumn,
                                        const SQLite::Column &valueColumn)
     {
@@ -398,13 +398,13 @@ namespace
 } // namespace
 
 SqlitePropertyStore::SqlitePropertyStore(act::db::sqlite::SQLiteDbProtectService &dbProtectService,
-                                         act::logger::AbsLogger &parentLogger,
+                                         act::foundation::AbsLogger &parentLogger,
                                          std::string tableName,
                                          TableProvisioning provisioning)
     : AbsPropertyStore(),
       m_dbProtectService(dbProtectService),
       m_logger(
-          parentLogger.createAbsSubLogger(LoggerCategory, act::logger::LogsLevel::Enum::TRACE)),
+          parentLogger.createAbsSubLogger(LoggerCategory, act::foundation::LogsLevel::Enum::TRACE)),
       m_tableName(std::move(tableName)),
       m_provisioning(provisioning),
       m_getQuery(std::format(GetQuery, quoteIdentifier(m_tableName))),

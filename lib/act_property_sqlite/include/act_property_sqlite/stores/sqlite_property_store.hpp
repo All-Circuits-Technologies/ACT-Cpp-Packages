@@ -12,10 +12,10 @@
 #include <optional>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::db::sqlite
 {
@@ -79,7 +79,7 @@ class SqlitePropertyStore : public AbsPropertyStore
      * @param provisioning Whether the store creates the table at init or expects it to exist
      */
     explicit SqlitePropertyStore(act::db::sqlite::SQLiteDbProtectService &dbProtectService,
-                                 act::logger::AbsLogger &parentLogger,
+                                 act::foundation::AbsLogger &parentLogger,
                                  std::string tableName,
                                  TableProvisioning provisioning);
 
@@ -122,7 +122,7 @@ class SqlitePropertyStore : public AbsPropertyStore
     act::db::sqlite::SQLiteDbProtectService &m_dbProtectService;
 
     /** @brief The store sub-logger */
-    std::shared_ptr<act::logger::AbsLogger> m_logger;
+    std::shared_ptr<act::foundation::AbsLogger> m_logger;
 
     /** @brief The table name, as given (not quoted) */
     std::string m_tableName;
