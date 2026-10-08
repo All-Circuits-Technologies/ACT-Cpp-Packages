@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "act_db_core/db_core_constants.hpp"
+#include "act_foundation/not_copiable_not_movable.hpp"
 
 namespace act::foundation
 {
@@ -23,7 +24,7 @@ class AbsDbManager;
  *       destructed, so it is recommended to use it with a local scope to ensure proper transaction
  *       handling.
  */
-class DbTransaction
+class DbTransaction : private act::foundation::NotCopiableNotMovable
 {
   private:
     /**
@@ -47,7 +48,7 @@ class DbTransaction
     explicit DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger);
 
     /** @brief Destructor */
-    virtual ~DbTransaction();
+    ~DbTransaction() override;
 
   public:
     /**

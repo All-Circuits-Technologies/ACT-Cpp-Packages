@@ -6,13 +6,15 @@
 
 #include "system_critical_section.hpp"
 
+#include "act_foundation/not_copiable_not_movable.hpp"
+
 #include <tuple>
 
 namespace act::system
 {
 
 /** @brief Lock a critical section during entire object life type */
-class SystemCriticalSectionGuard
+class SystemCriticalSectionGuard : private act::foundation::NotCopiableNotMovable
 {
   public:
     /**  @brief Lock criticalSection until destructor
@@ -25,7 +27,7 @@ class SystemCriticalSectionGuard
     }
 
     /** @brief Unlock critical section */
-    virtual ~SystemCriticalSectionGuard()
+    ~SystemCriticalSectionGuard() override
     {
         std::ignore = m_criticalSection.leave();
     }

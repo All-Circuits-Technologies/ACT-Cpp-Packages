@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "act_foundation/not_copiable_not_movable.hpp"
+
 #include <string>
 
 namespace act::foundation
@@ -21,7 +23,7 @@ namespace act::system
  * @note Uses flock-based locking on POSIX so that the lock is auto-released
  *       even in case of app crash.
  */
-class AbsSystemCriticalSection
+class AbsSystemCriticalSection : private act::foundation::NotCopiableNotMovable
 {
   public:
     /**
@@ -49,7 +51,7 @@ class AbsSystemCriticalSection
     }
 
     /** @brief Disconnect from created system-wide critical section */
-    virtual ~AbsSystemCriticalSection() = default;
+    ~AbsSystemCriticalSection() override = default;
 
   public:
     /** @brief Enter critical section, that is take the lock */
