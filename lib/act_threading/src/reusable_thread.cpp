@@ -37,7 +37,7 @@ ReusableThreadResult::Enum ReusableThread::startProcess(
     const std::function<std::thread *()> &threadFactory)
 {
     // This mutex protects the start process in case start() is called from different threads
-    const std::lock_guard<std::mutex> lock(m_startThreadMutex);
+    const std::scoped_lock lock(m_startThreadMutex);
 
     if (m_waitingThread != nullptr && m_waitingThread->joinable())
     {
