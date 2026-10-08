@@ -4,6 +4,7 @@
 
 #include "act_time/date_time_util.hpp"
 
+#include <array>
 #include <ctime>
 #include <tuple>
 
@@ -57,12 +58,12 @@ std::string DateTimeUtil::GetCurrentIsoDateTime(bool utc, const char *pattern)
         return {};
     }
 
-    char buffer[ISO_TIME_PATTERN_BUFFER_SIZE] = {0};
+    std::array<char, ISO_TIME_PATTERN_BUFFER_SIZE> buffer{};
 
     // No need to test the return value, we assume the buffer is large enough
-    std::ignore = std::strftime(buffer, ISO_TIME_PATTERN_BUFFER_SIZE, pattern, &parts);
+    std::ignore = std::strftime(buffer.data(), buffer.size(), pattern, &parts);
 
-    return {buffer};
+    return {buffer.data()};
 }
 
 } // namespace act::time

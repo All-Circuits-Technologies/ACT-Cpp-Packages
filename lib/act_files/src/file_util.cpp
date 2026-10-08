@@ -156,8 +156,6 @@ bool ArePathsEqual(const std::string &path1,
     bool isEqual = false;
     try
     {
-        auto path1Obj = std::filesystem::absolute(path1);
-        auto path2Obj = std::filesystem::absolute(path2);
         isEqual = std::filesystem::equivalent(path1, path2);
     }
     catch (const std::exception &e)

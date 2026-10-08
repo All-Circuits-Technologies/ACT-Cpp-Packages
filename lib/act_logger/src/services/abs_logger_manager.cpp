@@ -11,10 +11,7 @@
 namespace act::logger
 {
 
-AbsLoggerManager::AbsLoggerManager()
-
-{
-}
+AbsLoggerManager::AbsLoggerManager() = default;
 
 bool AbsLoggerManager::init()
 {

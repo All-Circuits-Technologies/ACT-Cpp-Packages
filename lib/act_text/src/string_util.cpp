@@ -61,7 +61,7 @@ std::string BinToHex(const std::string &bin)
     hex << std::hex << std::setfill('0');
     for (const unsigned char c : bin)
     {
-        hex << std::setw(2) << (int)c;
+        hex << std::setw(2) << static_cast<int>(c);
     }
     return hex.str();
 }

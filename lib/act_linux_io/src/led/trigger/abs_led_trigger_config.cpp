@@ -22,7 +22,7 @@ AbsLedTriggerConfig::AbsLedTriggerConfig(std::string name)
 
 bool AbsLedTriggerConfig::isLedAlreadyConfigured(const LinuxLed &led) const
 {
-    return led.hasAnyTrigger() && (led.getTrigger().value() == m_name);
+    return led.hasAnyTrigger() && (led.getTrigger() == m_name);
 }
 
 bool AbsLedTriggerConfig::applyToLeds(const std::vector<std::reference_wrapper<LinuxLed>> &leds,

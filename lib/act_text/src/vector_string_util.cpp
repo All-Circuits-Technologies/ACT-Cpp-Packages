@@ -56,11 +56,11 @@ std::vector<std::string> split(const std::string &str, const std::string &separa
 
     if (!str.empty())
     {
-        int start = 0;
-        size_t idx = str.find(separator, start);
+        std::string::size_type start = 0;
+        std::string::size_type idx = str.find(separator, start);
         while (idx != std::string::npos)
         {
-            const int length = idx - start;
+            const std::string::size_type length = idx - start;
             tmpList.push_back(str.substr(start, length));
             start += (length + separator.size());
 
