@@ -8,7 +8,13 @@
 
 #include "act_logger/helpers/logger_helper.hpp"
 
+#include <chrono>
+#include <exception>
+#include <filesystem>
+#include <functional>
 #include <gpiod.hpp>
+#include <memory>
+#include <string>
 #include <system_error>
 #include <thread>
 

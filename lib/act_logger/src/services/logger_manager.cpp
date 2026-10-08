@@ -4,8 +4,13 @@
 
 #include "act_logger/services/logger_manager.hpp"
 
+#include "act_foundation/logger/logs_level.hpp"
 #include "act_logger/constants/logs_constants.hpp"
+#include "act_logger/printers/abs_external_logger.hpp"
 #include "act_logger/printers/std_console_logger.hpp"
+#include "act_logger/services/abs_logger_manager.hpp"
+#include <memory>
+#include <string>
 
 namespace act::logger
 {

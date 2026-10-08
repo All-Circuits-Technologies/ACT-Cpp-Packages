@@ -9,11 +9,17 @@
 #include "act_files/ext_file.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 
+#include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {

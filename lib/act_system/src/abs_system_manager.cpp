@@ -5,11 +5,18 @@
 #include "act_system/abs_system_manager.hpp"
 
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 #include "act_text/vector_string_util.hpp"
 #include "act_threading/reusable_thread.hpp"
+#include "act_threading/types/reusable_thread_result.hpp"
 
 #include <array>
+#include <chrono>
+#include <cstdio>
+#include <exception>
 #include <iostream>
+#include <thread>
+#include <vector>
 
 namespace act::system
 {

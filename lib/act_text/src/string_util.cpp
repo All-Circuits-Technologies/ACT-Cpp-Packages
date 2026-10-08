@@ -8,9 +8,13 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <iomanip>
+#include <ios>
 #include <optional>
 #include <regex>
+#include <sstream>
+#include <string>
 
 namespace act::text::StringUtil
 {

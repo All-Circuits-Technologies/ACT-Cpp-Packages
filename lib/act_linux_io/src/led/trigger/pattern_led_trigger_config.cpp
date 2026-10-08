@@ -7,6 +7,8 @@
 #include "act_linux_io/led/linux_led.hpp"
 
 #include <numeric>
+#include <string>
+#include <utility>
 
 namespace act::linux_io
 {

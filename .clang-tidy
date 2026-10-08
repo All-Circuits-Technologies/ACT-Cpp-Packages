@@ -60,8 +60,6 @@ Checks:
   - -misc-use-internal-linkage
   # Alias of cppcoreguidelines-special-member-functions, whose options would not apply to it
   - -hicpp-special-member-functions
-  # Excluded until the includes are cleaned up
-  - -misc-include-cleaner
 CheckOptions: {
         # cppcoreguidelines-special-member-functions: a class that declares a destructor, a copy or
         # a move declares the five or deletes them, except an interface with a sole defaulted

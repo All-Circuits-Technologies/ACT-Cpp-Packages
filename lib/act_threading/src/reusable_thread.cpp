@@ -3,6 +3,10 @@
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
 
 #include "act_threading/reusable_thread.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
+#include "act_threading/types/reusable_thread_result.hpp"
+#include <functional>
+#include <mutex>
 
 namespace act::threading
 {
