@@ -31,7 +31,7 @@ bool DbTransaction::begin(std::string_view beginExtension)
         return false;
     }
 
-    std::string query = DbCoreConstants::BEGIN_NAME;
+    std::string query{DbCoreConstants::BEGIN_NAME};
     if (!beginExtension.empty())
     {
         query += " " + std::string(beginExtension);

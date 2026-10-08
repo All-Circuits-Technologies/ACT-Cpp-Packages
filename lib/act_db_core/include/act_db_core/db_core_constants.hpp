@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 
 /// @brief Set of constants related to SQL transaction statements
 namespace act::db::core::DbCoreConstants
@@ -12,20 +12,20 @@ namespace act::db::core::DbCoreConstants
 /**
  * @brief The SQL TRANSACTION statement name
  */
-static inline const std::string TRANSACTION_NAME = "TRANSACTION";
+constexpr std::string_view TRANSACTION_NAME = "TRANSACTION";
 
 /**
  * @brief The SQL BEGIN statement name
  */
-static inline const std::string BEGIN_NAME = "BEGIN";
+constexpr std::string_view BEGIN_NAME = "BEGIN";
 
 /**
  * @brief The SQL COMMIT statement name
  */
-static inline const std::string COMMIT_NAME = "COMMIT";
+constexpr std::string_view COMMIT_NAME = "COMMIT";
 
 /**
  * @brief The SQL ROLLBACK statement name
  */
-static inline const std::string ROLLBACK_NAME = "ROLLBACK";
+constexpr std::string_view ROLLBACK_NAME = "ROLLBACK";
 } // namespace act::db::core::DbCoreConstants

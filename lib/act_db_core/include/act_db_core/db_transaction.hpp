@@ -84,15 +84,13 @@ class DbTransaction
     /**
      * @brief Default SQL command to commit a transaction, using the standard "COMMIT TRANSACTION"
      */
-    static inline const std::string COMMIT_TRANSACTION =
-        DbCoreConstants::COMMIT_NAME + " " + DbCoreConstants::TRANSACTION_NAME;
+    static constexpr const char *COMMIT_TRANSACTION = "COMMIT TRANSACTION";
 
     /**
      * @brief Default SQL command to rollback a transaction, using the standard "ROLLBACK
      * TRANSACTION"
      */
-    static inline const std::string ROLLBACK_TRANSACTION =
-        DbCoreConstants::ROLLBACK_NAME + " " + DbCoreConstants::TRANSACTION_NAME;
+    static constexpr const char *ROLLBACK_TRANSACTION = "ROLLBACK TRANSACTION";
 
   private:
     /** @brief Shared database manager */

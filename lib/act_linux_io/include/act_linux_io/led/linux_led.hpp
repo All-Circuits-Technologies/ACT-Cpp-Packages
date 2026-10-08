@@ -264,19 +264,19 @@ class LinuxLed
     /* ## Constants */
   private:
     /** @brief Linux LEDs parent folder */
-    static const std::string LEDS_DIR;
+    static constexpr const char *LEDS_DIR = "/sys/class/leds";
 
     /** @brief LED brightness file name */
-    static const std::string BRIGHTNESS_FILE_NAME;
+    static constexpr const char *BRIGHTNESS_FILE_NAME = "brightness";
 
     /** @brief LED max brightness file name */
-    static const std::string MAX_BRIGHTNESS_FILE_NAME;
+    static constexpr const char *MAX_BRIGHTNESS_FILE_NAME = "max_brightness";
 
     /** @brief LED trigger file name */
-    static const std::string TRIGGER_FILE_NAME;
+    static constexpr const char *TRIGGER_FILE_NAME = "trigger";
 
     /** @brief Special trigger value used to clear the trigger */
-    static const std::string TRIGGER_NONE_VALUE;
+    static constexpr const char *TRIGGER_NONE_VALUE = "none";
 
     /* ## Data members */
   private:
