@@ -3,9 +3,13 @@
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
 
 #include "act_logger/printers/abs_external_logger.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 #include <algorithm>
+#include <map>
 #include <optional>
+#include <string>
+#include <vector>
 
 namespace act::logger
 {

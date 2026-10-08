@@ -4,6 +4,11 @@
 
 #include "act_system/linux/linux_system_manager.hpp"
 
+// popen, pclose and the wait status macros are POSIX: include-cleaner maps them to the C headers
+// of the platform rather than to <cstdio> and <sys/wait.h>
+// NOLINTBEGIN(misc-include-cleaner)
+#include <cstdio>
+#include <string>
 #include <sys/wait.h> // WIFEXITED, WEXITSTATUS
 #include <unistd.h>   // sync
 
@@ -35,3 +40,5 @@ void LinuxSystemManager::syncBeforeReboot()
 }
 
 } // namespace act::system
+
+// NOLINTEND(misc-include-cleaner)

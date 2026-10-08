@@ -6,11 +6,18 @@
 
 #include "act_db_core/db_log_helper.hpp"
 // NOLINTNEXTLINE: this include is actually needed
-#include "act_logger/helpers/logger_helper.hpp"
+#include "act_db_core/services/abs_db_manager.hpp"
 
-#include <SQLiteCpp/SQLiteCpp.h>
+#include <SQLiteCpp/Column.h>
+#include <SQLiteCpp/Database.h>
+#include <exception>
+#include <filesystem>
+#include <memory>
+#include <optional>
 #include <regex>
 #include <sqlite3.h>
+#include <string>
+#include <utility>
 
 namespace act::db::sqlite
 {

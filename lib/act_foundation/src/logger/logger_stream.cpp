@@ -5,6 +5,7 @@
 #include "act_foundation/logger/logger_stream.hpp"
 
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 namespace act::foundation
 {

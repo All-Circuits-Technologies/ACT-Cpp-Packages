@@ -5,9 +5,11 @@
 #include "act_system/linux/linux_system_critical_section.hpp"
 
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_system/abs_system_critical_section.hpp"
 
 #include <cerrno> // errno
 #include <fcntl.h>
+#include <string>
 #include <sys/file.h> // flock
 #include <system_error>
 #include <tuple>

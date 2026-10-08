@@ -4,7 +4,11 @@
 
 #include "act_logger/helpers/multi_external_logger.hpp"
 
+#include "act_foundation/logger/logs_level.hpp"
 #include "act_logger/helpers/logger_helper.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace act::logger
 {

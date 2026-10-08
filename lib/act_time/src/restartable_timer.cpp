@@ -3,6 +3,10 @@
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
 
 #include "act_time/restartable_timer.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
+#include <chrono>
+#include <functional>
+#include <mutex>
 
 namespace act::time
 {

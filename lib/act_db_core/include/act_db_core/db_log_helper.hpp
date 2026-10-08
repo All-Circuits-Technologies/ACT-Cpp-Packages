@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include "act_logger/helpers/logger_helper.hpp"
+
+#include <exception>
+
 // These macros return from the caller, which no function can do
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
