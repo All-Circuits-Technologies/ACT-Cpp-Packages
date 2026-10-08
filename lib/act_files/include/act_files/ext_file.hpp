@@ -39,7 +39,7 @@ class ExtFile : private act::foundation::NotCopiableNotMovable
     /**
      * @brief Default destructor
      */
-    virtual ~ExtFile();
+    ~ExtFile() override;
 
   private:
     /**

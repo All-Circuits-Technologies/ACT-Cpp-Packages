@@ -89,7 +89,7 @@ class DbProtectService : public foundation::AbsManager
      * @brief Access the db manager
      * @return The database manager
      */
-    DbManager &accessDb() const
+    [[nodiscard]] DbManager &accessDb() const
     {
         return m_db;
     }
@@ -98,7 +98,7 @@ class DbProtectService : public foundation::AbsManager
      * @brief Get the db executor
      * @return The database executor
      */
-    const DbManager &getDb() const
+    [[nodiscard]] const DbManager &getDb() const
     {
         return m_db;
     }

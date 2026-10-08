@@ -43,7 +43,7 @@ class LoggerHelper : public act::foundation::AbsLogger
         act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /** @brief Class destructor */
-    virtual ~LoggerHelper() = default;
+    ~LoggerHelper() override = default;
 
   protected:
     /**
