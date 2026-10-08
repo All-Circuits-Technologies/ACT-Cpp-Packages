@@ -51,3 +51,5 @@ endfunction()
 # Modules are listed alphabetically for simplicity.
 # -----------------------------------------------------------------------------
 add_subdirectory(common)
+
+add_subdirectory(act_db_core_tests)
