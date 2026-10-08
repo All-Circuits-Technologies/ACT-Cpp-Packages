@@ -5,7 +5,8 @@
 # act_logger
 
 Logging infrastructure library providing logger managers, external loggers, console output, and
-helper utilities for consistent logging across modules.
+helper utilities for consistent logging across modules. It implements the logger interface of
+act_foundation (`AbsLogger`, `LogsLevel`, `LoggerStream`).
 
 ## Dependencies
 

@@ -24,7 +24,7 @@ class LinuxSystemCriticalSection : public AbsSystemCriticalSection
      * @param logger Logger instance
      */
     explicit LinuxSystemCriticalSection(const std::string &slug,
-                                        const act::logger::AbsLogger &logger)
+                                        const act::foundation::AbsLogger &logger)
         : LinuxSystemCriticalSection(slug.c_str(), logger)
     {
     }
@@ -34,7 +34,7 @@ class LinuxSystemCriticalSection : public AbsSystemCriticalSection
      * @param slug Critical section identifier to reuse in other processes
      * @param logger Logger instance
      */
-    explicit LinuxSystemCriticalSection(const char *slug, const act::logger::AbsLogger &logger);
+    explicit LinuxSystemCriticalSection(const char *slug, const act::foundation::AbsLogger &logger);
 
     /** @brief Release the lock file file descriptor */
     ~LinuxSystemCriticalSection() override;

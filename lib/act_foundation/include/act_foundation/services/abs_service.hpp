@@ -17,12 +17,13 @@ namespace act::foundation
  */
 class AbsService : public AbsWithLifeCycle, private NotCopiableNotMovable
 {
+  public:
+    /// @brief Nothing special for default destructor
+    ~AbsService() override = default;
+
   protected:
     /// @brief Nothing special for default constructor
     AbsService() = default;
-
-    /// @brief Nothing special for default destructor
-    ~AbsService() override = default;
 };
 
 } // namespace act::foundation

@@ -7,9 +7,9 @@
 namespace act::time
 {
 
-RestartableTimer::RestartableTimer(const act::logger::AbsLogger &logger,
+RestartableTimer::RestartableTimer(const act::foundation::AbsLogger &logger,
                                    unsigned int durationMs,
-                                   const std::function<void()> &callback,
+                                   const std::function<void(StartId)> &callback,
                                    bool periodic,
                                    bool startImmediately)
     : m_logger{logger},
@@ -25,121 +25,107 @@ RestartableTimer::RestartableTimer(const act::logger::AbsLogger &logger,
 
 RestartableTimer::~RestartableTimer()
 {
-    if (m_timerThread != nullptr)
     {
-        m_requestedState.store(RequestedTimerState::TERMINATE);
-        m_timerCv.notify_all();
-        m_timerThread->join();
-        delete m_timerThread;
+        std::lock_guard<std::mutex> lock(m_timerMutex);
+        m_terminate = true;
     }
+    m_timerCv.notify_all();
+
+    if (m_timerThread.joinable())
+    {
+        m_timerThread.join();
+    }
+}
+
+RestartableTimer::StartId RestartableTimer::startOrRestart()
+{
+    std::lock_guard<std::mutex> lock(m_timerMutex);
+    return startLocked();
+}
+
+RestartableTimer::StartId RestartableTimer::startOrRestart(unsigned int durationMs)
+{
+    std::lock_guard<std::mutex> lock(m_timerMutex);
+    m_durationMs.store(durationMs);
+    return startLocked();
 }
 
 void RestartableTimer::stop()
 {
+    {
+        std::lock_guard<std::mutex> lock(m_timerMutex);
+        m_deadline.reset();
+    }
+    m_timerCv.notify_all();
+}
+
+bool RestartableTimer::isRunning() const
+{
     std::lock_guard<std::mutex> lock(m_timerMutex);
-    setRequestedState(RequestedTimerState::STOP);
+    return m_deadline.has_value();
 }
 
 void RestartableTimer::setDurationMs(unsigned int durationMs)
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
     m_durationMs.store(durationMs);
 }
 
 void RestartableTimer::setPeriodic(bool periodic)
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
     m_periodic.store(periodic);
 }
 
-void RestartableTimer::startOrRestartProcess(const unsigned int *durationMsPtr)
+RestartableTimer::StartId RestartableTimer::startLocked()
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
+    m_deadline = Clock::now() + std::chrono::milliseconds(m_durationMs.load());
 
-    if (durationMsPtr != nullptr)
+    // StartId is unsigned: incrementing the greatest value wraps around to 0, which the language
+    // defines. The identifiers are only compared for equality, so going back to 0 is harmless.
+    ++m_startId;
+
+    if (!m_timerThread.joinable())
     {
-        m_durationMs.store(*durationMsPtr);
+        m_timerThread = std::thread(&RestartableTimer::runTimerThread, this);
     }
 
-    setRequestedState(RequestedTimerState::RESTART);
-
-    if (m_timerThread == nullptr)
-    {
-        m_timerThread = new std::thread(TimerThreadFunction, this);
-    }
-}
-
-void RestartableTimer::setRequestedState(RequestedTimerState state)
-{
-    auto requestedState = m_requestedState.load();
-    if (requestedState == RequestedTimerState::TERMINATE)
-    {
-        // The timer is terminating, do not change the state
-        return;
-    }
-
-    m_requestedState.store(state);
     m_timerCv.notify_all();
+    return m_startId;
 }
 
-void RestartableTimer::TimerThreadFunction(RestartableTimer *timerInstance)
+void RestartableTimer::runTimerThread()
 {
-    auto requestedState = timerInstance->m_requestedState.load();
-    auto clockAtStart = std::chrono::steady_clock::now();
-    auto durationMs = std::chrono::milliseconds(timerInstance->m_durationMs.load());
-    while (requestedState != RequestedTimerState::TERMINATE)
+    std::unique_lock<std::mutex> lock(m_timerMutex);
+    while (!m_terminate)
     {
-        if (requestedState == RequestedTimerState::RESTART)
+        if (!m_deadline.has_value())
         {
-            timerInstance->m_requestedState.store(RequestedTimerState::NONE);
-            timerInstance->m_running.store(true);
-            durationMs = std::chrono::milliseconds(timerInstance->m_durationMs.load());
-            clockAtStart = std::chrono::steady_clock::now();
-        }
-        else if (requestedState == RequestedTimerState::STOP)
-        {
-            timerInstance->m_requestedState.store(RequestedTimerState::NONE);
-            timerInstance->m_running.store(false);
+            m_timerCv.wait(lock);
+            continue;
         }
 
-        auto timeToWait = durationMs - (std::chrono::steady_clock::now() - clockAtStart);
-        if (timeToWait <= std::chrono::milliseconds::zero() && timerInstance->m_running.load())
+        const auto now = Clock::now();
+        if (now < *m_deadline)
         {
-            // Timer expired
-            timerInstance->m_callback();
-
-            if (timerInstance->m_periodic.load())
-            {
-                // Restart the timer
-                clockAtStart = std::chrono::steady_clock::now();
-            }
-            else
-            {
-                // Stop the timer
-                timerInstance->m_running.store(false);
-            }
-
-            // We reload the duration in case it was changed during the callback
-            durationMs = std::chrono::milliseconds(timerInstance->m_durationMs.load());
+            m_timerCv.wait_until(lock, *m_deadline);
+            continue;
         }
-        else if (timerInstance->m_running.load())
+
+        // The timer expires on the deadline read under the lock: a restart or a stop made
+        // before it has already moved or removed it
+        const StartId expiringStart = m_startId;
+        if (m_periodic.load())
         {
-            // We wait for the timer to expire or a requested state change
-            std::unique_lock<std::mutex> lock(timerInstance->m_timerMutex);
-            timerInstance->m_timerCv.wait_for(lock, timeToWait, [timerInstance]() {
-                return timerInstance->m_requestedState.load() != RequestedTimerState::NONE;
-            });
+            m_deadline = now + std::chrono::milliseconds(m_durationMs.load());
         }
         else
         {
-            // Timer is not running, wait for a requested state change
-            std::unique_lock<std::mutex> lock(timerInstance->m_timerMutex);
-            timerInstance->m_timerCv.wait(lock, [timerInstance]() {
-                return timerInstance->m_requestedState.load() != RequestedTimerState::NONE;
-            });
+            m_deadline.reset();
         }
 
-        requestedState = timerInstance->m_requestedState.load();
+        // The callback runs without the lock, so that it can restart or stop the timer
+        lock.unlock();
+        m_callback(expiringStart);
+        lock.lock();
     }
 }
 

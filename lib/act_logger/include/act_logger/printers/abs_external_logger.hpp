@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "act_logger/types/logs_level.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 #include <map>
 #include <string>
@@ -27,8 +27,8 @@ class AbsExternalLogger
      * matching level in the map is used.
      */
     explicit AbsExternalLogger(
-        LogsLevel::Enum minLevel,
-        const std::map<std::string, LogsLevel::Enum> &minLevelByCategory = {});
+        act::foundation::LogsLevel::Enum minLevel,
+        const std::map<std::string, act::foundation::LogsLevel::Enum> &minLevelByCategory = {});
 
     /** @brief Class destructor */
     virtual ~AbsExternalLogger() = default;
@@ -38,7 +38,7 @@ class AbsExternalLogger
      * @brief Set the log min level
      * @param minLevel The new minimum logs level to log
      */
-    void setMinLevel(LogsLevel::Enum minLevel)
+    void setMinLevel(act::foundation::LogsLevel::Enum minLevel)
     {
         m_minLevel = minLevel;
     }
@@ -48,7 +48,7 @@ class AbsExternalLogger
      * @param category The category name.
      * @param minLevel The minimum log level for this category.
      */
-    void setCategoryMinLevel(const std::string &category, LogsLevel::Enum minLevel)
+    void setCategoryMinLevel(const std::string &category, act::foundation::LogsLevel::Enum minLevel)
     {
         m_minLevelByCategory[category] = minLevel;
     }
@@ -59,7 +59,7 @@ class AbsExternalLogger
      * @param categories The categories associated to the log message
      * @return True if the message should be logged, false otherwise
      */
-    [[nodiscard]] bool isLoggable(LogsLevel::Enum level,
+    [[nodiscard]] bool isLoggable(act::foundation::LogsLevel::Enum level,
                                   const std::vector<std::string> &categories) const;
 
     /**
@@ -68,7 +68,7 @@ class AbsExternalLogger
      * @param message The message to log
      * @param categories The categories associated to the log message
      */
-    virtual void log(LogsLevel::Enum level,
+    virtual void log(act::foundation::LogsLevel::Enum level,
                      const std::string &message,
                      const std::vector<std::string> &categories);
 
@@ -79,7 +79,7 @@ class AbsExternalLogger
      */
     void trace(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::TRACE, message, categories);
+        log(act::foundation::LogsLevel::Enum::TRACE, message, categories);
     }
 
     /**
@@ -89,7 +89,7 @@ class AbsExternalLogger
      */
     void debug(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::DEBG, message, categories);
+        log(act::foundation::LogsLevel::Enum::DEBG, message, categories);
     }
 
     /**
@@ -99,7 +99,7 @@ class AbsExternalLogger
      */
     void info(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::INFO, message, categories);
+        log(act::foundation::LogsLevel::Enum::INFO, message, categories);
     }
 
     /**
@@ -109,7 +109,7 @@ class AbsExternalLogger
      */
     void warning(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::WARNING, message, categories);
+        log(act::foundation::LogsLevel::Enum::WARNING, message, categories);
     }
 
     /**
@@ -119,7 +119,7 @@ class AbsExternalLogger
      */
     void error(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::ERR, message, categories);
+        log(act::foundation::LogsLevel::Enum::ERR, message, categories);
     }
 
     /**
@@ -129,7 +129,7 @@ class AbsExternalLogger
      */
     void fatal(const std::string &message, const std::vector<std::string> &categories = {})
     {
-        log(LogsLevel::Enum::FATAL, message, categories);
+        log(act::foundation::LogsLevel::Enum::FATAL, message, categories);
     }
 
   protected:
@@ -139,13 +139,13 @@ class AbsExternalLogger
      * @param message The message to log
      * @param categories The categories associated to the log message
      */
-    virtual void logToExternal(LogsLevel::Enum level,
+    virtual void logToExternal(act::foundation::LogsLevel::Enum level,
                                const std::string &message,
                                const std::vector<std::string> &categories) = 0;
 
   private:
     /** @brief The minimum logs level to log */
-    LogsLevel::Enum m_minLevel;
+    act::foundation::LogsLevel::Enum m_minLevel;
 
     /**
      * @brief The minimum logs level to log for each category
@@ -157,7 +157,7 @@ class AbsExternalLogger
      * @note If a log message has multiple categories, the maximum matching level in the map
      * is used.
      */
-    std::map<std::string, LogsLevel::Enum> m_minLevelByCategory;
+    std::map<std::string, act::foundation::LogsLevel::Enum> m_minLevelByCategory;
 };
 
 } // namespace act::logger

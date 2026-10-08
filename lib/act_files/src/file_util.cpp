@@ -7,17 +7,29 @@
 #include "act_files/file_util.hpp"
 
 #include "act_files/ext_file.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string_view>
+
+namespace
+{
+
+/** @brief Byte order mark an UTF-8 file may start with */
+constexpr std::string_view UTF8_BYTE_ORDER_MARK = "\xEF\xBB\xBF";
+
+/** @brief Whitespace characters, as std::isspace in the default locale */
+constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
+
+} // namespace
 
 namespace act::files::FileUtil
 {
 std::optional<std::string> ReadFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode)
 {
     std::ifstream file(path, mode);
@@ -36,7 +48,7 @@ std::optional<std::string> ReadFile(const std::string &path,
 }
 
 std::optional<int> ReadFileAsInt(const std::string &path,
-                                 const act::logger::AbsLogger &logger,
+                                 const act::foundation::AbsLogger &logger,
                                  std::ios::openmode mode)
 {
     auto optContent = ReadFile(path, logger, mode);
@@ -45,14 +57,32 @@ std::optional<int> ReadFileAsInt(const std::string &path,
         return std::nullopt;
     }
 
+    std::string content = std::move(optContent.value());
+    if (content.starts_with(UTF8_BYTE_ORDER_MARK))
+    {
+        content.erase(0, UTF8_BYTE_ORDER_MARK.size());
+    }
+
+    // Trailing whitespace is accepted, as the line feed ending the files of sysfs; std::stoi
+    // already skips the leading one
+    const auto lastNonSpace = content.find_last_not_of(WHITESPACE_CHARS);
+    content.erase((lastNonSpace == std::string::npos) ? 0 : (lastNonSpace + 1));
+
     int value = 0;
+    std::size_t parsedLength = 0;
     try
     {
-        value = std::stoi(optContent.value());
+        value = std::stoi(content, &parsedLength);
     }
     catch (const std::exception &)
     {
-        logger.errorStream() << "Failed to parse " << optContent.value() << " as int";
+        parsedLength = 0;
+    }
+
+    if (parsedLength == 0 || parsedLength != content.size())
+    {
+        // Nothing parsed, or characters left after the number ("12abc", an UTF-16 file...)
+        logger.errorStream() << "Failed to parse " << content << " as int";
         return std::nullopt;
     }
 
@@ -61,7 +91,7 @@ std::optional<int> ReadFileAsInt(const std::string &path,
 
 bool WriteFile(const std::string &path,
                const std::string &content,
-               const act::logger::AbsLogger &logger,
+               const act::foundation::AbsLogger &logger,
                std::ios::openmode mode)
 {
     std::ofstream file(path, mode);
@@ -92,7 +122,7 @@ bool WriteFile(const std::string &path,
 }
 
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     std::ios::openmode mode,
                                     bool isTemp)
 {
@@ -106,7 +136,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 }
 
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
-                                    const act::logger::AbsLogger &logger,
+                                    const act::foundation::AbsLogger &logger,
                                     bool isTemp)
 {
     auto extFile = new ExtFile(path, logger, isTemp);
@@ -115,7 +145,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 
 bool ArePathsEqual(const std::string &path1,
                    const std::string &path2,
-                   const act::logger::AbsLogger &logger)
+                   const act::foundation::AbsLogger &logger)
 {
     if (path1 == path2)
     {
