@@ -4,15 +4,9 @@
 
 #pragma once
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
-#include <cassert>
 #include <utility>
-
-namespace act::logger
-{
-class AbsLogger;
-} // namespace act::logger
 
 namespace act::foundation
 {
@@ -32,11 +26,12 @@ class Finally
      * @brief Constructor forwarding arguments to the value's constructor
      * @param func Function to execute upon destruction
      * @param logger Logger to log errors occurring during function execution
-     * @note Throwing from inside a destructor is strictly forbidden in C++.
-     *       As a safety measure, exceptions thrown by the function are all caught,
-     *       and either logged (if logger provided) or asserted (if no logger).
+     * @note Throwing from inside a destructor is strictly forbidden in C++. As a safety measure,
+     *       the std::exception thrown by the function are caught and logged as errors with
+     *       @p logger. Any other exception leaves the destructor, which is noexcept, so the
+     *       program terminates.
      */
-    explicit Finally(F &&func, act::logger::AbsLogger &logger)
+    explicit Finally(F &&func, act::foundation::AbsLogger &logger)
         : m_enabled(true),
           m_func(std::forward<F>(func)),
           m_logger(logger)
@@ -57,7 +52,8 @@ class Finally
             }
             catch (const std::exception &e)
             {
-                // Catching all exception since throwing from a destructor is strictly denied
+                // Throwing from a destructor is strictly denied; only std::exception can be
+                // logged, any other exception terminates the program
 
                 m_logger.errorStream() << "Exception caught in Finally destructor: " << e.what();
             }
@@ -94,7 +90,7 @@ class Finally
     /**
      * @brief Logger
      */
-    act::logger::AbsLogger &m_logger;
+    act::foundation::AbsLogger &m_logger;
 };
 
 } // namespace act::foundation

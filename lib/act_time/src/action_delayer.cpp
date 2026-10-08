@@ -4,135 +4,100 @@
 
 #include "act_time/action_delayer.hpp"
 
-#include "act_time/restartable_timer.hpp"
+#include <algorithm>
 
 namespace act::time
 {
 
-ActionDelayer::ActionDelayer(const act::logger::AbsLogger &logger,
+ActionDelayer::ActionDelayer(const act::foundation::AbsLogger &logger,
                              unsigned int delayMs,
                              const std::function<void()> &callback,
                              std::optional<unsigned int> maxDelayMs,
                              bool startImmediately)
     : m_logger{logger},
       m_callback{callback},
-      m_isRunning{false}
+      m_delayMs{delayMs},
+      m_maxDelayMs{maxDelayMs},
+      m_timer{logger, delayMs, [this](RestartableTimer::StartId start) { onTimerExpired(start); }}
 {
-    m_delayRestartableTimer = new RestartableTimer(
-        logger,
-        delayMs,
-        [this]() { internalDelayTimerCallback(); },
-        false,
-        false);
-
-    if (maxDelayMs.has_value())
-    {
-        m_maxDelayRestartableTimer = new RestartableTimer(
-            logger,
-            maxDelayMs.value(),
-            [this]() { internalMaxDelayTimerCallback(); },
-            false,
-            false);
-    }
-
     if (startImmediately)
     {
         startOrRestart();
     }
 }
 
-ActionDelayer::~ActionDelayer()
-{
-    delete m_delayRestartableTimer;
-    delete m_maxDelayRestartableTimer;
-}
+ActionDelayer::~ActionDelayer() = default;
 
 void ActionDelayer::startOrRestart()
 {
     std::lock_guard<std::mutex> lock(m_actionMutex);
-    startOrRestartProcess();
+    startLocked(Clock::now());
 }
 
 void ActionDelayer::startOrDelay()
 {
     std::lock_guard<std::mutex> lock(m_actionMutex);
+    const auto now = Clock::now();
 
     if (!m_isRunning)
     {
-        // We start the timers if they were not already running
-        startOrRestartProcess();
+        startLocked(now);
         return;
     }
 
-    // We delay the action by restarting the delay timer, but we do not restart the max delay
-    // timer to keep the original max delay time from the first start
-    m_delayRestartableTimer->startOrRestart();
+    // Delaying keeps the maximum delay of the running start
+    m_currentStart = m_timer.startOrRestart(getCappedDelayMsLocked(now));
 }
 
 void ActionDelayer::stop()
 {
     std::lock_guard<std::mutex> lock(m_actionMutex);
-
-    if (m_maxDelayRestartableTimer != nullptr)
-    {
-        m_maxDelayRestartableTimer->stop();
-    }
-    m_delayRestartableTimer->stop();
     m_isRunning = false;
+    m_timer.stop();
 }
 
-bool ActionDelayer::isRunning()
+bool ActionDelayer::isRunning() const
 {
     std::lock_guard<std::mutex> lock(m_actionMutex);
     return m_isRunning;
 }
 
-void ActionDelayer::startOrRestartProcess()
+void ActionDelayer::startLocked(Clock::time_point now)
 {
-    if (m_maxDelayRestartableTimer != nullptr)
+    m_maxDeadline.reset();
+    if (m_maxDelayMs.has_value())
     {
-        m_maxDelayRestartableTimer->startOrRestart();
+        m_maxDeadline = now + std::chrono::milliseconds(*m_maxDelayMs);
     }
-    m_delayRestartableTimer->startOrRestart();
+
     m_isRunning = true;
+    m_currentStart = m_timer.startOrRestart(getCappedDelayMsLocked(now));
 }
 
-void ActionDelayer::internalDelayTimerCallback()
+unsigned int ActionDelayer::getCappedDelayMsLocked(Clock::time_point now) const
 {
-    std::unique_lock<std::mutex> lock(m_actionMutex);
-
-    if (!m_isRunning)
+    if (!m_maxDeadline.has_value())
     {
-        // The timer callback can be called after stop() is called, in this case we do nothing
-        return;
+        return m_delayMs;
     }
 
-    if (m_maxDelayRestartableTimer != nullptr)
-    {
-        m_maxDelayRestartableTimer->stop();
-    }
-    m_isRunning = false;
-
-    lock.unlock();
-
-    m_callback();
+    // Rounded up, so that the action never runs before the end of the maximum delay
+    const auto remaining = std::chrono::ceil<std::chrono::milliseconds>(
+        std::max(*m_maxDeadline - now, Clock::duration::zero()));
+    return std::min(m_delayMs, static_cast<unsigned int>(remaining.count()));
 }
 
-void ActionDelayer::internalMaxDelayTimerCallback()
+void ActionDelayer::onTimerExpired(RestartableTimer::StartId start)
 {
-    std::unique_lock<std::mutex> lock(m_actionMutex);
-
-    if (!m_isRunning)
     {
-        // The timer callback can be called after stop() is called, in this case we do nothing
-        return;
+        std::lock_guard<std::mutex> lock(m_actionMutex);
+        if (!m_isRunning || start != m_currentStart)
+        {
+            // Stopped, or started again while this expiry was on its way: the last start rules
+            return;
+        }
+        m_isRunning = false;
     }
-
-    m_delayRestartableTimer->stop();
-
-    m_isRunning = false;
-
-    lock.unlock();
 
     m_callback();
 }

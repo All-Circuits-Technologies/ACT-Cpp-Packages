@@ -10,10 +10,10 @@
 #include <sstream>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 /** @brief Set of String helpers */
 namespace act::text::StringUtil
@@ -162,8 +162,9 @@ std::string BinToHex(const std::string &bin);
 
 /**
  * @brief Convert a hexadecimal string to its binary representation
- * @param hex The hexadecimal string to convert
- * @return A binary string representation of the input
+ * @param hex The hexadecimal string to convert, two digits per byte
+ * @return A binary string representation of the input, or an empty optional if it holds a
+ *         character which is not an hexadecimal digit or an odd number of digits
  */
 std::optional<std::string> HexToBin(const std::string &hex);
 
@@ -176,6 +177,7 @@ bool IsHexOnly(const std::string &data);
 
 /**
  * @brief Validate if a string is a valid IPv4 address
+ * @note The address must be written in dotted decimal, each byte without leading zeros
  * @param ipAddress The string to validate
  * @return true if the string is a valid IPv4 address, false otherwise
  */

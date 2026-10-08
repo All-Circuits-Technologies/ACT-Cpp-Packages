@@ -25,7 +25,8 @@ class WinSystemCriticalSection : public AbsSystemCriticalSection
      * @param slug Critical section identifier to reuse in other processes
      * @param logger Logger instance
      */
-    explicit WinSystemCriticalSection(const std::string &slug, const act::logger::AbsLogger &logger)
+    explicit WinSystemCriticalSection(const std::string &slug,
+                                      const act::foundation::AbsLogger &logger)
         : WinSystemCriticalSection(slug.c_str(), logger)
     {
     }
@@ -35,7 +36,7 @@ class WinSystemCriticalSection : public AbsSystemCriticalSection
      * @param slug Critical section identifier to reuse in other processes
      * @param logger Logger instance
      */
-    explicit WinSystemCriticalSection(const char *slug, const act::logger::AbsLogger &logger);
+    explicit WinSystemCriticalSection(const char *slug, const act::foundation::AbsLogger &logger);
 
     /** @brief Close the Windows mutex handle */
     ~WinSystemCriticalSection() override;

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "act_logger/types/logs_level.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 #include <sstream>
 
-namespace act::logger
+namespace act::foundation
 {
 
 class AbsLogger;
@@ -49,4 +49,4 @@ class LoggerStream
     LogsLevel::Enum m_level;
 };
 
-} // namespace act::logger
+} // namespace act::foundation

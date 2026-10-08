@@ -129,6 +129,14 @@ class LinuxGpio
     [[nodiscard]] static LinuxGpio *FindGpioByName(const std::string &lineName,
                                                    act::logger::LoggerHelper &parentLogger);
 
+  private:
+    /**
+     * @brief Open a GPIO chip device
+     * @param chipPath Path of the chip device
+     * @return The opened chip, or nullptr if it cannot be opened (missing, no permission...)
+     */
+    [[nodiscard]] static std::unique_ptr<gpiod::chip> OpenChip(const std::string &chipPath);
+
     /* ## Constants */
   private:
     /** @brief Logger category for LinuxGpio */

@@ -11,12 +11,12 @@ namespace act::logger
 
 MultiExternalLogger::MultiExternalLogger(
     const std::vector<std::shared_ptr<AbsExternalLogger>> &loggers)
-    : AbsExternalLogger(LogsLevel::Enum::TRACE),
+    : AbsExternalLogger(act::foundation::LogsLevel::Enum::TRACE),
       m_loggers{loggers}
 {
 }
 
-void MultiExternalLogger::log(LogsLevel::Enum level,
+void MultiExternalLogger::log(act::foundation::LogsLevel::Enum level,
                               const std::string &message,
                               const std::vector<std::string> &categories)
 {

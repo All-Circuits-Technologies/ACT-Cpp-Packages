@@ -6,11 +6,11 @@
 
 #include "act_db_core/db_core_constants.hpp"
 #include "act_db_core/services/abs_db_manager.hpp"
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 namespace act::db::core
 {
-DbTransaction::DbTransaction(AbsDbManager &db, const act::logger::AbsLogger &logger)
+DbTransaction::DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger)
     : m_db(db),
       m_logger(logger),
       m_state{State::NOT_STARTED}

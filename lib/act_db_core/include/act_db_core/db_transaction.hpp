@@ -8,10 +8,10 @@
 
 #include "act_db_core/db_core_constants.hpp"
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-}
+} // namespace act::foundation
 
 namespace act::db::core
 {
@@ -44,7 +44,7 @@ class DbTransaction
      * @param db Shared database manager to use for executing transaction commands
      * @param logger The logger to use for logging transaction operations
      */
-    explicit DbTransaction(AbsDbManager &db, const act::logger::AbsLogger &logger);
+    explicit DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger);
 
     /** @brief Destructor */
     virtual ~DbTransaction();
@@ -99,7 +99,7 @@ class DbTransaction
     AbsDbManager &m_db;
 
     /** @brief Logger for transaction operations */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 
     /** @brief Flag to indicate if the transaction has been committed or rolled back */
     State m_state;

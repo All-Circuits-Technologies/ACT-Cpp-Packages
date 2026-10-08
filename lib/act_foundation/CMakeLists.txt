@@ -6,12 +6,16 @@
 # act_foundation - Base classes and patterns
 # -----------------------------------------------------------------------------
 # Foundational types and design patterns used across all modules.
-# Provides base classes, constants, and common patterns (singleton, RAII).
+# Provides base classes, constants, common patterns (singleton, RAII) and the logger interface
+# the other modules log through.
 #
 # This module has no internal dependencies.
 # -----------------------------------------------------------------------------
 
 add_library(act_foundation STATIC
+    # Logger interface
+    src/logger/logger_stream.cpp
+
     # Services
     src/services/abs_manager.cpp
     src/services/abs_service.cpp

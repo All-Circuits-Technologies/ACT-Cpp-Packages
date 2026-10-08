@@ -25,9 +25,10 @@ class StdConsoleLogger : public AbsExternalLogger
      * matching level in the map is used.
      */
     explicit StdConsoleLogger(
-        LogsLevel::Enum minLevel,
-        LogsLevel::Enum minLevelToPrintToStdErr = LogsLevel::Enum::ERR,
-        const std::map<std::string, LogsLevel::Enum> &minLevelByCategory = {});
+        act::foundation::LogsLevel::Enum minLevel,
+        act::foundation::LogsLevel::Enum minLevelToPrintToStdErr =
+            act::foundation::LogsLevel::Enum::ERR,
+        const std::map<std::string, act::foundation::LogsLevel::Enum> &minLevelByCategory = {});
 
     /** @brief Class destructor */
     ~StdConsoleLogger() override = default;
@@ -39,13 +40,13 @@ class StdConsoleLogger : public AbsExternalLogger
      * @param message The message to log
      * @param categories The categories associated to the log message
      */
-    void logToExternal(LogsLevel::Enum level,
+    void logToExternal(act::foundation::LogsLevel::Enum level,
                        const std::string &message,
                        const std::vector<std::string> &categories) override;
 
   private:
     /** @brief Format the log message */
-    [[nodiscard]] static std::string FormatLogMessage(LogsLevel::Enum level,
+    [[nodiscard]] static std::string FormatLogMessage(act::foundation::LogsLevel::Enum level,
                                                       const std::string &message,
                                                       const std::vector<std::string> &categories);
 
@@ -55,7 +56,7 @@ class StdConsoleLogger : public AbsExternalLogger
 
   private:
     /** @brief The minimum logs level to print to standard error (stderr) */
-    LogsLevel::Enum m_minLevelToPrintToStdErr;
+    act::foundation::LogsLevel::Enum m_minLevelToPrintToStdErr;
 };
 
 } // namespace act::logger
