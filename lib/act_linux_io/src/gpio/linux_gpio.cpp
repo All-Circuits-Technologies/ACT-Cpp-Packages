@@ -13,7 +13,8 @@
 #include <thread>
 
 /* # Macros */
-/** @brief Return X if GPIO not found */
+/** @brief Return X if GPIO not found; returns from the caller, which no function can do */
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define LINUXGPIO_RETURN_X_IF_NOT_FOUND(X)                                                         \
     do                                                                                             \
     {                                                                                              \
