@@ -6,10 +6,10 @@
 
 #include "act_foundation/logger/abs_logger.hpp"
 
-#include <cerrno>  // errno
-#include <cstring> // std::strerror
+#include <cerrno> // errno
 #include <fcntl.h>
 #include <sys/file.h> // flock
+#include <system_error>
 #include <tuple>
 #include <unistd.h> // close
 
@@ -21,12 +21,14 @@ LinuxSystemCriticalSection::LinuxSystemCriticalSection(const char *slug,
     : AbsSystemCriticalSection(slug, logger)
 {
     const std::string lockFilePath = ComputeLockFilePath(slug);
+    // open is variadic in POSIX: the mode is its third argument
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg, hicpp-vararg)
     m_fd = ::open(lockFilePath.c_str(), O_CREAT | O_RDWR, LOCK_FILE_ACCESS_RIGHTS);
 
     if (m_fd == -1)
     {
         m_logger.errorStream() << "Failed to create/open lock file " << lockFilePath << ": "
-                               << std::strerror(errno);
+                               << std::generic_category().message(errno);
     }
 }
 
@@ -52,7 +54,8 @@ bool LinuxSystemCriticalSection::enter() const
     const bool locked = (flock(m_fd, LOCK_EX) == 0);
     if (!locked)
     {
-        m_logger.errorStream() << "Failed to lock critical section: " << std::strerror(errno);
+        m_logger.errorStream() << "Failed to lock critical section: "
+                               << std::generic_category().message(errno);
         return false;
     }
 
@@ -70,7 +73,8 @@ bool LinuxSystemCriticalSection::leave() const
     const bool unlocked = (flock(m_fd, LOCK_UN) == 0);
     if (!unlocked)
     {
-        m_logger.errorStream() << "Failed to unlock critical section: " << std::strerror(errno);
+        m_logger.errorStream() << "Failed to unlock critical section: "
+                               << std::generic_category().message(errno);
         return false;
     }
 
