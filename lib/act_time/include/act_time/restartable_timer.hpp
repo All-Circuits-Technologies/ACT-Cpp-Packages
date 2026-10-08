@@ -7,15 +7,12 @@
 #include "act_foundation/logger/abs_logger.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <thread>
-
-namespace act::foundation
-{
-class AbsLogger;
-} // namespace act::foundation
 
 namespace act::time
 {
@@ -25,19 +22,43 @@ namespace act::time
  * a specified duration. The timer can be configured to be periodic or one-shot.
  * @note The logger instances must outlive the timer instance.
  * @note The timer runs in its own thread to avoid blocking the main thread. The thread is
- *       terminated when the timer is destroyed.
+ *       started with the first start of the timer, and terminated when the timer is destroyed.
+ * @note The timer state is a deadline guarded by a mutex: the methods update it, and the timer
+ *       thread decides to expire on the current deadline, under the same mutex. A restart or a
+ *       stop therefore always applies to the next expiry, and the state read is always the one
+ *       left by the last call.
+ * @note The callback runs in the timer thread. When the timer is also restarted or stopped
+ *       from other threads, see StartId.
  */
 class RestartableTimer
 {
-  private:
-    /** @brief Requested timer state */
-    enum class RequestedTimerState : int
-    {
-        NONE = 0,
-        RESTART,
-        STOP,
-        TERMINATE,
-    };
+  public:
+    /**
+     * @brief Identifier of a start of the timer, given to the callback
+     * @details The timer decides to expire under its lock, then calls the callback without it,
+     *          so that the callback can restart or stop the timer. When another thread calls
+     *          startOrRestart() or stop() in between, the callback still comes, for the expiry
+     *          of the start made before that call:
+     * @verbatim
+       timer thread                       other thread
+       ------------                       ------------
+       expiry of start 1 decided
+                                          startOrRestart() -> start 2
+       callback(1)
+       @endverbatim
+     *          A callback whose behavior depends on what the other threads asked compares the
+     *          identifier it receives with the one startOrRestart() returned last, and ignores
+     *          the expiry of an older start: for instance an action postponed by the other
+     *          thread must not run now, start 2 calls back on its own deadline.
+     *
+     *          The identifier is of no use when the timer is only started, restarted or stopped
+     *          from its own callback, or when the callback does the same thing for every expiry:
+     *          such a callback ignores it.
+     * @note Each start gets the identifier of the previous start plus one, and the identifier
+     *       after the greatest value is 0: an identifier can therefore be smaller than the
+     *       previous one, and identifiers are only meant to be compared for equality.
+     */
+    using StartId = unsigned int;
 
   public:
     /**
@@ -45,7 +66,9 @@ class RestartableTimer
      * @warning The logger instances must outlive the timer instance.
      * @param durationMs The duration in milliseconds after which the timer should expire
      * @param logger The logger instance to use for logging
-     * @param callback The callback function to be called when the timer expires
+     * @param callback The callback function to be called when the timer expires, with the
+     *                 identifier of the start the expiry comes from (the same one at every
+     *                 period of a periodic timer); see StartId for when it matters
      * @param periodic Flag indicating whether the timer should be periodic. If true, the timer
      *                 will restart automatically after expiring.
      *                 If false, the timer will stop after expiring once.
@@ -54,44 +77,45 @@ class RestartableTimer
      */
     explicit RestartableTimer(const act::foundation::AbsLogger &logger,
                               unsigned int durationMs,
-                              const std::function<void()> &callback,
+                              const std::function<void(StartId)> &callback,
                               bool periodic = false,
                               bool startImmediately = false);
 
-    /// @brief Destructor
+    /**
+     * @brief Destructor
+     * @note Waits for the callback if it is running; it must therefore not be called from the
+     *       callback.
+     */
     virtual ~RestartableTimer();
 
   public:
     /**
-     * @brief Start or restart the timer with the specified duration.
+     * @brief Start or restart the timer with its current duration.
+     * @return The identifier of this start, given to the callback when it expires
      */
-    void startOrRestart()
-    {
-        startOrRestartProcess(nullptr);
-    }
+    StartId startOrRestart();
 
     /**
      * @brief Start or restart the timer with the specified duration.
-     * @param durationMs The duration in milliseconds after which the timer should expire
+     * @param durationMs The duration in milliseconds after which the timer should expire, kept
+     *                   as the duration of the timer
+     * @return The identifier of this start, given to the callback when it expires
      */
-    void startOrRestart(unsigned int durationMs)
-    {
-        startOrRestartProcess(&durationMs);
-    }
+    StartId startOrRestart(unsigned int durationMs);
 
     /**
      * @brief Stop the timer if it is running.
+     * @note A callback already called because the timer expired just before may still be
+     *       running when stop() returns.
      */
     void stop();
 
     /**
      * @brief Check if the timer is currently running.
+     * @note A one-shot timer stops running when it expires, before its callback is called.
      * @return true if the timer is running, false otherwise.
      */
-    [[nodiscard]] bool isRunning() const
-    {
-        return m_running.load();
-    }
+    [[nodiscard]] bool isRunning() const;
 
     /**
      * @brief Check if the timer is periodic.
@@ -128,57 +152,49 @@ class RestartableTimer
     void setPeriodic(bool periodic);
 
   private:
-    /**
-     * @brief Start or restart the timer with the specified duration.
-     * @param durationMsPtr Pointer to the duration in milliseconds after which the timer should
-     *                     expire. If nullptr, the current duration will be used.
-     */
-    void startOrRestartProcess(const unsigned int *durationMsPtr);
-
-    /**
-     * @brief Set the requested timer state.
-     * @note This is the method used by the timer to communicate with the timer thread.
-     * @note If the current state is TERMINATE, the state given will not be applied.
-     * @param state The requested timer state.
-     */
-    void setRequestedState(RequestedTimerState state);
+    /** @brief Clock the deadlines are measured with */
+    using Clock = std::chrono::steady_clock;
 
   private:
     /**
-     * @brief The function executed by the timer thread.
-     * @param timerInstance Pointer to the RestartableTimer instance.
+     * @brief Start the timer to expire after its current duration from now.
+     * @note The caller holds m_timerMutex.
+     * @return The identifier of this start
      */
-    static void TimerThreadFunction(RestartableTimer *timerInstance);
+    StartId startLocked();
+
+    /**
+     * @brief The function executed by the timer thread: wait for the deadline and expire.
+     */
+    void runTimerThread();
 
   private:
     /** @brief Logger instance */
     const act::foundation::AbsLogger &m_logger;
 
     /** @brief Callback function to be called when the timer expires */
-    std::function<void()> m_callback;
+    std::function<void(StartId)> m_callback;
 
-    /** @brief Mutex to protect timer operations */
-    std::mutex m_timerMutex;
+    /** @brief Mutex guarding the deadline, the start identifier, the termination and the thread */
+    mutable std::mutex m_timerMutex;
 
-    /** @brief Condition variable to signal timer thread */
+    /** @brief Condition variable waking the timer thread when the deadline changes */
     std::condition_variable m_timerCv;
 
-    /** @brief The timer thread */
-    std::thread *m_timerThread{nullptr};
+    /** @brief The timer thread, started with the first start of the timer */
+    std::thread m_timerThread;
+
+    /** @brief The time the timer expires at; empty while the timer is not running */
+    std::optional<Clock::time_point> m_deadline;
+
+    /** @brief The identifier of the last start */
+    StartId m_startId{0};
+
+    /** @brief Flag asking the timer thread to terminate */
+    bool m_terminate{false};
 
     /** @brief Flag indicating whether the timer is periodic */
     std::atomic<bool> m_periodic{false};
-
-    /** @brief Flag indicating whether the timer is running */
-    std::atomic<bool> m_running{false};
-
-    /**
-     * @brief Flag to request stopping the timer
-     * @note Even if we use a condition variable and a mutex to protect the timer state,
-     *       we use an atomic variable here to be faster in the destructor, where we need to
-     *       set the state to TERMINATE and notify the timer thread.
-     */
-    std::atomic<RequestedTimerState> m_requestedState{RequestedTimerState::NONE};
 
     /** @brief The duration of the timer in milliseconds */
     std::atomic<unsigned int> m_durationMs{0};

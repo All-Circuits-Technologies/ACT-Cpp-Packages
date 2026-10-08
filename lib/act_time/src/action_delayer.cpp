@@ -21,7 +21,7 @@ ActionDelayer::ActionDelayer(const act::foundation::AbsLogger &logger,
     m_delayRestartableTimer = new RestartableTimer(
         logger,
         delayMs,
-        [this]() { internalDelayTimerCallback(); },
+        [this](RestartableTimer::StartId) { internalDelayTimerCallback(); },
         false,
         false);
 
@@ -30,7 +30,7 @@ ActionDelayer::ActionDelayer(const act::foundation::AbsLogger &logger,
         m_maxDelayRestartableTimer = new RestartableTimer(
             logger,
             maxDelayMs.value(),
-            [this]() { internalMaxDelayTimerCallback(); },
+            [this](RestartableTimer::StartId) { internalMaxDelayTimerCallback(); },
             false,
             false);
     }
