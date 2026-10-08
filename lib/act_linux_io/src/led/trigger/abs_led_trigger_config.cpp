@@ -22,7 +22,7 @@ AbsLedTriggerConfig::AbsLedTriggerConfig(std::string name)
 
 bool AbsLedTriggerConfig::isLedAlreadyConfigured(const LinuxLed &led) const
 {
-    return led.hasAnyTrigger() && (led.getTrigger().value() == m_name);
+    return led.hasAnyTrigger() && (led.getTrigger() == m_name);
 }
 
 bool AbsLedTriggerConfig::applyToLeds(const std::vector<std::reference_wrapper<LinuxLed>> &leds,
@@ -31,13 +31,13 @@ bool AbsLedTriggerConfig::applyToLeds(const std::vector<std::reference_wrapper<L
     bool success = true;
 
     // Prepare all LEDs first
-    for (auto &ledRef : leds)
+    for (const auto &ledRef : leds)
     {
         success &= prepareLed(ledRef.get(), force);
     }
 
     // Then fire trigger over all LEDs
-    for (auto &ledRef : leds)
+    for (const auto &ledRef : leds)
     {
         success &= fireOnLed(ledRef.get());
     }

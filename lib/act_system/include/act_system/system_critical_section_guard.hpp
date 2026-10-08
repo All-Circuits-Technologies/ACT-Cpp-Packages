@@ -4,14 +4,17 @@
 
 #pragma once
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "system_critical_section.hpp"
+
+#include "act_foundation/not_copiable_not_movable.hpp"
+
+#include <tuple>
 
 namespace act::system
 {
 
 /** @brief Lock a critical section during entire object life type */
-class SystemCriticalSectionGuard
+class SystemCriticalSectionGuard : private act::foundation::NotCopiableNotMovable
 {
   public:
     /**  @brief Lock criticalSection until destructor
@@ -20,13 +23,13 @@ class SystemCriticalSectionGuard
     explicit SystemCriticalSectionGuard(SystemCriticalSection &criticalSection)
         : m_criticalSection(criticalSection)
     {
-        UNUSED(m_criticalSection.enter());
+        std::ignore = m_criticalSection.enter();
     }
 
     /** @brief Unlock critical section */
-    virtual ~SystemCriticalSectionGuard()
+    ~SystemCriticalSectionGuard() override
     {
-        UNUSED(m_criticalSection.leave());
+        std::ignore = m_criticalSection.leave();
     }
 
   private:

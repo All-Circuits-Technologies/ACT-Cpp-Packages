@@ -4,6 +4,9 @@
 
 #pragma once
 
+// These macros return from the caller, which no function can do
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 /**
  * @brief Macros to help handling database not opened and exceptions
  * @param caller The caller function name
@@ -80,3 +83,5 @@
  * @param cmd The command to execute
  */
 #define ZERO_IF_THROW(name, logger, cmd) XXX_IF_THROW(name, cmd, logger, 0);
+
+// NOLINTEND(cppcoreguidelines-macro-usage)

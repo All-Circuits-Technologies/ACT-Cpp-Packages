@@ -26,6 +26,8 @@ ASqLiteDbManager::ASqLiteDbManager(std::filesystem::path dbFilePath,
 
 int ASqLiteDbManager::getMigrationVersion() const
 {
+    // Reading the schema version changes nothing, but the executor interface is not const
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     return const_cast<ASqLiteDbManager *>(this)->execAndGetInt("PRAGMA user_version;").value_or(0);
 }
 
@@ -77,7 +79,7 @@ std::optional<int> ASqLiteDbManager::execAndGetInt(const std::string &sql)
     EMPTY_IF_THROW(execAndGetInt,
                    logger,
                    // May throw and Column has no default constructor to be moved up
-                   SQLite::Column column = m_db->execAndGet(sql);
+                   const SQLite::Column column = m_db->execAndGet(sql);
                    result = column.getInt(););
 
     return result;
@@ -124,10 +126,16 @@ bool ASqLiteDbManager::openImpl()
                        [](sqlite3_context *context, int /*argc*/, sqlite3_value **argv) {
                            try
                            {
+                               // sqlite3's C API hands the arguments as an array and the
+                               // text as unsigned char
+                               // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,
+                               // cppcoreguidelines-pro-bounds-pointer-arithmetic)
                                const char *pattern =
                                    reinterpret_cast<const char *>(sqlite3_value_text(argv[0]));
                                const char *text =
                                    reinterpret_cast<const char *>(sqlite3_value_text(argv[1]));
+                               // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,
+                               // cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
                                if (!pattern || !text)
                                {
@@ -135,8 +143,8 @@ bool ASqLiteDbManager::openImpl()
                                    return;
                                }
 
-                               std::regex regex_pattern(pattern);
-                               bool matches = std::regex_match(text, regex_pattern);
+                               const std::regex regex_pattern(pattern);
+                               const bool matches = std::regex_match(text, regex_pattern);
                                sqlite3_result_int(context, matches ? 1 : 0);
                            }
                            catch (const std::exception &)

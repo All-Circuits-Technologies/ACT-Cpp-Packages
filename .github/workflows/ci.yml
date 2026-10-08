@@ -103,6 +103,9 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v6
 
+      - name: Check .clang-tidy
+        run: clang-tidy-21 --verify-config
+
       - name: Configure
         run: cmake -S . -B build -G Ninja
 

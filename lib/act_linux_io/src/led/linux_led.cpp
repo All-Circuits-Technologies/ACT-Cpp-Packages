@@ -11,12 +11,6 @@
 namespace act::linux_io
 {
 
-const std::string LinuxLed::LEDS_DIR = "/sys/class/leds";
-const std::string LinuxLed::BRIGHTNESS_FILE_NAME = "brightness";
-const std::string LinuxLed::MAX_BRIGHTNESS_FILE_NAME = "max_brightness";
-const std::string LinuxLed::TRIGGER_FILE_NAME = "trigger";
-const std::string LinuxLed::TRIGGER_NONE_VALUE = "none";
-
 /* # Constructors */
 
 LinuxLed::LinuxLed(std::string ledName, act::logger::LoggerHelper &parentLogger)
@@ -63,7 +57,7 @@ bool LinuxLed::setTrigger(const std::string &trigger, bool force)
         return true;
     }
 
-    bool result = writeConfString(TRIGGER_FILE_NAME, trigger);
+    const bool result = writeConfString(TRIGGER_FILE_NAME, trigger);
     if (result)
     {
         m_currentTriggerCache = trigger;
@@ -131,7 +125,7 @@ bool LinuxLed::writeConfUInt(const std::string &fileName, unsigned int value)
 
 std::string LinuxLed::getLedDirPath() const
 {
-    return LEDS_DIR + "/" + m_ledName;
+    return std::string{LEDS_DIR} + "/" + m_ledName;
 }
 
 std::string LinuxLed::getConfFilePath(const std::string &fileName) const

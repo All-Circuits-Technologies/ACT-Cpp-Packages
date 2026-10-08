@@ -22,8 +22,7 @@ namespace act::db::core
 AbsDbManager::AbsDbManager(const std::string &dbSlug,
                            const std::optional<std::filesystem::path> &migrationDataDir,
                            const act::logger::LoggerManager &loggerManager)
-    : act::foundation::AbsManager(),
-      m_dbSlug(dbSlug + "-db"),
+    : m_dbSlug(dbSlug + "-db"),
       m_migrationDataDir(migrationDataDir),
       m_logger{loggerManager.createSubLogger(dbSlug + "-db")}
 {
@@ -33,7 +32,7 @@ bool AbsDbManager::applyMigrationUpdates()
 {
     act::system::SystemCriticalSection criticalSection(getDbSlug() + "-database-migration",
                                                        *m_logger);
-    act::system::SystemCriticalSectionGuard guard(criticalSection);
+    const act::system::SystemCriticalSectionGuard guard(criticalSection);
     DbProtectService protectService(*this, *m_logger);
 
     if (!m_migrationDataDir.has_value())
@@ -121,7 +120,8 @@ bool AbsDbManager::runScript(const std::filesystem::path &scriptPath)
         return false;
     }
 
-    std::string sql((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
+    const std::string sql((std::istreambuf_iterator<char>(scriptFile)),
+                          std::istreambuf_iterator<char>());
     return exec(sql);
 }
 

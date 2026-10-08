@@ -4,14 +4,14 @@
 
 #include "act_system/linux/linux_system_critical_section.hpp"
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 
-#include <cerrno>  // errno
-#include <cstring> // std::strerror
+#include <cerrno> // errno
 #include <fcntl.h>
 #include <sys/file.h> // flock
-#include <unistd.h>   // close
+#include <system_error>
+#include <tuple>
+#include <unistd.h> // close
 
 namespace act::system
 {
@@ -21,19 +21,21 @@ LinuxSystemCriticalSection::LinuxSystemCriticalSection(const char *slug,
     : AbsSystemCriticalSection(slug, logger)
 {
     const std::string lockFilePath = ComputeLockFilePath(slug);
+    // open is variadic in POSIX: the mode is its third argument
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg, hicpp-vararg)
     m_fd = ::open(lockFilePath.c_str(), O_CREAT | O_RDWR, LOCK_FILE_ACCESS_RIGHTS);
 
     if (m_fd == -1)
     {
         m_logger.errorStream() << "Failed to create/open lock file " << lockFilePath << ": "
-                               << std::strerror(errno);
+                               << std::generic_category().message(errno);
     }
 }
 
 LinuxSystemCriticalSection::~LinuxSystemCriticalSection()
 {
     // Qualified call: a destructor must not dispatch to a derived class, which is already gone
-    UNUSED(LinuxSystemCriticalSection::leave());
+    std::ignore = LinuxSystemCriticalSection::leave();
 
     if (m_fd >= 0)
     {
@@ -49,10 +51,11 @@ bool LinuxSystemCriticalSection::enter() const
         return false;
     }
 
-    bool locked = (flock(m_fd, LOCK_EX) == 0);
+    const bool locked = (flock(m_fd, LOCK_EX) == 0);
     if (!locked)
     {
-        m_logger.errorStream() << "Failed to lock critical section: " << std::strerror(errno);
+        m_logger.errorStream() << "Failed to lock critical section: "
+                               << std::generic_category().message(errno);
         return false;
     }
 
@@ -67,10 +70,11 @@ bool LinuxSystemCriticalSection::leave() const
         return false;
     }
 
-    bool unlocked = (flock(m_fd, LOCK_UN) == 0);
+    const bool unlocked = (flock(m_fd, LOCK_UN) == 0);
     if (!unlocked)
     {
-        m_logger.errorStream() << "Failed to unlock critical section: " << std::strerror(errno);
+        m_logger.errorStream() << "Failed to unlock critical section: "
+                               << std::generic_category().message(errno);
         return false;
     }
 
