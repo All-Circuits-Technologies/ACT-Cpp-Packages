@@ -12,6 +12,19 @@
 #include <optional>
 #include <regex>
 
+namespace
+{
+
+/**
+ * @brief IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some
+ *        parsers (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10
+ * @note Built once, at load time: compiling a regular expression is costly.
+ */
+const std::regex IP_ADDRESS_PATTERN(R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
+                                    R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
+
+} // namespace
+
 namespace act::text::StringUtil
 {
 
@@ -61,19 +74,20 @@ std::string BinToHex(const std::string &bin)
 {
     std::ostringstream hex;
 
-    /* configure hex output */
-    hex << std::hex << std::setw(2) << std::setfill('0');
+    /* configure hex output; the width is reset by each insertion, so it is set for every byte */
+    hex << std::hex << std::setfill('0');
     for (unsigned char c : bin)
     {
-        hex << (int)c;
+        hex << std::setw(2) << (int)c;
     }
     return hex.str();
 }
 
 std::optional<std::string> HexToBin(const std::string &hex)
 {
-    if (!IsHexOnly(hex))
+    if (!IsHexOnly(hex) || (hex.length() % act::foundation::HexConstants::HEX_CHARS_PER_BYTE) != 0)
     {
+        // Each byte is written with two digits: an odd length leaves half a byte
         return std::nullopt;
     }
 
@@ -99,14 +113,7 @@ bool IsHexOnly(const std::string &data)
 
 bool IsValidIpAddress(const std::string &ipAddress)
 {
-    /**
-     * Simple IP address validation using regex
-     * Matches IPv4 addresses (0-255.0-255.0-255.0-255)
-     */
-    std::regex ipPattern(
-        R"(^((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])$)");
-
-    return std::regex_match(ipAddress, ipPattern);
+    return std::regex_match(ipAddress, IP_ADDRESS_PATTERN);
 }
 
 } // namespace act::text::StringUtil

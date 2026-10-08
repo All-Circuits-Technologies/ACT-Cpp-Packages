@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_threading/types/reusable_thread_result.hpp"
 
 #include <atomic>
@@ -67,7 +67,7 @@ class ReusableThread
      */
     template <typename T, typename Func, typename... Args>
     ReusableThreadResult::Enum start(bool waitToJoin,
-                                     const act::logger::AbsLogger &logger,
+                                     const act::foundation::AbsLogger &logger,
                                      const std::function<std::optional<T>()> &preconditionFunc,
                                      Func &&func,
                                      Args &&...args);
@@ -84,7 +84,7 @@ class ReusableThread
      */
     template <typename Func, typename... Args>
     ReusableThreadResult::Enum start(bool waitToJoin,
-                                     const act::logger::AbsLogger &logger,
+                                     const act::foundation::AbsLogger &logger,
                                      Func &&func,
                                      Args &&...args);
 
@@ -103,7 +103,7 @@ class ReusableThread
      * @param args The arguments to pass to the function
      */
     template <typename T, typename Func, typename... Args>
-    ReusableThreadResult::Enum start(const act::logger::AbsLogger &logger,
+    ReusableThreadResult::Enum start(const act::foundation::AbsLogger &logger,
                                      const std::function<std::optional<T>()> &preconditionFunc,
                                      Func &&func,
                                      Args &&...args);
@@ -119,7 +119,7 @@ class ReusableThread
      * @param args The arguments to pass to the function
      */
     template <typename Func, typename... Args>
-    ReusableThreadResult::Enum start(const act::logger::AbsLogger &logger,
+    ReusableThreadResult::Enum start(const act::foundation::AbsLogger &logger,
                                      Func &&func,
                                      Args &&...args);
 
@@ -133,7 +133,7 @@ class ReusableThread
      * @return The result of starting the thread
      */
     ReusableThreadResult::Enum startProcess(bool waitToJoin,
-                                            const act::logger::AbsLogger &logger,
+                                            const act::foundation::AbsLogger &logger,
                                             const std::function<std::thread *()> &threadFactory);
 
   private:
@@ -160,7 +160,7 @@ class ReusableThread
 template <typename T, typename Func, typename... Args>
 inline ReusableThreadResult::Enum ReusableThread::start(
     bool waitToJoin,
-    const act::logger::AbsLogger &logger,
+    const act::foundation::AbsLogger &logger,
     const std::function<std::optional<T>()> &preconditionFunc,
     Func &&func,
     Args &&...args)
@@ -172,8 +172,7 @@ inline ReusableThreadResult::Enum ReusableThread::start(
                             auto conditionOpt = preconditionFunc();
                             if (!conditionOpt.has_value())
                             {
-                                logger.warningStream()
-                                    << "Precondition failed: " << conditionOpt.value();
+                                logger.warning("Precondition failed, the thread is not started");
                                 return nullptr;
                             }
 
@@ -185,7 +184,7 @@ inline ReusableThreadResult::Enum ReusableThread::start(
 
 template <typename Func, typename... Args>
 inline ReusableThreadResult::Enum ReusableThread::start(bool waitToJoin,
-                                                        const act::logger::AbsLogger &logger,
+                                                        const act::foundation::AbsLogger &logger,
                                                         Func &&func,
                                                         Args &&...args)
 {
@@ -196,7 +195,7 @@ inline ReusableThreadResult::Enum ReusableThread::start(bool waitToJoin,
 
 template <typename T, typename Func, typename... Args>
 inline ReusableThreadResult::Enum ReusableThread::start(
-    const act::logger::AbsLogger &logger,
+    const act::foundation::AbsLogger &logger,
     const std::function<std::optional<T>()> &preconditionFunc,
     Func &&func,
     Args &&...args)
@@ -209,7 +208,7 @@ inline ReusableThreadResult::Enum ReusableThread::start(
 }
 
 template <typename Func, typename... Args>
-inline ReusableThreadResult::Enum ReusableThread::start(const act::logger::AbsLogger &logger,
+inline ReusableThreadResult::Enum ReusableThread::start(const act::foundation::AbsLogger &logger,
                                                         Func &&func,
                                                         Args &&...args)
 {

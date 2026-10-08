@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
 
-#include "act_logger/helpers/logger_stream.hpp"
+#include "act_foundation/logger/logger_stream.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
-namespace act::logger
+namespace act::foundation
 {
 
 LoggerStream::LoggerStream(LogsLevel::Enum level, const AbsLogger &logger)
@@ -27,4 +27,4 @@ LoggerStream::~LoggerStream()
     m_logger.log(m_level, tmpLog);
 }
 
-} // namespace act::logger
+} // namespace act::foundation

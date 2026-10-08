@@ -31,7 +31,7 @@ class MultiExternalLogger : public AbsExternalLogger
      * @param categories The categories associated to the log message. This is ignored in
      * this implementation, because we use the categories of each logger.
      */
-    void log(LogsLevel::Enum level,
+    void log(act::foundation::LogsLevel::Enum level,
              const std::string &message,
              const std::vector<std::string> &categories) override;
 
@@ -42,7 +42,7 @@ class MultiExternalLogger : public AbsExternalLogger
      * @param message The message to log
      * @param categories The categories associated to the log message
      */
-    void logToExternal(LogsLevel::Enum level,
+    void logToExternal(act::foundation::LogsLevel::Enum level,
                        const std::string &message,
                        const std::vector<std::string> &categories) override
     {

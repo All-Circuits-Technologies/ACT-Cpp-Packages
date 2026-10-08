@@ -7,7 +7,7 @@
 #include "act_property_core/properties/abs_registered_property.hpp"
 #include "act_property_core/services/abs_property_store.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_logger/services/logger_manager.hpp"
 
 namespace act::property
@@ -52,7 +52,7 @@ void AbsPropertyManager::registerProperty(AbsRegisteredProperty &property)
     m_properties.push_back(&property);
 }
 
-act::logger::AbsLogger &AbsPropertyManager::accessLogger() const
+act::foundation::AbsLogger &AbsPropertyManager::accessLogger() const
 {
     return *m_logger;
 }

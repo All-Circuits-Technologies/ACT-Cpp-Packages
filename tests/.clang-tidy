@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Benoit Rolandeau <benoit.rolandeau@allcircuits.com>
+#
+# SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
+
+# Same rules as the libraries, except the abstract class prefix: a GoogleTest fixture is abstract
+# by construction (testing::Test::TestBody is pure virtual), but it is not an interface and keeps
+# the conventional `<Subject>Test` name.
+InheritParentConfig: true
+CheckOptions: {
+        readability-identifier-naming.AbstractClassPrefix: "",
+    }

@@ -16,6 +16,8 @@ the foundation layer.
 
 - **Base Classes:** NotCopiableNotMovable, AbsManager, AbsService, AbsWithLifeCycle
 - **Constants:** Software-wide constants and macros (def_soft.hpp)
+- **Logger interface:** AbsLogger, the interface every module logs through, with its levels
+  (LogsLevel) and its stream syntax (LoggerStream); the implementations are provided elsewhere
 - **Patterns:** Singleton pattern, Finally (RAII guard)
 
 ## Dependencies
@@ -26,6 +28,7 @@ None - this is a foundational module.
 
 ```cpp
 #include "act_foundation/constants/def_soft.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_foundation/services/abs_manager.hpp"
 #include "act_foundation/services/abs_service.hpp"
 #include "act_foundation/services/abs_with_life_cycle.hpp"

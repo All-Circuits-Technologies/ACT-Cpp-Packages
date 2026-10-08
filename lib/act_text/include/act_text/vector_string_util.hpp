@@ -22,8 +22,9 @@ std::string join(const std::vector<std::string> &vec, const std::string &separat
 /**
  * @brief Split a string into a vector of strings based on a separator.
  * @param str The string to split.
- * @param separator The separator to use for splitting.
- * @return A vector of strings resulting from the split.
+ * @param separator The separator to use for splitting. An empty separator does not split: the
+ *                  whole string is returned as the only element.
+ * @return A vector of strings resulting from the split, empty if @p str is empty.
  */
 std::vector<std::string> split(const std::string &str, const std::string &separator);
 } // namespace act::text::VectorStringUtil

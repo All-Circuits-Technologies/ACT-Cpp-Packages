@@ -157,7 +157,7 @@ class MyTableService
 {
   public:
     explicit MyTableService(act::db::sqlite::ASqLiteDbManager &db,
-                            act::logger::AbsLogger &parentLogger);
+                            act::foundation::AbsLogger &parentLogger);
     ~MyTableService() = default;
 
     [[nodiscard]] std::optional<std::vector<MyRow>> getAll() const;
@@ -191,7 +191,7 @@ namespace
 } // namespace
 
 MyTableService::MyTableService(act::db::sqlite::ASqLiteDbManager &db,
-                               act::logger::AbsLogger &parentLogger)
+                               act::foundation::AbsLogger &parentLogger)
     : m_protect(db, parentLogger)
 {
 }

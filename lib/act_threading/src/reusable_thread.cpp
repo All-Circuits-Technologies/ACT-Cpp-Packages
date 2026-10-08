@@ -26,12 +26,14 @@ ReusableThread::~ReusableThread()
 
 bool ReusableThread::isRunning() const
 {
-    return m_workingThread != nullptr && m_workingThread->joinable() && m_threadRunning.load();
+    // Only the atomic flag: start() may replace the working thread meanwhile, so reading it here
+    // would race. The flag is set before the working thread is started and cleared once it ended.
+    return m_threadRunning.load();
 }
 
 ReusableThreadResult::Enum ReusableThread::startProcess(
     bool waitToJoin,
-    const act::logger::AbsLogger &logger,
+    const act::foundation::AbsLogger &logger,
     const std::function<std::thread *()> &threadFactory)
 {
     // This mutex protects the start process in case start() is called from different threads

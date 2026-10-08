@@ -12,8 +12,8 @@
 
 #include "act_db_core/db_transaction.hpp"
 #include "act_db_core/services/abs_db_manager.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_foundation/services/abs_manager.hpp"
-#include "act_logger/models/abs_logger.hpp"
 
 namespace act::db::core
 {
@@ -30,11 +30,11 @@ class DbProtectService : public foundation::AbsManager
      * @param db Shared database manager to use for executing queries
      * @param parentLogger The parent logger to use for creating the service logger
      */
-    explicit DbProtectService(DbManager &db, act::logger::AbsLogger &parentLogger)
+    explicit DbProtectService(DbManager &db, act::foundation::AbsLogger &parentLogger)
         : AbsManager(),
           m_db(db),
           m_logger(parentLogger.createAbsSubLogger(SUB_LOGGER_CATEGORY,
-                                                   act::logger::LogsLevel::Enum::TRACE))
+                                                   act::foundation::LogsLevel::Enum::TRACE))
     {
     }
 
@@ -130,7 +130,7 @@ class DbProtectService : public foundation::AbsManager
     DbManager &m_db;
 
     /** @brief Logger helper */
-    std::shared_ptr<act::logger::AbsLogger> m_logger;
+    std::shared_ptr<act::foundation::AbsLogger> m_logger;
 };
 
 template <typename DbExecutor>

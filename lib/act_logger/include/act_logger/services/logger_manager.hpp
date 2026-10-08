@@ -21,7 +21,8 @@ class LoggerManager : public AbsLoggerManager
     /**
      * @brief Constructor
      */
-    explicit LoggerManager(LogsLevel::Enum minLevelToPrintToStdErr = LogsLevel::Enum::ERR);
+    explicit LoggerManager(act::foundation::LogsLevel::Enum minLevelToPrintToStdErr =
+                               act::foundation::LogsLevel::Enum::ERR);
 
     /**
      * @brief Destructor
@@ -39,14 +40,15 @@ class LoggerManager : public AbsLoggerManager
      * @brief Set the console logger minimum log level
      * @param minLevel The new minimum log level for the console logger
      */
-    void setCslMinLogLevel(LogsLevel::Enum minLevel);
+    void setCslMinLogLevel(act::foundation::LogsLevel::Enum minLevel);
 
     /**
      * @brief Set the console logger minimum log level for a specific category.
      * @param category The category name
      * @param minLevel The minimum log level for this category
      */
-    void setCslCategoryMinLogLevel(const std::string &category, LogsLevel::Enum minLevel);
+    void setCslCategoryMinLogLevel(const std::string &category,
+                                   act::foundation::LogsLevel::Enum minLevel);
 
   protected:
     /**
@@ -60,7 +62,7 @@ class LoggerManager : public AbsLoggerManager
     std::shared_ptr<StdConsoleLogger> m_consoleLogger;
 
     /** @brief The minimum logs level to print to standard error (stderr) */
-    LogsLevel::Enum m_minLevelToPrintToStdErr;
+    act::foundation::LogsLevel::Enum m_minLevelToPrintToStdErr;
 };
 
 } // namespace act::logger

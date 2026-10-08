@@ -4,21 +4,26 @@
 
 #pragma once
 
+#include "act_foundation/not_copiable_not_movable.hpp"
+
 #include <cstdio>
 #include <fstream>
 #include <optional>
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::files
 {
 
-/** @brief This defines an useful file class to act on file and get its path */
-class ExtFile
+/**
+ * @brief This defines an useful file class to act on file and get its path
+ * @note The class owns its file stream, so it can neither be copied nor moved
+ */
+class ExtFile : private act::foundation::NotCopiableNotMovable
 {
   public:
     /**
@@ -28,7 +33,7 @@ class ExtFile
      * @param isTemp Whether the file is temporary and should be deleted upon closing
      */
     explicit ExtFile(std::string filePath,
-                     const act::logger::AbsLogger &logger,
+                     const act::foundation::AbsLogger &logger,
                      bool isTemp = false);
 
     /**
@@ -46,7 +51,7 @@ class ExtFile
      */
     explicit ExtFile(std::fstream *fstream,
                      std::string filePath,
-                     const act::logger::AbsLogger &logger,
+                     const act::foundation::AbsLogger &logger,
                      std::ios::openmode mode,
                      bool isTemp = false);
 
@@ -101,7 +106,7 @@ class ExtFile
      */
     static ExtFile *CreateFileAndTryToOpenIt(const std::string &filePath,
                                              std::ios::openmode mode,
-                                             const act::logger::AbsLogger &logger,
+                                             const act::foundation::AbsLogger &logger,
                                              bool isTemp = false);
 
   private:
@@ -116,11 +121,11 @@ class ExtFile
     static bool OpenFile(std::fstream &fstream,
                          const std::string &filePath,
                          std::ios::openmode mode,
-                         const act::logger::AbsLogger &logger);
+                         const act::foundation::AbsLogger &logger);
 
   private:
     /** @brief Logger instance */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 
     /** @brief This is the pointer to the file stream  */
     std::fstream *m_fstream{nullptr};
