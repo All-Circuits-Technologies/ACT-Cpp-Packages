@@ -1,21 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Théo Magne <theo.magne@allcircuits.com>
 //
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/cpp
+// For format details, see https://aka.ms/devcontainer.json.
 {
-	"name": "C++",
-	"build": {
-		"dockerfile": "Dockerfile",
-		// Update the 'context' if your Dockerfile is not in the .devcontainer folder.
-		"context": "."
-	},
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Install additional OS packages for the libs to build
-	"postCreateCommand": "./tools/install_deps.sh",
+	"name": "ACT C++ packages",
+	// The toolchain image the CI publishes, built from image/Dockerfile: the CI builds it once per
+	// Dockerfile change and everyone runs the same one, so nothing is built on your machine. To try
+	// a Dockerfile change, build it by hand under this tag and start the container offline, or
+	// point this at the hash tag the pull request's "Toolchain image" job printed.
+	"image": "ghcr.io/all-circuits-technologies/act-cpp-packages:dev",
+	// Refreshed before every start, a no-op when up to date. Offline, the container starts on the
+	// image already present. Same image as above.
+	"initializeCommand": "docker pull ghcr.io/all-circuits-technologies/act-cpp-packages:dev || true",
+	// The image's default user is root, which the CI's container jobs need; work as the
+	// unprivileged user it creates.
+	"remoteUser": "dev",
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
@@ -53,6 +52,4 @@
 			}
 		}
 	}
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }

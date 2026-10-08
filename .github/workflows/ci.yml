@@ -1,0 +1,148 @@
+# SPDX-FileCopyrightText: 2026 Théo Magne <theo.magne@allcircuits.com>
+#
+# SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
+
+# Makes sure the toolchain image of this commit exists in the registry, then lints the packages
+# inside it.
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The image is a pure function of its build context, .devcontainer/image, so the context's git
+  # tree hash is its tag: a commit that does not touch the context reuses the image master has,
+  # and the build is skipped when the tag already exists. `dev` follows the last image built from
+  # master; it is the tag the dev container pulls.
+  IMAGE: ghcr.io/all-circuits-technologies/act-cpp-packages
+
+jobs:
+  image:
+    name: Toolchain image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.ref.outputs.image }}
+
+    steps:
+      - name: Clone the image build context
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .devcontainer/image
+
+      - name: Compute the tag
+        id: tag
+        run: echo "tag=$(git rev-parse HEAD:.devcontainer/image | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to the registry
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Check whether the image already exists
+        id: exists
+        run: |
+          if docker manifest inspect "$IMAGE:${{ steps.tag.outputs.tag }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$IMAGE:${{ steps.tag.outputs.tag }} already published, nothing to build"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The docker-container driver is what allows exporting the layer cache to the registry;
+      # --push streams the result there without loading it into the local daemon.
+      - name: Build and push
+        if: steps.exists.outputs.exists == 'false'
+        run: |
+          docker buildx create --use --driver docker-container
+          docker buildx build --push \
+            --tag "$IMAGE:${{ steps.tag.outputs.tag }}" \
+            --cache-from "type=registry,ref=$IMAGE:buildcache" \
+            --cache-to "type=registry,ref=$IMAGE:buildcache,mode=max" \
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            .devcontainer/image
+
+      # Only an image built from master becomes `dev`. A registry-side retag, the image is not
+      # rebuilt.
+      - name: Tag the master image as dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: docker buildx imagetools create --tag "$IMAGE:dev" "$IMAGE:${{ steps.tag.outputs.tag }}"
+
+      - name: Publish the image reference
+        id: ref
+        run: echo "image=$IMAGE:${{ steps.tag.outputs.tag }}" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Lint
+    needs: image
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 15
+    # packages: read lets the job pull the image with GITHUB_TOKEN, pull-requests: write lets
+    # cpp-linter post the findings on the pull request; a job that declares permissions gets none
+    # for the scopes it omits.
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: write
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      # Every source, not only the changed ones: the whole repository stays clean. cpp-linter is
+      # used for clang-format alone (--tidy-checks='-*'), where it posts the findings and their
+      # fixes on the pull request.
+      - name: clang-format
+        id: format
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          cpp-linter
+          --style=file
+          --tidy-checks='-*'
+          --version=21
+          --ignore='build'
+          --files-changed-only=false
+          --lines-changed-only=false
+          --thread-comments=update
+          --step-summary=true
+
+      # clang-tidy runs directly, not through cpp-linter, which counts a diagnostic only when it
+      # sits in the file being analyzed: a finding in a header, reported while analyzing a source
+      # that includes it, would never fail the job. HeaderFilterRegex in .clang-tidy is what makes
+      # clang-tidy report the headers of this repository. Every source of the compile database is
+      # analyzed, so the Windows sources are not on Linux. The findings become annotations on the
+      # pull request.
+      - name: clang-tidy
+        shell: bash
+        run: |
+          status=0
+          run-clang-tidy-21 -p build -quiet -warnings-as-errors='*' 'lib/.*' | tee tidy.log || status=$?
+          sed "s|^$PWD/||" tidy.log | grep -E '^[^ ]+:[0-9]+:[0-9]+: error:' | sort -u \
+            | sed -E 's|^([^:]+):([0-9]+):([0-9]+): error: (.*)$|::error file=\1,line=\2,col=\3::\4|' \
+            || true
+          exit "$status"
+
+      - name: Fail if clang-format found issues
+        if: steps.format.outputs.checks-failed > 0
+        run: exit 1
