@@ -293,8 +293,8 @@ namespace
         }
 
         const double raw = column.getDouble();
-        if (std::isfinite(raw) &&
-            (raw > std::numeric_limits<float>::max() || raw < std::numeric_limits<float>::lowest()))
+        if (std::isfinite(raw) && (raw > static_cast<double>(std::numeric_limits<float>::max()) ||
+                                   raw < static_cast<double>(std::numeric_limits<float>::lowest())))
         {
             logger.warningStream() << "The real " << raw << " is out of the float range";
             return std::nullopt;
