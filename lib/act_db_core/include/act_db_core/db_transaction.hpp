@@ -102,6 +102,6 @@ class DbTransaction
     const act::foundation::AbsLogger &m_logger;
 
     /** @brief Flag to indicate if the transaction has been committed or rolled back */
-    State m_state;
+    State m_state{State::NOT_STARTED};
 };
 } // namespace act::db::core

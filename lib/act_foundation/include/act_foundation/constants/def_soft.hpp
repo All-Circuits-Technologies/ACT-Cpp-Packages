@@ -52,7 +52,7 @@
 #define OBJ_PTR_AS_UNIQUE_KEY void *
 
 /** @brief Identity multiplication factor for Modbus (or other protocols) */
-constexpr float IDENTITY_MULTIPLICATION_FACTOR{1.0f};
+constexpr float IDENTITY_MULTIPLICATION_FACTOR{1.0F};
 
 /**
  * @brief This namespace contains hexadecimal conversion constants

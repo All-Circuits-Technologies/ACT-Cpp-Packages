@@ -22,8 +22,7 @@ namespace act::db::core
 AbsDbManager::AbsDbManager(const std::string &dbSlug,
                            const std::optional<std::filesystem::path> &migrationDataDir,
                            const act::logger::LoggerManager &loggerManager)
-    : act::foundation::AbsManager(),
-      m_dbSlug(dbSlug + "-db"),
+    : m_dbSlug(dbSlug + "-db"),
       m_migrationDataDir(migrationDataDir),
       m_logger{loggerManager.createSubLogger(dbSlug + "-db")}
 {

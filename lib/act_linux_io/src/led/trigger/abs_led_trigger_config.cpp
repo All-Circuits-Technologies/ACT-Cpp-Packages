@@ -31,13 +31,13 @@ bool AbsLedTriggerConfig::applyToLeds(const std::vector<std::reference_wrapper<L
     bool success = true;
 
     // Prepare all LEDs first
-    for (auto &ledRef : leds)
+    for (const auto &ledRef : leds)
     {
         success &= prepareLed(ledRef.get(), force);
     }
 
     // Then fire trigger over all LEDs
-    for (auto &ledRef : leds)
+    for (const auto &ledRef : leds)
     {
         success &= fireOnLed(ledRef.get());
     }

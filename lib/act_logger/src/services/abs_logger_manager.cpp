@@ -12,7 +12,7 @@ namespace act::logger
 {
 
 AbsLoggerManager::AbsLoggerManager()
-    : AbsManager()
+
 {
 }
 

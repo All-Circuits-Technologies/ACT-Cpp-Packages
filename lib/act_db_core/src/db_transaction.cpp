@@ -12,8 +12,8 @@ namespace act::db::core
 {
 DbTransaction::DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger)
     : m_db(db),
-      m_logger(logger),
-      m_state{State::NOT_STARTED}
+      m_logger(logger)
+
 {
 }
 

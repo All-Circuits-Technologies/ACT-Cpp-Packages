@@ -15,8 +15,7 @@ namespace act::system
 {
 
 AbsSystemManager::AbsSystemManager(act::foundation::AbsLogger &parentLogger)
-    : AbsManager(),
-      m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::foundation::LogsLevel::TRACE)},
+    : m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::foundation::LogsLevel::TRACE)},
       m_rebootThread{new act::threading::ReusableThread()}
 {
 }

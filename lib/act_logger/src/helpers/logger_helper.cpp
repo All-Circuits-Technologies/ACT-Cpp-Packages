@@ -21,8 +21,7 @@ LoggerHelper::LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLog
 
 LoggerHelper::LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLogger,
                            act::foundation::LogsLevel::Enum minLevel)
-    : m_categories{},
-      m_minLevel{minLevel},
+    : m_minLevel{minLevel},
       m_externalLogger{externalLogger}
 {
 }

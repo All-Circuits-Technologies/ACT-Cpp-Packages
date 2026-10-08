@@ -30,9 +30,7 @@ namespace act::text::StringUtil
 
 void ToUpperInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::toupper(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::toupper(c); });
 }
 
 std::string ToUpper(const std::string &str)
@@ -44,9 +42,7 @@ std::string ToUpper(const std::string &str)
 
 void ToLowerInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::tolower(c); });
 }
 
 std::string ToLower(const std::string &str)
@@ -106,9 +102,8 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
 bool IsHexOnly(const std::string &data)
 {
-    return std::all_of(data.begin(), data.end(), [](char c) {
-        return std::isxdigit(static_cast<unsigned char>(c));
-    });
+    return std::ranges::all_of(data,
+                               [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); });
 }
 
 bool IsValidIpAddress(const std::string &ipAddress)

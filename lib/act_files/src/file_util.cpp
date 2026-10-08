@@ -126,7 +126,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     std::ios::openmode mode,
                                     bool isTemp)
 {
-    auto extFile = ExtFile::CreateFileAndTryToOpenIt(path, mode, logger, isTemp);
+    auto *extFile = ExtFile::CreateFileAndTryToOpenIt(path, mode, logger, isTemp);
     if (extFile == nullptr)
     {
         return nullptr;
@@ -139,7 +139,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     const act::foundation::AbsLogger &logger,
                                     bool isTemp)
 {
-    auto extFile = new ExtFile(path, logger, isTemp);
+    auto *extFile = new ExtFile(path, logger, isTemp);
     return std::shared_ptr<ExtFile>(extFile);
 }
 
