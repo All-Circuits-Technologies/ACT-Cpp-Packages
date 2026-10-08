@@ -63,7 +63,7 @@ bool LinuxLed::setTrigger(const std::string &trigger, bool force)
         return true;
     }
 
-    bool result = writeConfString(TRIGGER_FILE_NAME, trigger);
+    const bool result = writeConfString(TRIGGER_FILE_NAME, trigger);
     if (result)
     {
         m_currentTriggerCache = trigger;

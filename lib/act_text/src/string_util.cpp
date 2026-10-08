@@ -76,7 +76,7 @@ std::string BinToHex(const std::string &bin)
 
     /* configure hex output; the width is reset by each insertion, so it is set for every byte */
     hex << std::hex << std::setfill('0');
-    for (unsigned char c : bin)
+    for (const unsigned char c : bin)
     {
         hex << std::setw(2) << (int)c;
     }
@@ -95,8 +95,8 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
     for (size_t i{0}; i + 1 < hex.length(); i += act::foundation::HexConstants::HEX_CHARS_PER_BYTE)
     {
-        std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
-        char byte{static_cast<char>(
+        const std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
+        const char byte{static_cast<char>(
             std::stoul(hexByte, nullptr, act::foundation::HexConstants::HEXADECIMAL_BASE))};
         binaryString.push_back(byte);
     }

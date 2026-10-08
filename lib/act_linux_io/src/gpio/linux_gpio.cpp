@@ -44,7 +44,7 @@ LinuxGpio::LinuxGpio(const std::string &chipName,
     std::string gpioLogName = chipName + ":" + std::to_string(lineNum);
     if (m_found)
     {
-        std::string lineName = getName();
+        const std::string lineName = getName();
         if (!lineName.empty())
         {
             gpioLogName = lineName;
@@ -152,7 +152,7 @@ bool LinuxGpio::listenEvents(const std::function<void(bool)> &callback)
 
             for (const auto &event : buffer)
             {
-                bool value = (event.type() == gpiod::edge_event::event_type::RISING_EDGE);
+                const bool value = (event.type() == gpiod::edge_event::event_type::RISING_EDGE);
                 m_logger->traceStream() << (value ? "Rising edge" : "Falling edge");
 
                 try

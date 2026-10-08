@@ -49,7 +49,7 @@ bool LinuxSystemCriticalSection::enter() const
         return false;
     }
 
-    bool locked = (flock(m_fd, LOCK_EX) == 0);
+    const bool locked = (flock(m_fd, LOCK_EX) == 0);
     if (!locked)
     {
         m_logger.errorStream() << "Failed to lock critical section: " << std::strerror(errno);
@@ -67,7 +67,7 @@ bool LinuxSystemCriticalSection::leave() const
         return false;
     }
 
-    bool unlocked = (flock(m_fd, LOCK_UN) == 0);
+    const bool unlocked = (flock(m_fd, LOCK_UN) == 0);
     if (!unlocked)
     {
         m_logger.errorStream() << "Failed to unlock critical section: " << std::strerror(errno);

@@ -77,7 +77,7 @@ std::optional<int> ASqLiteDbManager::execAndGetInt(const std::string &sql)
     EMPTY_IF_THROW(execAndGetInt,
                    logger,
                    // May throw and Column has no default constructor to be moved up
-                   SQLite::Column column = m_db->execAndGet(sql);
+                   const SQLite::Column column = m_db->execAndGet(sql);
                    result = column.getInt(););
 
     return result;
@@ -135,8 +135,8 @@ bool ASqLiteDbManager::openImpl()
                                    return;
                                }
 
-                               std::regex regex_pattern(pattern);
-                               bool matches = std::regex_match(text, regex_pattern);
+                               const std::regex regex_pattern(pattern);
+                               const bool matches = std::regex_match(text, regex_pattern);
                                sqlite3_result_int(context, matches ? 1 : 0);
                            }
                            catch (const std::exception &)

@@ -30,13 +30,13 @@ ActionDelayer::~ActionDelayer() = default;
 
 void ActionDelayer::startOrRestart()
 {
-    std::lock_guard<std::mutex> lock(m_actionMutex);
+    const std::lock_guard<std::mutex> lock(m_actionMutex);
     startLocked(Clock::now());
 }
 
 void ActionDelayer::startOrDelay()
 {
-    std::lock_guard<std::mutex> lock(m_actionMutex);
+    const std::lock_guard<std::mutex> lock(m_actionMutex);
     const auto now = Clock::now();
 
     if (!m_isRunning)
@@ -51,14 +51,14 @@ void ActionDelayer::startOrDelay()
 
 void ActionDelayer::stop()
 {
-    std::lock_guard<std::mutex> lock(m_actionMutex);
+    const std::lock_guard<std::mutex> lock(m_actionMutex);
     m_isRunning = false;
     m_timer.stop();
 }
 
 bool ActionDelayer::isRunning() const
 {
-    std::lock_guard<std::mutex> lock(m_actionMutex);
+    const std::lock_guard<std::mutex> lock(m_actionMutex);
     return m_isRunning;
 }
 
@@ -90,7 +90,7 @@ unsigned int ActionDelayer::getCappedDelayMsLocked(Clock::time_point now) const
 void ActionDelayer::onTimerExpired(RestartableTimer::StartId start)
 {
     {
-        std::lock_guard<std::mutex> lock(m_actionMutex);
+        const std::lock_guard<std::mutex> lock(m_actionMutex);
         if (!m_isRunning || start != m_currentStart)
         {
             // Stopped, or started again while this expiry was on its way: the last start rules
