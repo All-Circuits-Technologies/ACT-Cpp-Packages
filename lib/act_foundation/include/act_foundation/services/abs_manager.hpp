@@ -18,12 +18,13 @@ namespace act::foundation
  */
 class AbsManager : public AbsWithLifeCycle, private NotCopiableNotMovable
 {
+  public:
+    /// @brief Nothing special for default destructor
+    ~AbsManager() override = default;
+
   protected:
     /// @brief Nothing special for default constructor
     AbsManager() = default;
-
-    /// @brief Nothing special for default destructor
-    ~AbsManager() override = default;
 };
 
 } // namespace act::foundation

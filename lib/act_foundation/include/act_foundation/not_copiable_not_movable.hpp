@@ -4,21 +4,16 @@
 
 #pragma once
 
-
 namespace act::foundation
 {
 
 /** @brief Deny copy and moves of classes inheriting it */
 class NotCopiableNotMovable
 {
-  protected:
-    /// @brief Nothing special for default constructor
-    NotCopiableNotMovable() = default;
-
+  public:
     /// @brief Nothing special for default destructor
     virtual ~NotCopiableNotMovable() = default;
 
-  public:
     /// @brief Copy constructor (deleted)
     NotCopiableNotMovable(const NotCopiableNotMovable &) = delete;
 
@@ -30,6 +25,10 @@ class NotCopiableNotMovable
 
     /// @brief Move assignment operator (deleted)
     NotCopiableNotMovable &operator=(NotCopiableNotMovable &&) = delete;
+
+  protected:
+    /// @brief Nothing special for default constructor
+    NotCopiableNotMovable() = default;
 };
 
 } // namespace act::foundation

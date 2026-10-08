@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "act_logger/helpers/logger_stream.hpp"
-#include "act_logger/models/abs_logger.hpp"
-#include "act_logger/types/logs_level.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
+#include "act_foundation/logger/logger_stream.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 #include <memory>
 #include <string>
@@ -18,7 +18,7 @@ namespace act::logger
 class AbsExternalLogger;
 
 /** @brief This is a helper class to log messages with categories and minimum level */
-class LoggerHelper : public AbsLogger
+class LoggerHelper : public act::foundation::AbsLogger
 {
   public:
     /**
@@ -27,9 +27,10 @@ class LoggerHelper : public AbsLogger
      * @param category The main category for this logger
      * @param minLevel The minimum logs level for this logger
      */
-    explicit LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLogger,
-                          const std::string &category,
-                          LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+    explicit LoggerHelper(
+        const std::shared_ptr<AbsExternalLogger> &externalLogger,
+        const std::string &category,
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /**
      * @brief Class constructor
@@ -37,8 +38,9 @@ class LoggerHelper : public AbsLogger
      * @param externalLogger The external logger to use
      * @param minLevel The minimum logs level for this logger
      */
-    explicit LoggerHelper(const std::shared_ptr<AbsExternalLogger> &externalLogger,
-                          LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+    explicit LoggerHelper(
+        const std::shared_ptr<AbsExternalLogger> &externalLogger,
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /** @brief Class destructor */
     virtual ~LoggerHelper() = default;
@@ -51,7 +53,8 @@ class LoggerHelper : public AbsLogger
      * @param categories The categories for this logger
      * @param minLevel The minimum logs level for this logger
      */
-    explicit LoggerHelper(const std::vector<std::string> &categories, LogsLevel::Enum minLevel);
+    explicit LoggerHelper(const std::vector<std::string> &categories,
+                          act::foundation::LogsLevel::Enum minLevel);
 
   public:
     /**
@@ -89,7 +92,8 @@ class LoggerHelper : public AbsLogger
      * @return The sub-logger
      */
     [[nodiscard]] std::shared_ptr<LoggerHelper> createSubLogger(
-        const std::string &category, LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+        const std::string &category,
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /**
      * @brief Create a sub-logger with an additional category
@@ -97,7 +101,7 @@ class LoggerHelper : public AbsLogger
      * @return The sub-logger
      */
     [[nodiscard]] std::shared_ptr<LoggerHelper> createSubLogger(
-        LogsLevel::Enum minLevel = LogsLevel::Enum::TRACE);
+        act::foundation::LogsLevel::Enum minLevel = act::foundation::LogsLevel::Enum::TRACE);
 
     /**
      * @brief Create an abstract sub-logger with an additional category
@@ -105,8 +109,8 @@ class LoggerHelper : public AbsLogger
      * @param minLevel The minimum logs level for the sub-logger
      * @return The sub-logger
      */
-    [[nodiscard]] std::shared_ptr<AbsLogger> createAbsSubLogger(const std::string &category,
-                                                                LogsLevel::Enum minLevel) override
+    [[nodiscard]] std::shared_ptr<act::foundation::AbsLogger> createAbsSubLogger(
+        const std::string &category, act::foundation::LogsLevel::Enum minLevel) override
     {
         return createSubLogger(category, minLevel);
     }
@@ -116,7 +120,8 @@ class LoggerHelper : public AbsLogger
      * @param minLevel The minimum logs level for the sub-logger
      * @return The sub-logger
      */
-    [[nodiscard]] std::shared_ptr<AbsLogger> createAbsSubLogger(LogsLevel::Enum minLevel) override
+    [[nodiscard]] std::shared_ptr<act::foundation::AbsLogger> createAbsSubLogger(
+        act::foundation::LogsLevel::Enum minLevel) override
     {
         return createSubLogger(minLevel);
     }
@@ -127,23 +132,24 @@ class LoggerHelper : public AbsLogger
      * @param level The logs level
      * @return True if the message would be logged, false otherwise
      */
-    [[nodiscard]] bool wouldBeLogged(LogsLevel::Enum level) const override;
+    [[nodiscard]] bool wouldBeLogged(act::foundation::LogsLevel::Enum level) const override;
 
     /**
      * @brief Log a message
      * @param level The logs level
      * @param message The message to log
      */
-    void log(LogsLevel::Enum level, const std::string &message) const override;
+    void log(act::foundation::LogsLevel::Enum level, const std::string &message) const override;
 
     /**
      * @brief Get a logger stream to log using stream syntax
      * @param level The logs level
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream logStream(LogsLevel::Enum level) const override
+    [[nodiscard]] act::foundation::LoggerStream logStream(
+        act::foundation::LogsLevel::Enum level) const override
     {
-        return LoggerStream(level, *this);
+        return act::foundation::LoggerStream(level, *this);
     }
 
     /**
@@ -152,16 +158,16 @@ class LoggerHelper : public AbsLogger
      */
     void trace(const std::string &message) const override
     {
-        log(LogsLevel::Enum::TRACE, message);
+        log(act::foundation::LogsLevel::Enum::TRACE, message);
     }
 
     /**
      * @brief Get a trace logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream traceStream() const override
+    [[nodiscard]] act::foundation::LoggerStream traceStream() const override
     {
-        return logStream(LogsLevel::Enum::TRACE);
+        return logStream(act::foundation::LogsLevel::Enum::TRACE);
     }
 
     /**
@@ -170,16 +176,16 @@ class LoggerHelper : public AbsLogger
      */
     void debug(const std::string &message) const override
     {
-        log(LogsLevel::Enum::DEBG, message);
+        log(act::foundation::LogsLevel::Enum::DEBG, message);
     }
 
     /**
      * @brief Get a debug logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream debugStream() const override
+    [[nodiscard]] act::foundation::LoggerStream debugStream() const override
     {
-        return logStream(LogsLevel::Enum::DEBG);
+        return logStream(act::foundation::LogsLevel::Enum::DEBG);
     }
 
     /**
@@ -188,16 +194,16 @@ class LoggerHelper : public AbsLogger
      */
     void info(const std::string &message) const override
     {
-        log(LogsLevel::Enum::INFO, message);
+        log(act::foundation::LogsLevel::Enum::INFO, message);
     }
 
     /**
      * @brief Get an info logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream infoStream() const override
+    [[nodiscard]] act::foundation::LoggerStream infoStream() const override
     {
-        return logStream(LogsLevel::Enum::INFO);
+        return logStream(act::foundation::LogsLevel::Enum::INFO);
     }
 
     /**
@@ -206,16 +212,16 @@ class LoggerHelper : public AbsLogger
      */
     void warning(const std::string &message) const override
     {
-        log(LogsLevel::Enum::WARNING, message);
+        log(act::foundation::LogsLevel::Enum::WARNING, message);
     }
 
     /**
      * @brief Get a warning logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream warningStream() const override
+    [[nodiscard]] act::foundation::LoggerStream warningStream() const override
     {
-        return logStream(LogsLevel::Enum::WARNING);
+        return logStream(act::foundation::LogsLevel::Enum::WARNING);
     }
 
     /**
@@ -224,16 +230,16 @@ class LoggerHelper : public AbsLogger
      */
     void error(const std::string &message) const override
     {
-        log(LogsLevel::Enum::ERR, message);
+        log(act::foundation::LogsLevel::Enum::ERR, message);
     }
 
     /**
      * @brief Get an error logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream errorStream() const override
+    [[nodiscard]] act::foundation::LoggerStream errorStream() const override
     {
-        return logStream(LogsLevel::Enum::ERR);
+        return logStream(act::foundation::LogsLevel::Enum::ERR);
     }
 
     /**
@@ -242,16 +248,16 @@ class LoggerHelper : public AbsLogger
      */
     void fatal(const std::string &message) const override
     {
-        log(LogsLevel::Enum::FATAL, message);
+        log(act::foundation::LogsLevel::Enum::FATAL, message);
     }
 
     /**
      * @brief Get a fatal logger stream to log using stream syntax
      * @return The logger stream
      */
-    [[nodiscard]] LoggerStream fatalStream() const override
+    [[nodiscard]] act::foundation::LoggerStream fatalStream() const override
     {
-        return logStream(LogsLevel::Enum::FATAL);
+        return logStream(act::foundation::LogsLevel::Enum::FATAL);
     }
 
   private:
@@ -260,7 +266,7 @@ class LoggerHelper : public AbsLogger
      * @param level The logs level
      * @return True if the message should be logged, false otherwise
      */
-    [[nodiscard]] bool testIfLoggable(LogsLevel::Enum level) const
+    [[nodiscard]] bool testIfLoggable(act::foundation::LogsLevel::Enum level) const
     {
         return level >= m_minLevel;
     }
@@ -278,7 +284,7 @@ class LoggerHelper : public AbsLogger
      * @brief This is the minimum logs level for this logger.
      * @note If a log message has a level lower than this, it will not be logged.
      */
-    LogsLevel::Enum m_minLevel;
+    act::foundation::LogsLevel::Enum m_minLevel;
 
     /**
      * @brief This is the external logger used to log messages.

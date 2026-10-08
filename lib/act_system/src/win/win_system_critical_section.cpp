@@ -4,13 +4,13 @@
 
 #include "act_system/win/win_system_critical_section.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 
 namespace act::system
 {
 
 WinSystemCriticalSection::WinSystemCriticalSection(const char *slug,
-                                                   const act::logger::AbsLogger &logger)
+                                                   const act::foundation::AbsLogger &logger)
     : AbsSystemCriticalSection(slug, logger)
 {
     const std::string mutexName = std::string("Global\\") + slug;

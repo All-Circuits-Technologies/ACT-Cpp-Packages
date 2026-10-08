@@ -4,7 +4,7 @@
 
 #include "act_system/abs_system_manager.hpp"
 
-#include "act_logger/models/abs_logger.hpp"
+#include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/vector_string_util.hpp"
 #include "act_threading/reusable_thread.hpp"
 
@@ -14,9 +14,9 @@
 namespace act::system
 {
 
-AbsSystemManager::AbsSystemManager(act::logger::AbsLogger &parentLogger)
+AbsSystemManager::AbsSystemManager(act::foundation::AbsLogger &parentLogger)
     : AbsManager(),
-      m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::logger::LogsLevel::TRACE)},
+      m_logger{parentLogger.createAbsSubLogger(LOGGER_CATEGORY, act::foundation::LogsLevel::TRACE)},
       m_rebootThread{new act::threading::ReusableThread()}
 {
 }
@@ -42,7 +42,7 @@ act::threading::ReusableThreadResult::Enum AbsSystemManager::askReboot(int delay
 
 int AbsSystemManager::callCommand(const std::string &cmd,
                                   std::ostream &output,
-                                  const act::logger::AbsLogger &logger)
+                                  const act::foundation::AbsLogger &logger)
 {
     FILE *pipe = nullptr;
     try
@@ -69,9 +69,33 @@ int AbsSystemManager::callCommand(const std::string &cmd,
     return closePipe(pipe);
 }
 
+std::string AbsSystemManager::EscapeCmdArgument(const std::string &arg, char escapeChar)
+{
+    std::string escaped(1, escapeChar);
+    for (const char character : arg)
+    {
+        if (escapeChar == SINGLE_QUOTE_CHAR && character == SINGLE_QUOTE_CHAR)
+        {
+            // Nothing can be escaped between single quotes
+            escaped += SINGLE_QUOTE_IN_SINGLE_QUOTES;
+            continue;
+        }
+
+        if (escapeChar == DOUBLE_QUOTE_CHAR &&
+            DOUBLE_QUOTED_SPECIAL_CHARS.find(character) != std::string_view::npos)
+        {
+            escaped += BACKSLASH_CHAR;
+        }
+
+        escaped += character;
+    }
+    escaped += escapeChar;
+    return escaped;
+}
+
 int AbsSystemManager::callCommand(const std::vector<std::string> &cmdParts,
                                   std::ostream &output,
-                                  const act::logger::AbsLogger &logger)
+                                  const act::foundation::AbsLogger &logger)
 {
     auto cmd = act::text::VectorStringUtil::join(cmdParts, CMD_PART_SEPARATOR);
     return callCommand(cmd, output, logger);

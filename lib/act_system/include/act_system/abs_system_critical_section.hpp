@@ -6,10 +6,10 @@
 
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 class AbsLogger;
-} // namespace act::logger
+} // namespace act::foundation
 
 namespace act::system
 {
@@ -30,7 +30,8 @@ class AbsSystemCriticalSection
      * @param logger Logger instance
      * @note Created critical section is not auto-entered, you must enter it.
      */
-    explicit AbsSystemCriticalSection(const std::string &slug, const act::logger::AbsLogger &logger)
+    explicit AbsSystemCriticalSection(const std::string &slug,
+                                      const act::foundation::AbsLogger &logger)
         : AbsSystemCriticalSection(slug.c_str(), logger)
     {
     }
@@ -41,7 +42,8 @@ class AbsSystemCriticalSection
      * @param logger Logger instance
      * @note Created critical section is not auto-entered, you must enter it.
      */
-    explicit AbsSystemCriticalSection(const char * /*slug*/, const act::logger::AbsLogger &logger)
+    explicit AbsSystemCriticalSection(const char * /*slug*/,
+                                      const act::foundation::AbsLogger &logger)
         : m_logger(logger)
     {
     }
@@ -58,7 +60,7 @@ class AbsSystemCriticalSection
 
   protected:
     /** @brief Logger instance */
-    const act::logger::AbsLogger &m_logger;
+    const act::foundation::AbsLogger &m_logger;
 };
 
 } // namespace act::system

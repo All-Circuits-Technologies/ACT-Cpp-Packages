@@ -8,11 +8,11 @@
 
 #include <string>
 
-namespace act::logger
+namespace act::foundation
 {
 
 /** @brief This is the status of the Firmware update */
-class LogsLevel : private act::foundation::NotCopiableNotMovable
+class LogsLevel : private NotCopiableNotMovable
 {
   public:
     /** @brief Enum representing the logs level types */
@@ -99,4 +99,4 @@ class LogsLevel : private act::foundation::NotCopiableNotMovable
     static constexpr const char *NONE_STR = "NONE";
 };
 
-} // namespace act::logger
+} // namespace act::foundation

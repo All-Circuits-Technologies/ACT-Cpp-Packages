@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "act_logger/types/logs_level.hpp"
+#include "act_foundation/logger/logs_level.hpp"
 
 namespace act::logger::LogsConstants
 {
 /** @brief Default console logs level */
-constexpr const LogsLevel::Enum DEFAULT_CONSOLE_LOGS_LEVEL = LogsLevel::Enum::INFO;
+constexpr const act::foundation::LogsLevel::Enum DEFAULT_CONSOLE_LOGS_LEVEL =
+    act::foundation::LogsLevel::Enum::INFO;
 } // namespace act::logger::LogsConstants
