@@ -50,3 +50,15 @@ endfunction()
 # -----------------------------------------------------------------------------
 # Modules are listed alphabetically for simplicity.
 # -----------------------------------------------------------------------------
+add_subdirectory(common)
+
+add_subdirectory(act_db_core_tests)
+add_subdirectory(act_db_sqlite_tests)
+add_subdirectory(act_files_tests)
+add_subdirectory(act_foundation_tests)
+add_subdirectory(act_linux_io_tests)
+add_subdirectory(act_logger_tests)
+add_subdirectory(act_system_tests)
+add_subdirectory(act_text_tests)
+add_subdirectory(act_threading_tests)
+add_subdirectory(act_time_tests)
