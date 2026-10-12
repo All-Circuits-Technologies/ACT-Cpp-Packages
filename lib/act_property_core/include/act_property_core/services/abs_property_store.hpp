@@ -22,8 +22,8 @@ namespace act::property
  * global manager but owned and initialized by its property manager. Its @ref init prepares the
  * backing storage.
  *
- * Concrete implementations include a SQLite backed store (in the companion package) and an
- * in-memory store (@ref InMemoryPropertyStore, handy for tests).
+ * This package ships an in-memory implementation (@ref InMemoryPropertyStore, handy for tests); a
+ * persistent store implements this interface in a package of its own.
  */
 class AbsPropertyStore : public act::foundation::AbsService
 {

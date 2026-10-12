@@ -6,8 +6,8 @@
 # act_property_core - Engine-agnostic persistent configuration store
 # -----------------------------------------------------------------------------
 # Typed property descriptors, codecs, value providers, the store interface and
-# the property manager base. Storage-engine agnostic; a concrete store (e.g.
-# a SQLite backed one) lives in a companion package.
+# the property manager base. Storage-engine agnostic: a persistent store
+# implements the store interface in a package of its own.
 #
 # Dependencies: act_foundation, act_logger
 # -----------------------------------------------------------------------------

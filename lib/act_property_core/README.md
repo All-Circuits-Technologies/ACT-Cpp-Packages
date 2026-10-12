@@ -11,8 +11,8 @@ codecs, value providers, the store interface and the property manager base.
 
 An application declares its settings as typed objects ("properties"), grouped in a "property
 manager", which reads and writes them through a "store". The store is an abstraction; this package
-ships the interface and an in-memory implementation for tests. A concrete storage backend (for
-example a SQLite backed store) lives in a companion package.
+ships the interface and an in-memory implementation for tests. A persistent storage backend
+implements the interface in a package of its own.
 
 Design principles:
 
