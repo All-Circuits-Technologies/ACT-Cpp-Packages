@@ -44,7 +44,8 @@ namespace act::property
  *
  * With @ref TableProvisioning::SELF_CREATE, @ref init runs this statement. With
  * @ref TableProvisioning::EXTERNAL, the migrations of the database owner must create the table with
- * this schema, and @ref init only checks that it exists.
+ * this schema, and @ref init checks that it exists. In both modes, @ref init then checks that the
+ * table has the three columns and that `key` is its primary key (or unique).
  *
  * The `type` column holds the @ref StoredType tag. The `value` column has no declared type, so it
  * keeps the SQLite storage class it is written with:
@@ -56,16 +57,23 @@ namespace act::property
  *   lossless, but an external reader of the table sees a negative number for any value above
  *   `INT64_MAX` (2^63 - 1): it must reinterpret the column as unsigned when the tag is
  *   @ref StoredType::UINT64;
- * - @ref StoredType::FLOAT and @ref StoredType::DOUBLE are a `REAL`;
+ * - @ref StoredType::FLOAT and @ref StoredType::DOUBLE are a `REAL`, except a NaN, which SQLite
+ *   stores as `NULL`; a `NULL` tagged @ref StoredType::FLOAT or @ref StoredType::DOUBLE reads back
+ *   as a quiet NaN (its payload and sign are lost, which @ref StoredValue equality ignores);
  * - @ref StoredType::STRING is a `TEXT`.
  *
  * Reading is strict: a row whose tag is unknown, whose storage class does not match its tag, or
  * whose integer does not fit the tagged type (for example 300 tagged @ref StoredType::INT8) reads
- * as absent, and the mismatch is logged. SQLite stores a NaN floating point value as `NULL`, so a
- * NaN written to the store reads back as absent.
+ * as absent, and the mismatch is logged.
  *
  * No query opens a transaction: each one is a single statement, hence already atomic, and the
- * store stays usable while the caller holds a transaction on the same connection.
+ * store stays usable while the caller holds a transaction on the same connection, from the same
+ * thread.
+ *
+ * @warning The store does not handle thread safety: it takes no lock, and is only as safe as the
+ *          connection it goes through. In particular, a query run while another thread holds a
+ *          transaction on the same connection joins that transaction, and is undone if it rolls
+ *          back. A store shared between threads needs its accesses serialized by its owner.
  */
 class SqlitePropertyStore : public AbsPropertyStore
 {
@@ -116,6 +124,12 @@ class SqlitePropertyStore : public AbsPropertyStore
      * @return true if the table exists, false otherwise
      */
     bool checkTableExists();
+
+    /**
+     * @brief Check that the table has the expected columns and that the key is its primary key
+     * @return true if the table can serve the store queries, false otherwise
+     */
+    bool checkTableSchema();
 
   private:
     /** @brief The protect service of the database holding the table */

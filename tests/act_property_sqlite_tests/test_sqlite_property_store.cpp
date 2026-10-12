@@ -7,11 +7,12 @@
  * @brief Unit tests of SqlitePropertyStore.
  *
  * These tests run against a real SQLite database file, created in a temporary directory for each
- * test. Covers the table provisioning (created at init or expected to exist), the round trip of
- * every stored type with the SQLite storage class it is written with, the strict reading of rows
- * which do not match their tag, overwriting, erasing and clearing, a table name which needs
- * quoting, the use of the store inside a caller transaction, a dedicated database reopened, and a
- * property manager reading and writing its properties through the store.
+ * test. Covers the table provisioning (created at init or expected to exist), the check of the
+ * table schema at init, the round trip of every stored type with the SQLite storage class it is
+ * written with, the strict reading of rows which do not match their tag, overwriting, erasing and
+ * clearing, a table name which needs quoting, the use of the store inside a caller transaction, a
+ * dedicated database reopened, and a property manager reading and writing its properties through
+ * the store.
  */
 
 #include "act_property_sqlite/stores/sqlite_property_store.hpp"
@@ -36,6 +37,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -287,6 +289,62 @@ namespace
         EXPECT_TRUE(store->init());
     }
 
+    TEST_F(SqlitePropertyStoreTest, ExternalInitAcceptsAKeyWhichIsOnlyUnique)
+    {
+        ASSERT_TRUE(getDb().exec("CREATE TABLE properties (\"key\" TEXT NOT NULL UNIQUE, \"type\" "
+                                 "INTEGER NOT NULL, \"value\")"));
+        auto store = makeStore(TABLE_NAME, TableProvisioning::EXTERNAL);
+
+        EXPECT_TRUE(store->init());
+        EXPECT_TRUE(store->set(KEY, StoredValue(true)));
+        EXPECT_TRUE(store->set(KEY, StoredValue(false)));
+        EXPECT_EQ(store->get(KEY), StoredValue(false));
+    }
+
+    /** @brief A table of the store name but of another schema, which init must reject */
+    struct WrongSchemaCase
+    {
+        const char *name;
+        const char *columns;
+    };
+
+    /** @brief Show a case by its name in the test listings */
+    void PrintTo(const WrongSchemaCase &testCase, std::ostream *stream)
+    {
+        *stream << testCase.name;
+    }
+
+    class SqlitePropertyStoreWrongSchemaTest : public SqlitePropertyStoreTest,
+                                               public ::testing::WithParamInterface<WrongSchemaCase>
+    {
+    };
+
+    TEST_P(SqlitePropertyStoreWrongSchemaTest, InitFailsInBothProvisioningModes)
+    {
+        ASSERT_TRUE(
+            getDb().exec(std::string{"CREATE TABLE properties ("} + GetParam().columns + ")"));
+        auto selfCreated = makeStore(TABLE_NAME, TableProvisioning::SELF_CREATE);
+        auto external = makeStore(TABLE_NAME, TableProvisioning::EXTERNAL);
+
+        EXPECT_FALSE(selfCreated->init());
+        EXPECT_FALSE(external->init());
+        EXPECT_EQ(getLogger().count(LogsLevel::ERR), 2U);
+        EXPECT_TRUE(getLogger().contains(LogsLevel::ERR,
+                                         "The property table '" + TABLE_NAME +
+                                             "' does not have the expected schema"));
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        SchemaCheck,
+        SqlitePropertyStoreWrongSchemaTest,
+        ::testing::Values(
+            WrongSchemaCase{"KeyMissing", R"("name" TEXT PRIMARY KEY, "type" INTEGER, "value")"},
+            WrongSchemaCase{"TypeMissing", R"("key" TEXT PRIMARY KEY, "value")"},
+            WrongSchemaCase{"ValueMissing", R"("key" TEXT PRIMARY KEY, "type" INTEGER)"},
+            WrongSchemaCase{"KeyNeitherPrimaryNorUnique",
+                            R"("key" TEXT, "type" INTEGER, "value")"}),
+        [](const ::testing::TestParamInfo<WrongSchemaCase> &info) { return info.param.name; });
+
     TEST_F(SqlitePropertyStoreTest, InitFailsOnAClosedDatabase)
     {
         SqliteDbManager closedDb(getTmpDir() / "closed.sqlite",
@@ -426,15 +484,25 @@ namespace
         EXPECT_EQ(queryInt64("SELECT \"value\" FROM properties"), std::optional<std::int64_t>(0));
     }
 
-    TEST_F(SqlitePropertyStoreTest, NanReadsBackAsAbsent)
+    TEST_F(SqlitePropertyStoreTest, NanIsStoredAsNullAndReadsBackAsNan)
     {
         auto store = makeReadyStore();
 
         ASSERT_TRUE(store->set(KEY, StoredValue(std::numeric_limits<double>::quiet_NaN())));
-        EXPECT_EQ(store->get(KEY), std::nullopt);
+        EXPECT_EQ(queryText("SELECT typeof(\"value\") FROM properties"), "null");
+        const std::optional<StoredValue> readDouble = store->get(KEY);
+        ASSERT_TRUE(readDouble.has_value());
+        EXPECT_EQ(readDouble->type(), StoredType::DOUBLE);
+        EXPECT_TRUE(std::isnan(readDouble->asDouble().value()));
 
         ASSERT_TRUE(store->set(KEY, StoredValue(std::numeric_limits<float>::quiet_NaN())));
-        EXPECT_EQ(store->get(KEY), std::nullopt);
+        EXPECT_EQ(queryText("SELECT typeof(\"value\") FROM properties"), "null");
+        const std::optional<StoredValue> readFloat = store->get(KEY);
+        ASSERT_TRUE(readFloat.has_value());
+        EXPECT_EQ(readFloat->type(), StoredType::FLOAT);
+        EXPECT_TRUE(std::isnan(readFloat->asFloat().value()));
+
+        EXPECT_EQ(getLogger().count(LogsLevel::WARNING), 0U);
     }
 
     // -----------------------------------------------------------------------------------------
@@ -447,6 +515,7 @@ namespace
         const char *name;
         const char *typeLiteral;
         const char *valueLiteral;
+        /** @brief The end of the warning, after the key and the table name */
         const char *explanation;
     };
 
@@ -468,50 +537,115 @@ namespace
         insertRawRow(KEY, testCase.typeLiteral, testCase.valueLiteral);
 
         EXPECT_EQ(store->get(KEY), std::nullopt);
-        EXPECT_TRUE(getLogger().contains(LogsLevel::WARNING, testCase.explanation));
+        EXPECT_EQ(getLogger().count(LogsLevel::WARNING), 1U);
         EXPECT_TRUE(getLogger().contains(LogsLevel::WARNING,
                                          "The row of key '" + KEY + "' in table '" + TABLE_NAME +
-                                             "' cannot be read back"));
+                                             "'" + testCase.explanation));
     }
 
     INSTANTIATE_TEST_SUITE_P(
         StrictReading,
         SqlitePropertyStoreInvalidRowTest,
         ::testing::Values(
-            InvalidRowCase{"UnknownTag", "99", "1", "The type tag 99 is unknown"},
-            InvalidRowCase{"NegativeTag", "-1", "1", "The type tag -1 is unknown"},
-            InvalidRowCase{"TagOutOfIntRange", "1099511627776", "1", "is out of the int range"},
+            InvalidRowCase{
+                "UnknownTag", "99", "1", " (type tag 99) reads as absent: the type tag is unknown"},
+            InvalidRowCase{"NegativeTag",
+                           "-1",
+                           "1",
+                           " (type tag -1) reads as absent: the type tag is unknown"},
+            InvalidRowCase{"TagOutOfIntRange",
+                           "1099511627776",
+                           "1",
+                           " reads as absent: the type tag 1099511627776 is out of the int range"},
             InvalidRowCase{"TagNotAnInteger",
                            "'int'",
                            "1",
-                           "holds storage class TEXT where INTEGER is expected"},
-            InvalidRowCase{"Int8AboveMax", "1", "300", "The integer 300 does not fit"},
-            InvalidRowCase{"Int16BelowMin", "2", "-40000", "The integer -40000 does not fit"},
-            InvalidRowCase{
-                "Int32AboveMax", "3", "2147483648", "The integer 2147483648 does not fit"},
-            InvalidRowCase{"UInt8Negative", "5", "-1", "The integer -1 does not fit"},
-            InvalidRowCase{"UInt16AboveMax", "6", "65536", "The integer 65536 does not fit"},
-            InvalidRowCase{"UInt32Negative", "7", "-1", "The integer -1 does not fit"},
-            InvalidRowCase{"BoolNeitherZeroNorOne", "0", "2", "The boolean 2 is neither 0 nor 1"},
-            InvalidRowCase{
-                "BoolAsText", "0", "'true'", "holds storage class TEXT where INTEGER is expected"},
-            InvalidRowCase{
-                "IntegerAsText", "3", "'12'", "holds storage class TEXT where INTEGER is expected"},
-            InvalidRowCase{
-                "IntegerAsReal", "4", "1.5", "holds storage class REAL where INTEGER is expected"},
-            InvalidRowCase{
-                "UInt64AsText", "8", "'1'", "holds storage class TEXT where INTEGER is expected"},
-            InvalidRowCase{
-                "FloatAsInteger", "9", "1", "holds storage class INTEGER where REAL is expected"},
-            InvalidRowCase{"FloatOutOfRange", "9", "1e300", "is out of the float range"},
-            InvalidRowCase{
-                "DoubleAsInteger", "10", "1", "holds storage class INTEGER where REAL is expected"},
-            InvalidRowCase{
-                "StringAsInteger", "11", "5", "holds storage class INTEGER where TEXT is expected"},
-            InvalidRowCase{
-                "StringAsBlob", "11", "x'00ff'", "holds storage class BLOB where TEXT is expected"},
-            InvalidRowCase{
-                "NullValue", "11", "NULL", "holds storage class NULL where TEXT is expected"}),
+                           " reads as absent: the 'type' column holds storage class TEXT where "
+                           "INTEGER is expected"},
+            InvalidRowCase{"Int8AboveMax",
+                           "1",
+                           "300",
+                           " (type tag 1) reads as absent: the integer 300 does not fit its tagged "
+                           "type"},
+            InvalidRowCase{"Int16BelowMin",
+                           "2",
+                           "-40000",
+                           " (type tag 2) reads as absent: the integer -40000 does not fit its "
+                           "tagged type"},
+            InvalidRowCase{"Int32AboveMax",
+                           "3",
+                           "2147483648",
+                           " (type tag 3) reads as absent: the integer 2147483648 does not fit its "
+                           "tagged type"},
+            InvalidRowCase{"UInt8Negative",
+                           "5",
+                           "-1",
+                           " (type tag 5) reads as absent: the integer -1 does not fit its tagged "
+                           "type"},
+            InvalidRowCase{"UInt16AboveMax",
+                           "6",
+                           "65536",
+                           " (type tag 6) reads as absent: the integer 65536 does not fit its "
+                           "tagged type"},
+            InvalidRowCase{"UInt32Negative",
+                           "7",
+                           "-1",
+                           " (type tag 7) reads as absent: the integer -1 does not fit its tagged "
+                           "type"},
+            InvalidRowCase{"BoolNeitherZeroNorOne",
+                           "0",
+                           "2",
+                           " (type tag 0) reads as absent: the boolean 2 is neither 0 nor 1"},
+            InvalidRowCase{"BoolAsText",
+                           "0",
+                           "'true'",
+                           " (type tag 0) reads as absent: the 'value' column holds storage class "
+                           "TEXT where INTEGER is expected"},
+            InvalidRowCase{"IntegerAsText",
+                           "3",
+                           "'12'",
+                           " (type tag 3) reads as absent: the 'value' column holds storage class "
+                           "TEXT where INTEGER is expected"},
+            InvalidRowCase{"IntegerAsReal",
+                           "4",
+                           "1.5",
+                           " (type tag 4) reads as absent: the 'value' column holds storage class "
+                           "REAL where INTEGER is expected"},
+            InvalidRowCase{"UInt64AsText",
+                           "8",
+                           "'1'",
+                           " (type tag 8) reads as absent: the 'value' column holds storage class "
+                           "TEXT where INTEGER is expected"},
+            InvalidRowCase{"FloatAsInteger",
+                           "9",
+                           "1",
+                           " (type tag 9) reads as absent: the 'value' column holds storage class "
+                           "INTEGER where REAL is expected"},
+            InvalidRowCase{"FloatOutOfRange",
+                           "9",
+                           "1e300",
+                           " (type tag 9) reads as absent: the real 1e+300 is out of the float "
+                           "range"},
+            InvalidRowCase{"DoubleAsInteger",
+                           "10",
+                           "1",
+                           " (type tag 10) reads as absent: the 'value' column holds storage class "
+                           "INTEGER where REAL is expected"},
+            InvalidRowCase{"StringAsInteger",
+                           "11",
+                           "5",
+                           " (type tag 11) reads as absent: the 'value' column holds storage class "
+                           "INTEGER where TEXT is expected"},
+            InvalidRowCase{"StringAsBlob",
+                           "11",
+                           "x'00ff'",
+                           " (type tag 11) reads as absent: the 'value' column holds storage class "
+                           "BLOB where TEXT is expected"},
+            InvalidRowCase{"NullValue",
+                           "11",
+                           "NULL",
+                           " (type tag 11) reads as absent: the 'value' column holds storage class "
+                           "NULL where TEXT is expected"}),
         [](const ::testing::TestParamInfo<InvalidRowCase> &info) { return info.param.name; });
 
     TEST_F(SqlitePropertyStoreTest, MissingKeyReadsAsAbsentWithoutWarning)
@@ -757,6 +891,50 @@ namespace
         EXPECT_EQ(manager.count.get(), std::optional<std::int32_t>(42));
         EXPECT_EQ(queryText("SELECT typeof(\"value\") FROM properties WHERE \"key\" = 'count'"),
                   "integer");
+    }
+
+    /** @brief Property manager holding a property seeded with NaN in the test database */
+    class NanSeedPropertyManager : public AbsPropertyManager
+    {
+      public:
+        NanSeedPropertyManager(act::db::sqlite::SQLiteDbProtectService &service,
+                               act::logger::LoggerManager &logger)
+            : AbsPropertyManager(logger),
+              m_store(service, accessLogger(), TABLE_NAME, TableProvisioning::SELF_CREATE)
+        {
+        }
+
+        RProperty<double> ratio{*this, "ratio", Seed::of(std::numeric_limits<double>::quiet_NaN())};
+
+      protected:
+        [[nodiscard]] AbsPropertyStore &accessStore() override
+        {
+            return m_store;
+        }
+
+      private:
+        SqlitePropertyStore m_store;
+    };
+
+    TEST_F(SqlitePropertyStoreTest, ManagerDoesNotRewriteANanSeedAtTheNextStart)
+    {
+        {
+            NanSeedPropertyManager manager(getService(), getLoggerManager());
+            ASSERT_TRUE(manager.init());
+        }
+
+        // Record every update of the table, which the upsert of a seed realignment would fire
+        ASSERT_TRUE(getDb().exec("CREATE TABLE updates (\"key\" TEXT)"));
+        ASSERT_TRUE(getDb().exec("CREATE TRIGGER record_updates AFTER UPDATE ON properties "
+                                 "BEGIN INSERT INTO updates VALUES (new.\"key\"); END"));
+
+        NanSeedPropertyManager manager(getService(), getLoggerManager());
+        ASSERT_TRUE(manager.init());
+
+        EXPECT_EQ(getDb().execAndGetInt("SELECT COUNT(*) FROM updates"), std::optional<int>(0));
+        const std::optional<double> ratio = manager.ratio.get();
+        ASSERT_TRUE(ratio.has_value());
+        EXPECT_TRUE(std::isnan(*ratio));
     }
 
     TEST_F(SqlitePropertyStoreTest, ManagerRealignsAChangedSeed)

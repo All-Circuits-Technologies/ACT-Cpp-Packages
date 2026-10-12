@@ -168,13 +168,46 @@ namespace
         }
     }
 
+    /** @brief The row being read, so a rejected row is logged on a single line naming it */
+    struct RowContext
+    {
+        /** @brief The logger explaining a rejected row */
+        const act::foundation::AbsLogger &logger;
+
+        /** @brief The key of the row */
+        const std::string &key;
+
+        /** @brief The name of the table holding the row */
+        const std::string &tableName;
+
+        /** @brief The type tag of the row, once it is known to be an integer */
+        std::optional<std::int64_t> typeTag;
+    };
+
+    /**
+     * @brief Log that a row cannot be read back, and why
+     * @param row The row being read
+     * @param reason Why the row is rejected
+     */
+    void logRejectedRow(const RowContext &row, const std::string &reason)
+    {
+        auto stream = row.logger.warningStream();
+        stream << "The row of key '" << row.key << "' in table '" << row.tableName << "'";
+        if (row.typeTag.has_value())
+        {
+            stream << " (type tag " << *row.typeTag << ")";
+        }
+
+        stream << " reads as absent: " << reason;
+    }
+
     /**
      * @brief Log that a column does not hold the storage class its reader expects
-     * @param logger The logger to write to
+     * @param row The row being read
      * @param column The column
      * @param expected The SQLite name of the expected storage class
      */
-    void logStorageClassMismatch(const act::foundation::AbsLogger &logger,
+    void logStorageClassMismatch(const RowContext &row,
                                  const SQLite::Column &column,
                                  const char *expected)
     {
@@ -196,30 +229,32 @@ namespace
             actual = BlobStorageClass;
         }
 
-        logger.warningStream() << "The '" << column.getName() << "' column holds storage class "
-                               << actual << " where " << expected << " is expected";
+        logRejectedRow(row,
+                       std::format("the '{}' column holds storage class {} where {} is expected",
+                                   column.getName(),
+                                   actual,
+                                   expected));
     }
 
     /**
      * @brief Read an integer column into a value of the tagged type
-     * @param logger The logger explaining a rejected column
+     * @param row The row being read
      * @param column The value column
      * @return The value, or an empty optional if the column is not an integer or does not fit @p T
      */
     template <typename T>
-    std::optional<StoredValue> readInteger(const act::foundation::AbsLogger &logger,
-                                           const SQLite::Column &column)
+    std::optional<StoredValue> readInteger(const RowContext &row, const SQLite::Column &column)
     {
         if (!column.isInteger())
         {
-            logStorageClassMismatch(logger, column, IntegerStorageClass);
+            logStorageClassMismatch(row, column, IntegerStorageClass);
             return std::nullopt;
         }
 
         const std::int64_t raw = column.getInt64();
         if (!std::in_range<T>(raw))
         {
-            logger.warningStream() << "The integer " << raw << " does not fit its tagged type";
+            logRejectedRow(row, std::format("the integer {} does not fit its tagged type", raw));
             return std::nullopt;
         }
 
@@ -228,16 +263,15 @@ namespace
 
     /**
      * @brief Read a boolean column
-     * @param logger The logger explaining a rejected column
+     * @param row The row being read
      * @param column The value column
      * @return The value, or an empty optional if the column is not an integer equal to 0 or 1
      */
-    std::optional<StoredValue> readBool(const act::foundation::AbsLogger &logger,
-                                        const SQLite::Column &column)
+    std::optional<StoredValue> readBool(const RowContext &row, const SQLite::Column &column)
     {
         if (!column.isInteger())
         {
-            logStorageClassMismatch(logger, column, IntegerStorageClass);
+            logStorageClassMismatch(row, column, IntegerStorageClass);
             return std::nullopt;
         }
 
@@ -252,24 +286,25 @@ namespace
             return StoredValue(false);
         }
 
-        logger.warningStream() << "The boolean " << raw << " is neither "
-                               << act::db::sqlite::SQLiteDbConstants::FALSE << " nor "
-                               << act::db::sqlite::SQLiteDbConstants::TRUE;
+        logRejectedRow(row,
+                       std::format("the boolean {} is neither {} nor {}",
+                                   raw,
+                                   static_cast<int>(act::db::sqlite::SQLiteDbConstants::FALSE),
+                                   static_cast<int>(act::db::sqlite::SQLiteDbConstants::TRUE)));
         return std::nullopt;
     }
 
     /**
      * @brief Read an unsigned 64 bits integer column, stored as its signed reinterpretation
-     * @param logger The logger explaining a rejected column
+     * @param row The row being read
      * @param column The value column
      * @return The value, or an empty optional if the column is not an integer
      */
-    std::optional<StoredValue> readUInt64(const act::foundation::AbsLogger &logger,
-                                          const SQLite::Column &column)
+    std::optional<StoredValue> readUInt64(const RowContext &row, const SQLite::Column &column)
     {
         if (!column.isInteger())
         {
-            logStorageClassMismatch(logger, column, IntegerStorageClass);
+            logStorageClassMismatch(row, column, IntegerStorageClass);
             return std::nullopt;
         }
 
@@ -278,17 +313,22 @@ namespace
 
     /**
      * @brief Read a single precision floating point column
-     * @param logger The logger explaining a rejected column
+     * @note A `NULL` reads as NaN, see @ref readDouble.
+     * @param row The row being read
      * @param column The value column
-     * @return The value, or an empty optional if the column is not a real or a finite value is out
-     * of the float range
+     * @return The value, or an empty optional if the column is neither a real nor `NULL`, or a
+     * finite value is out of the float range
      */
-    std::optional<StoredValue> readFloat(const act::foundation::AbsLogger &logger,
-                                         const SQLite::Column &column)
+    std::optional<StoredValue> readFloat(const RowContext &row, const SQLite::Column &column)
     {
+        if (column.isNull())
+        {
+            return StoredValue(std::numeric_limits<float>::quiet_NaN());
+        }
+
         if (!column.isFloat())
         {
-            logStorageClassMismatch(logger, column, RealStorageClass);
+            logStorageClassMismatch(row, column, RealStorageClass);
             return std::nullopt;
         }
 
@@ -296,7 +336,7 @@ namespace
         if (std::isfinite(raw) && (raw > static_cast<double>(std::numeric_limits<float>::max()) ||
                                    raw < static_cast<double>(std::numeric_limits<float>::lowest())))
         {
-            logger.warningStream() << "The real " << raw << " is out of the float range";
+            logRejectedRow(row, std::format("the real {} is out of the float range", raw));
             return std::nullopt;
         }
 
@@ -305,16 +345,23 @@ namespace
 
     /**
      * @brief Read a double precision floating point column
-     * @param logger The logger explaining a rejected column
+     * @note SQLite stores a NaN as `NULL`, which is the only `NULL` the store writes: reading it
+     *       back as NaN keeps the round trip of a NaN value. The NaN payload and sign are lost,
+     *       which @ref StoredValue equality ignores.
+     * @param row The row being read
      * @param column The value column
-     * @return The value, or an empty optional if the column is not a real
+     * @return The value, or an empty optional if the column is neither a real nor `NULL`
      */
-    std::optional<StoredValue> readDouble(const act::foundation::AbsLogger &logger,
-                                          const SQLite::Column &column)
+    std::optional<StoredValue> readDouble(const RowContext &row, const SQLite::Column &column)
     {
+        if (column.isNull())
+        {
+            return StoredValue(std::numeric_limits<double>::quiet_NaN());
+        }
+
         if (!column.isFloat())
         {
-            logStorageClassMismatch(logger, column, RealStorageClass);
+            logStorageClassMismatch(row, column, RealStorageClass);
             return std::nullopt;
         }
 
@@ -323,16 +370,15 @@ namespace
 
     /**
      * @brief Read a string column
-     * @param logger The logger explaining a rejected column
+     * @param row The row being read
      * @param column The value column
      * @return The value, or an empty optional if the column is not a text
      */
-    std::optional<StoredValue> readString(const act::foundation::AbsLogger &logger,
-                                          const SQLite::Column &column)
+    std::optional<StoredValue> readString(const RowContext &row, const SQLite::Column &column)
     {
         if (!column.isText())
         {
-            logStorageClassMismatch(logger, column, TextStorageClass);
+            logStorageClassMismatch(row, column, TextStorageClass);
             return std::nullopt;
         }
 
@@ -341,57 +387,60 @@ namespace
 
     /**
      * @brief Rebuild a stored value from the columns of a row
-     * @param logger The logger explaining a rejected row
+     * @note A rejected row is logged once, with its key, its table and the reason.
+     * @param row The row being read
      * @param typeColumn The type tag column
      * @param valueColumn The value column
      * @return The value, or an empty optional if the tag is unknown or the value does not match it
      */
-    std::optional<StoredValue> readRow(const act::foundation::AbsLogger &logger,
+    std::optional<StoredValue> readRow(const RowContext &row,
                                        const SQLite::Column &typeColumn,
                                        const SQLite::Column &valueColumn)
     {
         if (!typeColumn.isInteger())
         {
-            logStorageClassMismatch(logger, typeColumn, IntegerStorageClass);
+            logStorageClassMismatch(row, typeColumn, IntegerStorageClass);
             return std::nullopt;
         }
 
         const std::int64_t typeTag = typeColumn.getInt64();
         if (!std::in_range<int>(typeTag))
         {
-            logger.warningStream() << "The type tag " << typeTag << " is out of the int range";
+            logRejectedRow(row, std::format("the type tag {} is out of the int range", typeTag));
             return std::nullopt;
         }
+
+        const RowContext taggedRow{row.logger, row.key, row.tableName, typeTag};
 
         // The underlying type is fixed, so any int is a valid StoredType; unknown tags hit default
         switch (static_cast<StoredType>(static_cast<int>(typeTag)))
         {
             case StoredType::BOOL:
-                return readBool(logger, valueColumn);
+                return readBool(taggedRow, valueColumn);
             case StoredType::INT8:
-                return readInteger<std::int8_t>(logger, valueColumn);
+                return readInteger<std::int8_t>(taggedRow, valueColumn);
             case StoredType::INT16:
-                return readInteger<std::int16_t>(logger, valueColumn);
+                return readInteger<std::int16_t>(taggedRow, valueColumn);
             case StoredType::INT32:
-                return readInteger<std::int32_t>(logger, valueColumn);
+                return readInteger<std::int32_t>(taggedRow, valueColumn);
             case StoredType::INT64:
-                return readInteger<std::int64_t>(logger, valueColumn);
+                return readInteger<std::int64_t>(taggedRow, valueColumn);
             case StoredType::UINT8:
-                return readInteger<std::uint8_t>(logger, valueColumn);
+                return readInteger<std::uint8_t>(taggedRow, valueColumn);
             case StoredType::UINT16:
-                return readInteger<std::uint16_t>(logger, valueColumn);
+                return readInteger<std::uint16_t>(taggedRow, valueColumn);
             case StoredType::UINT32:
-                return readInteger<std::uint32_t>(logger, valueColumn);
+                return readInteger<std::uint32_t>(taggedRow, valueColumn);
             case StoredType::UINT64:
-                return readUInt64(logger, valueColumn);
+                return readUInt64(taggedRow, valueColumn);
             case StoredType::FLOAT:
-                return readFloat(logger, valueColumn);
+                return readFloat(taggedRow, valueColumn);
             case StoredType::DOUBLE:
-                return readDouble(logger, valueColumn);
+                return readDouble(taggedRow, valueColumn);
             case StoredType::STRING:
-                return readString(logger, valueColumn);
+                return readString(taggedRow, valueColumn);
             default:
-                logger.warningStream() << "The type tag " << typeTag << " is unknown";
+                logRejectedRow(taggedRow, "the type tag is unknown");
                 return std::nullopt;
         }
     }
@@ -416,15 +465,18 @@ SqlitePropertyStore::SqlitePropertyStore(act::db::sqlite::SQLiteDbProtectService
 
 bool SqlitePropertyStore::init()
 {
+    bool tableReady = false;
     switch (m_provisioning)
     {
         case TableProvisioning::SELF_CREATE:
-            return createTable();
+            tableReady = createTable();
+            break;
         case TableProvisioning::EXTERNAL:
-            return checkTableExists();
+            tableReady = checkTableExists();
+            break;
     }
 
-    return false;
+    return tableReady && checkTableSchema();
 }
 
 std::optional<StoredValue> SqlitePropertyStore::get(const std::string &key) const
@@ -438,16 +490,10 @@ std::optional<StoredValue> SqlitePropertyStore::get(const std::string &key) cons
                 return std::nullopt;
             }
 
-            const SQLite::Column typeColumn = statement.getColumn(TypeResultIndex);
-            auto value = readRow(*m_logger, typeColumn, statement.getColumn(ValueResultIndex));
-            if (!value.has_value())
-            {
-                m_logger->warningStream() << "The row of key '" << key << "' in table '"
-                                          << m_tableName << "' cannot be read back (type tag "
-                                          << typeColumn.getString() << "), the key reads as absent";
-            }
-
-            return value;
+            const RowContext row{*m_logger, key, m_tableName, std::nullopt};
+            return readRow(row,
+                           statement.getColumn(TypeResultIndex),
+                           statement.getColumn(ValueResultIndex));
         },
         "SqlitePropertyStore::get",
         false);
@@ -531,6 +577,33 @@ bool SqlitePropertyStore::checkTableExists()
     }
 
     return true;
+}
+
+bool SqlitePropertyStore::checkTableSchema()
+{
+    // Nothing else catches a table of another schema before the first query uses it:
+    // - `CREATE TABLE IF NOT EXISTS` keeps an existing table of the same name, whatever its schema,
+    //   and an external table is only looked up by name;
+    // - SQLite reads a double quoted identifier which names no column as a string literal, so on a
+    //   table without a "key" column, `WHERE "key" = ?` compares the literal 'key' to the bound
+    //   key, and the read and erase queries silently match the wrong rows.
+    // Preparing the upsert compiles it against the actual table without running it: it fails if a
+    // column is missing, or if "key" is neither the primary key nor unique, as its ON CONFLICT
+    // clause requires. The declared column types are not checked.
+    const bool valid = m_dbProtectService.protectQuery(
+        [this](act::db::sqlite::ASqLiteDbManager &db) {
+            const SQLite::Statement statement(*db.getHandle(), m_setQuery);
+            return true;
+        },
+        "SqlitePropertyStore::checkTableSchema",
+        false);
+    if (!valid)
+    {
+        m_logger->errorStream() << "The property table '" << m_tableName
+                                << "' does not have the expected schema";
+    }
+
+    return valid;
 }
 
 } // namespace act::property

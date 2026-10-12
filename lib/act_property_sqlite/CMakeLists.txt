@@ -8,7 +8,7 @@
 # A property store persisting the properties in a key/value table of a SQLite
 # database, either an application database or a dedicated one.
 #
-# Dependencies: act_property_core, act_db_core, act_db_sqlite, act_logger
+# Dependencies: act_property_core, act_db_core, act_db_sqlite, act_foundation
 # External: SQLiteCpp (libsqlitecpp-dev)
 # -----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ target_link_libraries(act_property_sqlite
     act_property_core
     act_db_core
     act_db_sqlite
-    act_logger
+    act_foundation
     PRIVATE
     SQLiteCpp
 )

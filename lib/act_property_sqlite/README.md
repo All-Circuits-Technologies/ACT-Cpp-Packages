@@ -20,7 +20,7 @@ One class covers both deployments, since a dedicated database is a key/value tab
 - act_property_core
 - act_db_core
 - act_db_sqlite
-- act_logger
+- act_foundation
 - SQLiteCpp (libsqlitecpp-dev)
 
 ## Components
@@ -44,23 +44,30 @@ CREATE TABLE IF NOT EXISTS "<table>" (
 
 - `type` holds the `StoredType` tag of the value.
 - `value` has no declared type, so it keeps the SQLite storage class it is written with: `INTEGER`
-  for the booleans (0 or 1) and the integers, `REAL` for the floating point values, `TEXT` for the
-  strings.
+  for the booleans (0 or 1) and the integers, `REAL` for the floating point values (but a NaN, see
+  below), `TEXT` for the strings.
 - A `UINT64` value is written as the two's complement reinterpretation of the value as a signed
   integer, since a SQLite integer is signed: an external reader sees a negative number for any
   value above `INT64_MAX`, and must reinterpret the column as unsigned when the tag is `UINT64`.
 
 Reading is strict: a row whose tag is unknown, whose storage class does not match its tag, or whose
-integer does not fit the tagged type reads as absent, and the mismatch is logged. SQLite stores a
-NaN as `NULL`, so a NaN written to the store reads back as absent.
+integer does not fit the tagged type reads as absent, and the mismatch is logged.
+
+SQLite stores a NaN as `NULL`, so a `NULL` tagged `FLOAT` or `DOUBLE` reads back as a quiet NaN: a
+NaN value round trips, without its payload and sign. A NaN seed is then seen as aligned, and is not
+written again at every start.
 
 ## Table provisioning
 
 - `TableProvisioning::SELF_CREATE`: `init()` runs the `CREATE TABLE IF NOT EXISTS` above. The store
   is self-contained, which fits a dedicated database.
-- `TableProvisioning::EXTERNAL`: `init()` only checks that the table exists, and fails otherwise.
+- `TableProvisioning::EXTERNAL`: `init()` checks that the table exists, and fails otherwise.
   The migrations of the database owner create the table with the schema above, which keeps a single
   source of truth for the migrations.
+
+In both modes, `init()` then checks that the table has the three columns and that `key` is its
+primary key (or unique), and fails otherwise: an existing table of the same name but of another
+schema is caught at init, instead of at the first query.
 
 The table name is always given by the application. It is quoted in every query, so any name is
 accepted. Two stores may target two tables, or the same one.
@@ -99,7 +106,14 @@ class SettingsManager : public act::property::AbsPropertyManager
 ```
 
 No query opens a transaction: each one is a single statement, hence already atomic, and the store
-stays usable while the caller holds a transaction on the same connection.
+stays usable while the caller holds a transaction on the same connection, from the same thread.
+
+## Thread safety
+
+The store does not handle thread safety: it takes no lock, and is only as safe as the connection it
+goes through. In particular, a query run while another thread holds a transaction on the same
+connection joins that transaction, and is undone if it rolls back. A store shared between threads
+needs its accesses serialized by its owner.
 
 ## CMake integration
 

@@ -20,8 +20,8 @@ enum class TableProvisioning
     SELF_CREATE,
 
     /**
-     * @brief The table is created by the migrations of the database owner; the store only checks at
-     *        init that it exists. Keeps a single source of truth for the schema.
+     * @brief The table is created by the migrations of the database owner; the store never creates
+     *        it, and checks at init that it exists. Keeps a single source of truth for the schema.
      */
     EXTERNAL,
 };
