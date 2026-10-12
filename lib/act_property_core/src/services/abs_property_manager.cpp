@@ -52,6 +52,11 @@ void AbsPropertyManager::registerProperty(AbsRegisteredProperty &property)
     m_properties.push_back(&property);
 }
 
+void AbsPropertyManager::unregisterProperty(AbsRegisteredProperty &property)
+{
+    std::erase(m_properties, &property);
+}
+
 act::foundation::AbsLogger &AbsPropertyManager::accessLogger() const
 {
     return *m_logger;

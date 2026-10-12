@@ -5,6 +5,9 @@
 #pragma once
 
 #include "act_property_core/properties/r_property.hpp"
+#include "act_property_core/stored_value.hpp"
+
+#include <optional>
 
 namespace act::property
 {
@@ -15,8 +18,10 @@ namespace act::property
  * The write capability is carried by the type, so it is checked at compile time: a consumer given
  * only a `const RProperty<T> &` cannot write. It inherits every constructor of @ref RProperty.
  *
- * @note A seed goes with a read only descriptor: because a seed is realigned at each start, a
- *       runtime write of a seeded property would be overwritten at the next boot.
+ * @note A seeded read and write descriptor holds a temporary override: a runtime write lasts for
+ *       the lifetime of the application, and the seed is realigned at the next start. Each write
+ *       still reaches the store, so it costs a flash write and external readers see the override
+ *       until then.
  *
  * @tparam T The application type of the value
  */
@@ -30,12 +35,14 @@ class RWProperty : public RProperty<T>
     /**
      * @brief Write the value into the store (upsert)
      * @param value The value to store
-     * @return true on success, false otherwise
+     * @return true on success, false if the codec cannot encode @p value or the write failed
      */
     bool set(const T &value);
 
     /**
-     * @brief Reset the value to its provider value, or remove the key when there is no provider.
+     * @brief Reset the value: write the seed back if there is one, remove the key otherwise.
+     * @note Removing the key lets a read fall back on the default, if any, as the default itself is
+     *       never written.
      * @return true on success, false otherwise
      */
     bool reset();
@@ -44,19 +51,18 @@ class RWProperty : public RProperty<T>
 template <typename T>
 bool RWProperty<T>::set(const T &value)
 {
-    const auto &encoder = this->getEncoder();
-    return this->accessStore().set(this->getKey(), encoder(value));
+    const std::optional<StoredValue> encoded = this->encode(value);
+    if (!encoded.has_value())
+    {
+        return false;
+    }
+
+    return this->accessStore().set(this->getKey(), *encoded);
 }
 
 template <typename T>
 bool RWProperty<T>::reset()
 {
-    const auto &fallback = this->getFallback();
-    if (fallback.has_value())
-    {
-        return set(fallback->evaluate());
-    }
-
     const auto &seed = this->getSeed();
     if (seed.has_value())
     {

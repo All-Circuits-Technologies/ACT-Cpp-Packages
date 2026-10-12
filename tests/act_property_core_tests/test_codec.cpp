@@ -8,7 +8,8 @@
  *
  * The concept is a compile-time contract, so most checks are static assertions: the shipped codecs
  * and a hand written one model it for their value type, while a codec for another type, or whose
- * members have the wrong signatures, does not. A runtime test then uses a hand written codec.
+ * members have the wrong signatures (an encode which cannot report a failure included), does not.
+ * A runtime test then uses a hand written codec.
  */
 
 #include "act_property_core/codecs/codec.hpp"
@@ -49,7 +50,7 @@ namespace
     /** @brief Codec written without any base class: it only exposes the two members */
     struct VersionCodec
     {
-        [[nodiscard]] StoredValue encode(const Version &value) const
+        [[nodiscard]] std::optional<StoredValue> encode(const Version &value) const
         {
             return StoredValue{std::int32_t{(value.major * VERSION_BASE) + value.minor}};
         }
@@ -69,16 +70,30 @@ namespace
     /** @brief Only knows how to encode */
     struct EncodeOnlyCodec
     {
+        [[nodiscard]] std::optional<StoredValue> encode(const int &value) const
+        {
+            return StoredValue{value};
+        }
+    };
+
+    /** @brief Encodes into a stored value itself, so it cannot report an encode failure */
+    struct NonOptionalEncodeCodec
+    {
         [[nodiscard]] StoredValue encode(const int &value) const
         {
             return StoredValue{value};
+        }
+
+        [[nodiscard]] std::optional<int> decode(const StoredValue &raw) const
+        {
+            return raw.asInt32();
         }
     };
 
     /** @brief Decodes into the value type itself instead of an optional */
     struct NonOptionalDecodeCodec
     {
-        [[nodiscard]] StoredValue encode(const int &value) const
+        [[nodiscard]] std::optional<StoredValue> encode(const int &value) const
         {
             return StoredValue{value};
         }
@@ -106,7 +121,7 @@ namespace
     /** @brief Members usable only on a mutable codec */
     struct NonConstCodec
     {
-        StoredValue encode(const int &value)
+        std::optional<StoredValue> encode(const int &value)
         {
             return StoredValue{value};
         }
@@ -129,6 +144,7 @@ namespace
     static_assert(!CodecFor<EnumCodec<Mode>, int>);
     static_assert(!CodecFor<VersionCodec, Mode>);
     static_assert(!CodecFor<EncodeOnlyCodec, int>);
+    static_assert(!CodecFor<NonOptionalEncodeCodec, int>);
     static_assert(!CodecFor<NonOptionalDecodeCodec, int>);
     static_assert(!CodecFor<StringEncodeCodec, int>);
     static_assert(!CodecFor<NonConstCodec, int>);
@@ -138,7 +154,10 @@ namespace
         const VersionCodec codec;
         constexpr Version version{2, 7};
 
-        const std::optional<Version> decoded = codec.decode(codec.encode(version));
+        const std::optional<StoredValue> raw = codec.encode(version);
+        ASSERT_TRUE(raw.has_value());
+
+        const std::optional<Version> decoded = codec.decode(*raw);
 
         ASSERT_TRUE(decoded.has_value());
         EXPECT_EQ(decoded->major, version.major);

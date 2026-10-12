@@ -31,9 +31,9 @@ struct ScalarCodec
     /**
      * @brief Encode a value into its native stored representation
      * @param value The value to encode
-     * @return The stored value carrying the type tag of `T`
+     * @return The stored value carrying the type tag of `T`; a scalar always encodes
      */
-    [[nodiscard]] StoredValue encode(const T &value) const;
+    [[nodiscard]] std::optional<StoredValue> encode(const T &value) const;
 
     /**
      * @brief Decode a stored value back into the application type
@@ -44,7 +44,7 @@ struct ScalarCodec
 };
 
 template <StoredScalar T>
-[[nodiscard]] StoredValue ScalarCodec<T>::encode(const T &value) const
+[[nodiscard]] std::optional<StoredValue> ScalarCodec<T>::encode(const T &value) const
 {
     return StoredValue{value};
 }

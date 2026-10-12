@@ -57,10 +57,11 @@ namespace
     {
         const auto codec = serializedCodec<Contact>(&Serialize, &Parse);
 
-        const StoredValue raw = codec.encode(Contact{"Ada", "Lovelace"});
+        const std::optional<StoredValue> raw = codec.encode(Contact{"Ada", "Lovelace"});
 
-        EXPECT_EQ(raw.type(), StoredType::STRING);
-        EXPECT_EQ(raw.asString(), std::optional<std::string>("Ada;Lovelace"));
+        ASSERT_TRUE(raw.has_value());
+        EXPECT_EQ(raw->type(), StoredType::STRING);
+        EXPECT_EQ(raw->asString(), std::optional<std::string>("Ada;Lovelace"));
     }
 
     TEST(SerializedCodecTest, DecodeGivesBackTheEncodedObject)
@@ -68,7 +69,10 @@ namespace
         const SerializedCodec<Contact> codec(&Serialize, &Parse);
         const Contact contact{"Alan", "Turing"};
 
-        EXPECT_EQ(codec.decode(codec.encode(contact)), std::optional<Contact>(contact));
+        const std::optional<StoredValue> raw = codec.encode(contact);
+
+        ASSERT_TRUE(raw.has_value());
+        EXPECT_EQ(codec.decode(*raw), std::optional<Contact>(contact));
     }
 
     TEST(SerializedCodecTest, DeserializerFailureDecodesToNothing)

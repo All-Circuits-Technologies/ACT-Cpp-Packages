@@ -162,7 +162,10 @@ namespace
 
         for (const auto &value : ScalarSample<TypeParam>::Values())
         {
-            EXPECT_EQ(codec.encode(value).type(), ScalarSample<TypeParam>::TAG);
+            const std::optional<StoredValue> raw = codec.encode(value);
+
+            ASSERT_TRUE(raw.has_value());
+            EXPECT_EQ(raw->type(), ScalarSample<TypeParam>::TAG);
         }
     }
 
@@ -172,8 +175,10 @@ namespace
 
         for (const auto &value : ScalarSample<TypeParam>::Values())
         {
-            EXPECT_EQ(codec.decode(codec.encode(value)),
-                      std::optional<TypeParam>(TypeParam{value}));
+            const std::optional<StoredValue> raw = codec.encode(value);
+
+            ASSERT_TRUE(raw.has_value());
+            EXPECT_EQ(codec.decode(*raw), std::optional<TypeParam>(TypeParam{value}));
         }
     }
 

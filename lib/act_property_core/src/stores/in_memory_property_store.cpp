@@ -4,6 +4,8 @@
 
 #include "act_property_core/stores/in_memory_property_store.hpp"
 
+#include <mutex>
+
 namespace act::property
 {
 
@@ -14,6 +16,7 @@ bool InMemoryPropertyStore::init()
 
 std::optional<StoredValue> InMemoryPropertyStore::get(const std::string &key) const
 {
+    const std::shared_lock lock(m_mutex);
     const auto it = m_values.find(key);
     if (it == m_values.cend())
     {
@@ -25,18 +28,21 @@ std::optional<StoredValue> InMemoryPropertyStore::get(const std::string &key) co
 
 bool InMemoryPropertyStore::set(const std::string &key, const StoredValue &value)
 {
+    const std::unique_lock lock(m_mutex);
     m_values.insert_or_assign(key, value);
     return true;
 }
 
 bool InMemoryPropertyStore::erase(const std::string &key)
 {
+    const std::unique_lock lock(m_mutex);
     m_values.erase(key);
     return true;
 }
 
 bool InMemoryPropertyStore::clearAll()
 {
+    const std::unique_lock lock(m_mutex);
     m_values.clear();
     return true;
 }

@@ -34,11 +34,11 @@ namespace act::property
  * Descriptors only know the manager through the @ref AbsPropertyRegistry capability, inherited as a
  * protected base: a concrete manager can hand `*this` to the descriptors it declares as members,
  * while code holding a reference to the manager can neither reach the raw store nor register
- * descriptors of its own. Each descriptor registers itself at construction and reaches the store
- * lazily through @ref AbsPropertyRegistry::accessStore, only at init and at access time. That
- * indirection resolves the construction order trap: the base holds no reference to a store member
- * that may not be constructed yet, it asks for the store once it exists. The concrete manager owns
- * the store and provides @ref AbsPropertyRegistry::accessStore.
+ * descriptors of its own. Each descriptor registers itself at construction, unregisters itself at
+ * destruction, and reaches the store lazily through @ref AbsPropertyRegistry::accessStore, only at
+ * init and at access time. That indirection resolves the construction order trap: the base holds
+ * no reference to a store member that may not be constructed yet, it asks for the store once it
+ * exists. The concrete manager owns the store and provides @ref AbsPropertyRegistry::accessStore.
  *
  * In the other direction, the manager only knows a descriptor through the
  * @ref AbsRegisteredProperty capability, which the descriptor hands over at registration: the
@@ -60,20 +60,22 @@ class AbsPropertyManager : public act::foundation::AbsManager, protected AbsProp
 
     /**
      * @brief Initialize the store, then seed and realign every registered descriptor.
+     * @note It stops at the first failure: the seeds of the following descriptors are not
+     *       materialized, and the manager is not usable.
      * @return true if the store initialized and every seed was materialized, false otherwise
      */
     bool init() override;
 
   protected:
-    /**
-     * @brief Access the manager sub-logger
-     * @return The logger
-     */
-    [[nodiscard]] act::foundation::AbsLogger &accessLogger() const;
+    /** @copydoc AbsPropertyRegistry::accessLogger */
+    [[nodiscard]] act::foundation::AbsLogger &accessLogger() const override;
 
   private:
     /** @copydoc AbsPropertyRegistry::registerProperty */
     void registerProperty(AbsRegisteredProperty &property) override;
+
+    /** @copydoc AbsPropertyRegistry::unregisterProperty */
+    void unregisterProperty(AbsRegisteredProperty &property) override;
 
   private:
     /** @brief The registered descriptors (not owned) */

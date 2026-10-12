@@ -18,9 +18,19 @@ AbsPropertyBase::AbsPropertyBase(AbsPropertyRegistry &registry, std::string key)
     m_registry.registerProperty(*this);
 }
 
+AbsPropertyBase::~AbsPropertyBase()
+{
+    m_registry.unregisterProperty(*this);
+}
+
 AbsPropertyStore &AbsPropertyBase::accessStore() const
 {
     return m_registry.accessStore();
+}
+
+act::foundation::AbsLogger &AbsPropertyBase::accessLogger() const
+{
+    return m_registry.accessLogger();
 }
 
 } // namespace act::property

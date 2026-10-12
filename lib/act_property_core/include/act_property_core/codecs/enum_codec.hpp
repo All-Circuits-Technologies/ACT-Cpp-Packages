@@ -9,6 +9,7 @@
 #include <initializer_list>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -21,19 +22,19 @@ namespace act::property
  * The codec is built from a value <-> name mapping. Storing the name rather than the numeric value
  * keeps the stored data readable and, above all, robust to reordering of the enumerators: an
  * unknown name (or a stored value whose tag is not a string) decodes to an empty optional, so a
- * corrupted or outdated entry degrades to "absent" instead of crashing or yielding a wrong value.
+ * corrupted or outdated entry reads as absent instead of crashing or yielding a wrong value. An
+ * enumerator missing from the mapping fails to encode, so writing it fails instead of storing a
+ * name that could never be read back.
  *
  * @tparam E The enumeration type
  */
 template <class E>
+    requires std::is_enum_v<E>
 class EnumCodec
 {
   public:
     /** @brief One value <-> name association */
     using Mapping = std::pair<E, std::string>;
-
-    /** @brief Build an empty codec (decodes and encodes nothing until a mapping is provided) */
-    EnumCodec() = default;
 
     /**
      * @brief Build a codec from a value <-> name mapping
@@ -48,9 +49,10 @@ class EnumCodec
     /**
      * @brief Encode an enumerator into its stored name
      * @param value The enumerator to encode
-     * @return A string stored value holding the name, or an empty name if the enumerator is unknown
+     * @return A string stored value holding the name, or an empty optional if the enumerator is
+     *         missing from the mapping
      */
-    [[nodiscard]] StoredValue encode(const E &value) const;
+    [[nodiscard]] std::optional<StoredValue> encode(E value) const;
 
     /**
      * @brief Decode a stored name back into its enumerator
@@ -66,7 +68,8 @@ class EnumCodec
 };
 
 template <typename E>
-[[nodiscard]] StoredValue EnumCodec<E>::encode(const E &value) const
+    requires std::is_enum_v<E>
+[[nodiscard]] std::optional<StoredValue> EnumCodec<E>::encode(E value) const
 {
     for (const Mapping &mapping : m_mappings)
     {
@@ -76,10 +79,11 @@ template <typename E>
         }
     }
 
-    return StoredValue{std::string{}};
+    return std::nullopt;
 }
 
 template <typename E>
+    requires std::is_enum_v<E>
 [[nodiscard]] std::optional<E> EnumCodec<E>::decode(const StoredValue &raw) const
 {
     const std::optional<std::string> name = raw.asString();

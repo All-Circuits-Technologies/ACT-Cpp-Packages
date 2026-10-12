@@ -43,8 +43,12 @@ class AbsPropertyStore : public act::foundation::AbsService
 
     /**
      * @brief Read the raw value stored for a key
+     * @note A read error (I/O error, locked database, ...) cannot be told apart from an absent key:
+     *       it reads as absent, so a descriptor then falls back on its default, and a seed is
+     *       written again at init. An implementation must log such an error, as it is the only
+     *       place which can tell them apart.
      * @param key The key to read
-     * @return The stored value, or an empty optional if the key is absent
+     * @return The stored value, or an empty optional if the key is absent or cannot be read
      */
     [[nodiscard]] virtual std::optional<StoredValue> get(const std::string &key) const = 0;
 

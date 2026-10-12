@@ -6,9 +6,10 @@
  * @file test_enum_codec.cpp
  * @brief Unit tests of EnumCodec.
  *
- * An enumerator is stored as its name in a string value, an unknown enumerator as an empty name;
- * a known name decodes back to its enumerator, while an unknown name or a value which is not a
- * string decodes to nothing.
+ * An enumerator is stored as its name in a string value, while an enumerator missing from the
+ * mapping fails to encode; a known name decodes back to its enumerator, while an unknown name or a
+ * value which is not a string decodes to nothing. Static assertions check that the codec only
+ * accepts an enumeration and cannot be built without a mapping.
  */
 
 #include "act_property_core/codecs/enum_codec.hpp"
@@ -20,6 +21,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 namespace act::property
 {
@@ -33,6 +35,15 @@ namespace
         DE_DE,
     };
 
+    /** @brief Tells whether EnumCodec accepts `T` as its value type */
+    template <class T>
+    concept EnumCodecAccepts = requires { typename EnumCodec<T>; };
+
+    static_assert(EnumCodecAccepts<Locale>);
+    static_assert(!EnumCodecAccepts<int>);
+    static_assert(!EnumCodecAccepts<std::string>);
+    static_assert(!std::is_default_constructible_v<EnumCodec<Locale>>);
+
     /** @brief Codec knowing the first two locales only */
     EnumCodec<Locale> MakeLocaleCodec()
     {
@@ -43,17 +54,18 @@ namespace
     {
         const EnumCodec<Locale> codec = MakeLocaleCodec();
 
-        const StoredValue raw = codec.encode(Locale::FR_FR);
+        const std::optional<StoredValue> raw = codec.encode(Locale::FR_FR);
 
-        EXPECT_EQ(raw.type(), StoredType::STRING);
-        EXPECT_EQ(raw.asString(), std::optional<std::string>("fr_FR"));
+        ASSERT_TRUE(raw.has_value());
+        EXPECT_EQ(raw->type(), StoredType::STRING);
+        EXPECT_EQ(raw->asString(), std::optional<std::string>("fr_FR"));
     }
 
-    TEST(EnumCodecTest, EncodeOfAnUnknownEnumeratorStoresAnEmptyName)
+    TEST(EnumCodecTest, EncodeOfAnEnumeratorMissingFromTheMappingFails)
     {
         const EnumCodec<Locale> codec = MakeLocaleCodec();
 
-        EXPECT_EQ(codec.encode(Locale::DE_DE).asString(), std::optional<std::string>(""));
+        EXPECT_EQ(codec.encode(Locale::DE_DE), std::nullopt);
     }
 
     TEST(EnumCodecTest, DecodeGivesBackTheEnumeratorOfAKnownName)
@@ -62,7 +74,9 @@ namespace
 
         EXPECT_EQ(codec.decode(StoredValue(std::string("en_GB"))),
                   std::optional<Locale>(Locale::EN_GB));
-        EXPECT_EQ(codec.decode(codec.encode(Locale::FR_FR)), std::optional<Locale>(Locale::FR_FR));
+        const std::optional<StoredValue> raw = codec.encode(Locale::FR_FR);
+        ASSERT_TRUE(raw.has_value());
+        EXPECT_EQ(codec.decode(*raw), std::optional<Locale>(Locale::FR_FR));
     }
 
     TEST(EnumCodecTest, DecodeOfAnUnknownNameGivesNothing)
@@ -81,14 +95,6 @@ namespace
         // The numeric value of an enumerator is never accepted, so reordering stays harmless
         EXPECT_EQ(codec.decode(StoredValue(std::int32_t{0})), std::nullopt);
         EXPECT_EQ(codec.decode(StoredValue(false)), std::nullopt);
-    }
-
-    TEST(EnumCodecTest, EmptyCodecEncodesAndDecodesNothing)
-    {
-        const EnumCodec<Locale> codec;
-
-        EXPECT_EQ(codec.encode(Locale::EN_GB).asString(), std::optional<std::string>(""));
-        EXPECT_EQ(codec.decode(StoredValue(std::string("en_GB"))), std::nullopt);
     }
 
 } // namespace

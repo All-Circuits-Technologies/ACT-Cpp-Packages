@@ -8,6 +8,7 @@
  *
  * Covers the AbsPropertyStore contract on the in-memory implementation: absent keys, upserts
  * (including a change of type tag), erasing (an absent key included) and clearing every key.
+ * Concurrent writes and reads from several threads lose no write.
  */
 
 #include "act_property_core/stored_value.hpp"
@@ -19,7 +20,9 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <thread>
 #include <type_traits>
+#include <vector>
 
 namespace act::property
 {
@@ -95,6 +98,40 @@ namespace
     TEST_F(InMemoryPropertyStoreTest, EraseOfAnAbsentKeySucceeds)
     {
         EXPECT_TRUE(getStore().erase("missing"));
+    }
+
+    TEST_F(InMemoryPropertyStoreTest, ConcurrentAccessesLoseNoWrite)
+    {
+        constexpr int threadCount = 4;
+        constexpr std::int32_t keysPerThread = 500;
+        const auto keyOf = [](int thread, std::int32_t index) {
+            return std::to_string(thread) + "." + std::to_string(index);
+        };
+
+        {
+            std::vector<std::jthread> threads;
+            threads.reserve(threadCount);
+            for (int thread = 0; thread < threadCount; ++thread)
+            {
+                threads.emplace_back([this, &keyOf, thread]() {
+                    for (std::int32_t index = 0; index < keysPerThread; ++index)
+                    {
+                        const std::string key = keyOf(thread, index);
+                        EXPECT_TRUE(getStore().set(key, StoredValue(index)));
+                        EXPECT_TRUE(getStore().get(key).has_value());
+                    }
+                });
+            }
+        }
+
+        for (int thread = 0; thread < threadCount; ++thread)
+        {
+            for (std::int32_t index = 0; index < keysPerThread; ++index)
+            {
+                EXPECT_EQ(getStore().get(keyOf(thread, index)),
+                          std::optional<StoredValue>(StoredValue(index)));
+            }
+        }
     }
 
     TEST_F(InMemoryPropertyStoreTest, ClearAllRemovesEveryKey)

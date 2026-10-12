@@ -51,9 +51,9 @@ class SerializedCodec
     /**
      * @brief Encode an object into a string stored value
      * @param value The object to encode
-     * @return A string stored value holding the serialized object
+     * @return A string stored value holding the serialized object; serializing never fails
      */
-    [[nodiscard]] StoredValue encode(const T &value) const;
+    [[nodiscard]] std::optional<StoredValue> encode(const T &value) const;
 
     /**
      * @brief Decode a string stored value back into an object
@@ -71,7 +71,7 @@ class SerializedCodec
 };
 
 template <typename T>
-[[nodiscard]] StoredValue SerializedCodec<T>::encode(const T &value) const
+[[nodiscard]] std::optional<StoredValue> SerializedCodec<T>::encode(const T &value) const
 {
     return StoredValue{m_toString(value)};
 }

@@ -9,6 +9,11 @@
 
 #include <string>
 
+namespace act::foundation
+{
+class AbsLogger;
+} // namespace act::foundation
+
 namespace act::property
 {
 
@@ -19,8 +24,8 @@ class AbsPropertyStore;
  * @brief The non-generic part common to every descriptor.
  *
  * It holds the key and the link to the owning registry. A descriptor registers itself with its
- * registry at construction, but never touches the store then; it reaches the store lazily through
- * @ref accessStore.
+ * registry at construction and unregisters itself at destruction, but never touches the store at
+ * construction; it reaches the store lazily through @ref accessStore.
  *
  * The registry only knows the descriptor through the @ref AbsRegisteredProperty capability,
  * inherited as a protected base: the descriptor hands itself to the registry, which can then seed
@@ -40,8 +45,8 @@ class AbsPropertyBase : protected AbsRegisteredProperty,
     AbsPropertyBase(AbsPropertyRegistry &registry, std::string key);
 
   public:
-    /// @brief Nothing special for default destructor
-    ~AbsPropertyBase() override = default;
+    /// @brief Unregister the descriptor from its registry
+    ~AbsPropertyBase() override;
 
   public:
     /** @copydoc AbsRegisteredProperty::getKey */
@@ -57,6 +62,13 @@ class AbsPropertyBase : protected AbsRegisteredProperty,
      * @return The store
      */
     [[nodiscard]] AbsPropertyStore &accessStore() const;
+
+    /**
+     * @brief Access the logger provided by the registry.
+     * @note Never called during construction, only at init and at access time.
+     * @return The logger
+     */
+    [[nodiscard]] act::foundation::AbsLogger &accessLogger() const;
 
   private:
     /** @brief The owning registry (not owned) */

@@ -9,14 +9,16 @@
  * Covers init: it initializes the store, writes the seed of every registered descriptor when the
  * key is absent, realigns it when the stored value differs (another value or another type tag),
  * skips the write when it is already aligned, never writes a default, and reports a store which
- * cannot be initialized or written. Building a second manager on the same store simulates the
- * next start of an application. Static assertions check that outside code can neither reach the
+ * cannot be initialized or written and a seed which cannot be encoded. A descriptor destroyed
+ * before its manager is no longer seeded. Building a second manager on the same store simulates
+ * the next start of an application. Static assertions check that outside code can neither reach the
  * store nor register or seed a descriptor.
  */
 
 #include "recording_property_store.hpp"
 #include "store_backed_manager.hpp"
 
+#include "act_property_core/codecs/enum_codec.hpp"
 #include "act_property_core/properties/abs_property_registry.hpp"
 #include "act_property_core/properties/abs_registered_property.hpp"
 #include "act_property_core/properties/r_property.hpp"
@@ -48,9 +50,18 @@ namespace
     const std::string BRIGHTNESS_KEY{"ui.brightness"};
     const std::string LAST_USER_KEY{"session.lastUser"};
     const std::string RATIO_KEY{"sensor.ratio"};
+    const std::string MODE_KEY{"device.mode"};
+    const std::string TRANSIENT_KEY{"transient"};
 
     constexpr std::int32_t RETRIES_SEED = 3;
     constexpr std::int32_t BRIGHTNESS_DEFAULT = 50;
+
+    enum class Mode
+    {
+        OFF,
+        ON,
+        STANDBY,
+    };
 
     /** @brief Manager without any descriptor */
     class EmptyManager : public test::StoreBackedManager
@@ -97,6 +108,32 @@ namespace
       private:
         RProperty<double> m_ratio{
             *this, RATIO_KEY, Seed::of(std::numeric_limits<double>::quiet_NaN())};
+    };
+
+    /** @brief Manager whose only descriptor is seeded with an enumerator missing from its codec */
+    class UnencodableSeedManager : public test::StoreBackedManager
+    {
+      public:
+        using StoreBackedManager::StoreBackedManager;
+
+      private:
+        RProperty<Mode> m_mode{*this,
+                               MODE_KEY,
+                               Seed::of(Mode::STANDBY),
+                               EnumCodec<Mode>({{Mode::OFF, "off"}, {Mode::ON, "on"}})};
+    };
+
+    /** @brief Manager able to declare a seeded descriptor which lives shorter than itself */
+    class TransientDescriptorManager : public test::StoreBackedManager
+    {
+      public:
+        using StoreBackedManager::StoreBackedManager;
+
+        /** @brief Build a seeded descriptor and destroy it right away */
+        void declareTransientDescriptor()
+        {
+            const RProperty<std::int32_t> transient{*this, TRANSIENT_KEY, Seed::of(RETRIES_SEED)};
+        }
     };
 
     /** @brief Manager with a default backed descriptor and a descriptor without provider */
@@ -262,6 +299,25 @@ namespace
 
         EXPECT_FALSE(manager.init());
         EXPECT_EQ(getStore().get(RETRIES_KEY), std::nullopt);
+    }
+
+    TEST_F(AbsPropertyManagerTest, InitFailsWhenASeedCannotBeEncoded)
+    {
+        UnencodableSeedManager manager(getLoggerManager(), getStore());
+
+        EXPECT_FALSE(manager.init());
+        EXPECT_EQ(getStore().getSetCount(), 0);
+        EXPECT_EQ(getStore().get(MODE_KEY), std::nullopt);
+    }
+
+    TEST_F(AbsPropertyManagerTest, DestroyedDescriptorIsNoLongerSeeded)
+    {
+        TransientDescriptorManager manager(getLoggerManager(), getStore());
+        manager.declareTransientDescriptor();
+
+        ASSERT_TRUE(manager.init());
+
+        EXPECT_EQ(getStore().get(TRANSIENT_KEY), std::nullopt);
     }
 
     TEST_F(AbsPropertyManagerTest, InitNeverWritesADefault)

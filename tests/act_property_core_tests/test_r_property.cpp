@@ -8,9 +8,10 @@
  *
  * Covers reading: the store always comes first (no cache), an absent key falls back on the
  * default (evaluated lazily) or reads as nothing, a seed is never consulted on read, and a stored
- * value the codec cannot decode (another type tag, an unknown enum name) reads as nothing without
- * falling back on the default. Static assertions check that a read only descriptor cannot be
- * written nor copied, and that a provider or codec of another value type is rejected.
+ * value the codec cannot decode (another type tag, an unknown enum name) reads as absent: it falls
+ * back on the default, if any, and stays in the store. Static assertions check that a read only
+ * descriptor cannot be written nor copied, and that a provider or codec of another value type is
+ * rejected.
  */
 
 #include "store_backed_manager.hpp"
@@ -258,16 +259,20 @@ namespace
         EXPECT_EQ(manager.getWide().get(), std::nullopt);
     }
 
-    TEST_F(RPropertyTest, UndecodableValueDoesNotFallBackOnTheDefault)
+    TEST_F(RPropertyTest, UndecodableValueFallsBackOnTheDefault)
     {
+        const StoredValue undecodable{std::string("seven")};
         int lazyCalls = 0;
         ReadOnlyManager manager(getLoggerManager(), getStore(), lazyCalls);
         ASSERT_TRUE(manager.init());
-        ASSERT_TRUE(getStore().set(DEFAULTED_KEY, StoredValue(std::string("seven"))));
+        ASSERT_TRUE(getStore().set(DEFAULTED_KEY, undecodable));
         ASSERT_TRUE(getStore().set(LOCALE_KEY, StoredValue(std::string("de_DE"))));
 
-        EXPECT_EQ(manager.getDefaulted().get(), std::nullopt);
-        EXPECT_EQ(manager.getLocale().get(), std::nullopt);
+        EXPECT_EQ(manager.getDefaulted().get(), std::optional<std::int32_t>(DEFAULT_VALUE));
+        EXPECT_EQ(manager.getLocale().get(), std::optional<Locale>(Locale::EN_GB));
+
+        // The undecodable value is left in the store, for whoever investigates it
+        EXPECT_EQ(getStore().get(DEFAULTED_KEY), std::optional<StoredValue>(undecodable));
     }
 
     TEST_F(RPropertyTest, EnumPropertyDecodesTheStoredName)

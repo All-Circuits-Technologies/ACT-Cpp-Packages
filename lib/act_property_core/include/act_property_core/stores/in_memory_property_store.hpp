@@ -9,6 +9,7 @@
 
 #include <map>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 
 namespace act::property
@@ -18,7 +19,8 @@ namespace act::property
  * @brief A volatile store backed by an in-memory map.
  *
  * Handy for tests: it is the only store that could safely cache, since it is itself the source of
- * truth in memory. Its content does not survive the process.
+ * truth in memory. Its content does not survive the process. Every operation is safe to call from
+ * any thread.
  */
 class InMemoryPropertyStore : public AbsPropertyStore
 {
@@ -49,6 +51,9 @@ class InMemoryPropertyStore : public AbsPropertyStore
     bool clearAll() override;
 
   private:
+    /** @brief Guards @ref m_values: shared by the reads, exclusive for the writes */
+    mutable std::shared_mutex m_mutex;
+
     /** @brief The stored values, keyed by property key */
     std::map<std::string, StoredValue> m_values;
 };

@@ -6,10 +6,11 @@
  * @file test_rw_property.cpp
  * @brief Unit tests of RWProperty.
  *
- * Covers writing (the encoded value reaches the store, takes precedence over the default, and a
- * store failure is reported) and resetting (to the default, to the seed, or by removing the key
- * when there is no provider). A read and write descriptor is also usable through a read only
- * reference, and a runtime write of a seeded descriptor is realigned at the next start.
+ * Covers writing (the encoded value reaches the store, takes precedence over the default, and an
+ * encode or store failure is reported) and resetting (by writing the seed back, or by removing the
+ * key so that a read falls back on the default, if any). A read and write descriptor is also
+ * usable through a read only reference, and a runtime write of a seeded descriptor is realigned at
+ * the next start.
  */
 
 #include "store_backed_manager.hpp"
@@ -37,6 +38,7 @@ namespace
     {
         EN_GB,
         FR_FR,
+        DE_DE,
     };
 
     const std::string PLAIN_KEY{"plain"};
@@ -136,7 +138,21 @@ namespace
         EXPECT_EQ(manager.getDefaulted().get(), std::optional<std::int32_t>(DEFAULT_VALUE));
     }
 
-    TEST_F(RWPropertyTest, ResetWritesTheDefault)
+    TEST_F(RWPropertyTest, SetOfAValueTheCodecCannotEncodeFails)
+    {
+        ReadWriteManager manager(getLoggerManager(), getStore());
+        ASSERT_TRUE(manager.init());
+        ASSERT_TRUE(manager.getLocale().set(Locale::FR_FR));
+        const int setCount = getStore().getSetCount();
+
+        // DE_DE is missing from the mapping of the codec
+        EXPECT_FALSE(manager.getLocale().set(Locale::DE_DE));
+
+        EXPECT_EQ(getStore().getSetCount(), setCount);
+        EXPECT_EQ(manager.getLocale().get(), std::optional<Locale>(Locale::FR_FR));
+    }
+
+    TEST_F(RWPropertyTest, ResetWithADefaultRemovesTheKey)
     {
         ReadWriteManager manager(getLoggerManager(), getStore());
         ASSERT_TRUE(manager.init());
@@ -144,8 +160,9 @@ namespace
 
         ASSERT_TRUE(manager.getDefaulted().reset());
 
-        EXPECT_EQ(getStore().get(DEFAULTED_KEY),
-                  std::optional<StoredValue>(StoredValue(DEFAULT_VALUE)));
+        EXPECT_EQ(getStore().get(DEFAULTED_KEY), std::nullopt);
+        EXPECT_EQ(manager.getDefaulted().get(), std::optional<std::int32_t>(DEFAULT_VALUE));
+        EXPECT_EQ(getStore().getEraseCount(), 1);
     }
 
     TEST_F(RWPropertyTest, ResetWritesTheSeed)
@@ -181,9 +198,10 @@ namespace
         getStore().setFailErase(true);
         EXPECT_FALSE(manager.getPlain().reset());
         EXPECT_EQ(manager.getPlain().get(), std::optional<std::int32_t>(WRITTEN_VALUE));
+        EXPECT_FALSE(manager.getDefaulted().reset());
 
         getStore().setFailSet(true);
-        EXPECT_FALSE(manager.getDefaulted().reset());
+        EXPECT_FALSE(manager.getSeeded().reset());
     }
 
     TEST_F(RWPropertyTest, IsReadableThroughAReadOnlyReference)
