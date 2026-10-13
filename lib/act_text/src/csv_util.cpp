@@ -19,8 +19,9 @@ namespace act::text::CsvUtil
 std::string EscapeCsvValue(const std::string &value, const std::string &separator)
 {
     /* An empty separator is found at every position: there is no separator to protect */
-    const bool hasSeparator = !separator.empty() && (value.find(separator) != std::string::npos);
-    if (!hasSeparator && (value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) == std::string::npos))
+    const bool hasSeparator {!separator.empty() && (value.find(separator) != std::string::npos)};
+    const bool hasQuotingTriggerChars {value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) != std::string::npos};
+    if (!hasSeparator && !hasQuotingTriggerChars)
     {
         return value;
     }

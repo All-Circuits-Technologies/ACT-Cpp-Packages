@@ -21,7 +21,7 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <optional>
+#include <optional> // IWYU pragma: keep - cf. std::optional
 #include <random>
 #include <string>
 #include <vector>

@@ -43,6 +43,8 @@ std::string EscapeCsvValue(const std::string &value,
 
 /**
  * @brief Create a CSV line from a vector of strings
+ * @note Each value should be already escaped using @ref EscapeCsvValue
+ * before being joined into the line.
  * @param values The values to include in the CSV line
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
  * @return The created CSV line as a string
