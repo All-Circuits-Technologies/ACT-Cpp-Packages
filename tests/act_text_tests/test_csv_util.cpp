@@ -6,8 +6,9 @@
  * @file test_csv_util.cpp
  * @brief Unit tests of CsvUtil.
  *
- * Covers building a CSV line, appending lines to a file (in a temporary directory removed after
- * each test), splitting CSV content into lines, and splitting a line into trimmed values.
+ * Covers escaping a value, building a CSV line, appending lines to a file (in a temporary
+ * directory removed after each test), splitting CSV content into lines, and splitting a line into
+ * trimmed values.
  */
 
 #include "act_files/ext_file.hpp"
@@ -18,10 +19,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <random>
 #include <string>
+#include <vector>
 
 namespace act::text::CsvUtil
 {
@@ -30,6 +33,108 @@ namespace
 
     using ::testing::ElementsAre;
     using ::testing::IsEmpty;
+
+    /**
+     * @brief Read the fields of a CSV line as RFC 4180 describes them: the reverse of the escaping
+     * of the values and of the creation of the line
+     */
+    std::vector<std::string> ReadRfc4180Fields(const std::string &line, char separator)
+    {
+        std::vector<std::string> fields;
+        std::string field;
+        bool inQuotes = false;
+
+        for (std::size_t index = 0; index < line.size(); ++index)
+        {
+            const char character = line[index];
+            if (inQuotes)
+            {
+                if (character != '"')
+                {
+                    field += character;
+                }
+                else if ((index + 1 < line.size()) && (line[index + 1] == '"'))
+                {
+                    field += '"';
+                    ++index;
+                }
+                else
+                {
+                    inQuotes = false;
+                }
+            }
+            else if (character == '"')
+            {
+                inQuotes = true;
+            }
+            else if (character == separator)
+            {
+                fields.push_back(field);
+                field.clear();
+            }
+            else if (character != '\n')
+            {
+                field += character;
+            }
+        }
+        fields.push_back(field);
+
+        return fields;
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueKeepsAPlainValue)
+    {
+        EXPECT_EQ(EscapeCsvValue("plain value"), "plain value");
+        EXPECT_EQ(EscapeCsvValue(" padded "), " padded ");
+        EXPECT_EQ(EscapeCsvValue(""), "");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueQuotesAValueHoldingTheSeparator)
+    {
+        EXPECT_EQ(EscapeCsvValue("a,b"), "\"a,b\"");
+        EXPECT_EQ(EscapeCsvValue("a;b", ";"), "\"a;b\"");
+        EXPECT_EQ(EscapeCsvValue("a||b", "||"), "\"a||b\"");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueKeepsAValueHoldingAnotherSeparator)
+    {
+        EXPECT_EQ(EscapeCsvValue("a;b"), "a;b");
+        EXPECT_EQ(EscapeCsvValue("a,b", ";"), "a,b");
+        EXPECT_EQ(EscapeCsvValue("a|b", "||"), "a|b");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueQuotesAValueHoldingALineBreak)
+    {
+        EXPECT_EQ(EscapeCsvValue("two\nlines"), "\"two\nlines\"");
+        EXPECT_EQ(EscapeCsvValue("two\rlines"), "\"two\rlines\"");
+        EXPECT_EQ(EscapeCsvValue("two\r\nlines", ";"), "\"two\r\nlines\"");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueQuotesAndDoublesTheDoubleQuotes)
+    {
+        EXPECT_EQ(EscapeCsvValue("say \"hi\""), "\"say \"\"hi\"\"\"");
+        EXPECT_EQ(EscapeCsvValue("\""), "\"\"\"\"");
+        EXPECT_EQ(EscapeCsvValue("\"\"", ";"), "\"\"\"\"\"\"");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueOfAnEmptySeparatorOnlyLooksAtQuotesAndLineBreaks)
+    {
+        EXPECT_EQ(EscapeCsvValue("a,b", ""), "a,b");
+        EXPECT_EQ(EscapeCsvValue("a\"b", ""), "\"a\"\"b\"");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueKeepsTheColumnsOfALine)
+    {
+        const std::vector<std::string> values =
+            {"plain", "a,b", "say \"hi\"", "two\nlines", "cr\r\nlf", "", "\"", " padded "};
+        std::vector<std::string> escapedValues;
+        for (const std::string &value : values)
+        {
+            escapedValues.push_back(EscapeCsvValue(value));
+        }
+
+        EXPECT_EQ(ReadRfc4180Fields(CreateCsvLine(escapedValues), ','), values);
+    }
 
     TEST(CsvUtilTest, CreateCsvLineJoinsValuesAndEndsTheLine)
     {
