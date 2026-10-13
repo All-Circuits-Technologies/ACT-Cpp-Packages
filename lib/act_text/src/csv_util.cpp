@@ -16,6 +16,31 @@
 namespace act::text::CsvUtil
 {
 
+std::string EscapeCsvValue(const std::string &value, const std::string &separator)
+{
+    /* An empty separator is found at every position: there is no separator to protect */
+    const bool hasSeparator = !separator.empty() && (value.find(separator) != std::string::npos);
+    if (!hasSeparator && (value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) == std::string::npos))
+    {
+        return value;
+    }
+
+    std::string escapedValue(1, CSV_QUOTE_CHAR);
+    escapedValue.reserve(value.size() + 2);
+    for (const char character : value)
+    {
+        if (character == CSV_QUOTE_CHAR)
+        {
+            /* A double quote inside a quoted value is doubled */
+            escapedValue += CSV_QUOTE_CHAR;
+        }
+        escapedValue += character;
+    }
+    escapedValue += CSV_QUOTE_CHAR;
+
+    return escapedValue;
+}
+
 std::string CreateCsvLine(const std::vector<std::string> &values, const std::string &separator)
 {
     std::stringstream stream;
