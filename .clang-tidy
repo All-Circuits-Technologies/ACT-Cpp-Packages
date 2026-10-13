@@ -6,6 +6,8 @@ FormatStyle: file
 WarningsAsErrors: "false"
 HeaderFileExtensions: ["hpp"]
 ImplementationFileExtensions: ["cpp"]
+# Report the findings in the headers of this repository too, not only in the analyzed sources
+HeaderFilterRegex: ".*"
 Checks: >
     bugprone-argument-comment,
     bugprone-assert-side-effect,

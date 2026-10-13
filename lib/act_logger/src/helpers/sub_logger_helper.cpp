@@ -7,10 +7,10 @@
 namespace act::logger
 {
 
-SubLoggerHelper::SubLoggerHelper(std::vector<std::string> categories,
+SubLoggerHelper::SubLoggerHelper(const std::vector<std::string> &categories,
                                  LoggerHelper &parentLogger,
                                  act::foundation::LogsLevel::Enum minLevel)
-    : LoggerHelper(std::move(categories), minLevel),
+    : LoggerHelper(categories, minLevel),
       m_parentLogger(parentLogger)
 {
 }

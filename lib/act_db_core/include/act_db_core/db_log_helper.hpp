@@ -13,7 +13,8 @@
 #define XXX_IF_NO_DB(caller, logger, xxx)                                                          \
     if (!isOpened())                                                                               \
     {                                                                                              \
-        logger->errorStream() << "Database is not opened, cannot perform operation: " << #caller;  \
+        (logger)->errorStream() << "Database is not opened, cannot perform operation: "            \
+                                << #caller;                                                        \
         return xxx;                                                                                \
     }
 
@@ -31,7 +32,7 @@
     }                                                                                              \
     catch (const std::exception &e)                                                                \
     {                                                                                              \
-        logger->errorStream() << "Error occurred: " << e.what() << " upon " #name;                 \
+        (logger)->errorStream() << "Error occurred: " << e.what() << " upon " #name;               \
         return xxx;                                                                                \
     }
 

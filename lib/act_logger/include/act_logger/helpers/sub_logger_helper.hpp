@@ -43,7 +43,7 @@ class SubLoggerHelper : public LoggerHelper
      * @param parentLogger The parent logger to delegate getLogger() to.
      * @param minLevel Minimum log level.
      */
-    explicit SubLoggerHelper(std::vector<std::string> categories,
+    explicit SubLoggerHelper(const std::vector<std::string> &categories,
                              LoggerHelper &parentLogger,
                              act::foundation::LogsLevel::Enum minLevel);
 
