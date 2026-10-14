@@ -44,15 +44,6 @@ std::string EscapeCsvValue(const std::string &value, const std::string &separato
 
 std::string CreateCsvLine(const std::vector<std::string> &values, const std::string &separator)
 {
-    std::stringstream stream;
-    stream << VectorStringUtil::join(values, separator);
-    stream << std::endl;
-    return stream.str();
-}
-
-std::string CreateEscapedCsvLine(const std::vector<std::string> &values,
-                                 const std::string &separator)
-{
     std::vector<std::string> escapedValues;
     escapedValues.reserve(values.size());
     for (const std::string &value : values)
@@ -60,7 +51,15 @@ std::string CreateEscapedCsvLine(const std::vector<std::string> &values,
         escapedValues.push_back(EscapeCsvValue(value, separator));
     }
 
-    return CreateCsvLine(escapedValues, separator);
+    return JoinCsvLine(escapedValues, separator);
+}
+
+std::string JoinCsvLine(const std::vector<std::string> &values, const std::string &separator)
+{
+    std::stringstream stream;
+    stream << VectorStringUtil::join(values, separator);
+    stream << std::endl;
+    return stream.str();
 }
 
 bool AddCsvLine(const std::vector<std::string> &values,

@@ -134,44 +134,44 @@ namespace
             escapedValues.push_back(EscapeCsvValue(value));
         }
 
-        EXPECT_EQ(ReadRfc4180Fields(CreateCsvLine(escapedValues), ','), values);
+        EXPECT_EQ(ReadRfc4180Fields(JoinCsvLine(escapedValues), ','), values);
     }
 
-    TEST(CsvUtilTest, CreateCsvLineJoinsValuesAndEndsTheLine)
+    TEST(CsvUtilTest, JoinCsvLineJoinsValuesAndEndsTheLine)
+    {
+        EXPECT_EQ(JoinCsvLine({"a", "b", "c"}), "a,b,c\n");
+        EXPECT_EQ(JoinCsvLine({"a", "b"}, ";"), "a;b\n");
+    }
+
+    TEST(CsvUtilTest, JoinCsvLineOfNoValueIsAnEmptyLine)
+    {
+        EXPECT_EQ(JoinCsvLine({}), "\n");
+    }
+
+    TEST(CsvUtilTest, CreateCsvLineJoinsPlainValuesAsJoinCsvLineDoes)
     {
         EXPECT_EQ(CreateCsvLine({"a", "b", "c"}), "a,b,c\n");
         EXPECT_EQ(CreateCsvLine({"a", "b"}, ";"), "a;b\n");
     }
 
-    TEST(CsvUtilTest, CreateCsvLineOfNoValueIsAnEmptyLine)
+    TEST(CsvUtilTest, CreateCsvLineEscapesTheValuesForItsSeparator)
     {
-        EXPECT_EQ(CreateCsvLine({}), "\n");
+        EXPECT_EQ(CreateCsvLine({"a,b", "c;d"}), "\"a,b\",c;d\n");
+        EXPECT_EQ(CreateCsvLine({"a,b", "c;d"}, ";"), "a,b;\"c;d\"\n");
     }
 
-    TEST(CsvUtilTest, CreateEscapedCsvLineJoinsPlainValuesAsCreateCsvLineDoes)
-    {
-        EXPECT_EQ(CreateEscapedCsvLine({"a", "b", "c"}), "a,b,c\n");
-        EXPECT_EQ(CreateEscapedCsvLine({"a", "b"}, ";"), "a;b\n");
-    }
-
-    TEST(CsvUtilTest, CreateEscapedCsvLineEscapesTheValuesForItsSeparator)
-    {
-        EXPECT_EQ(CreateEscapedCsvLine({"a,b", "c;d"}), "\"a,b\",c;d\n");
-        EXPECT_EQ(CreateEscapedCsvLine({"a,b", "c;d"}, ";"), "a,b;\"c;d\"\n");
-    }
-
-    TEST(CsvUtilTest, CreateEscapedCsvLineKeepsTheColumnsOfALine)
+    TEST(CsvUtilTest, CreateCsvLineKeepsTheColumnsOfALine)
     {
         const std::vector<std::string> values =
             {"plain", "a,b", "x;y", "say \"hi\"", "two\nlines", "cr\r\nlf", "", "\"", " padded "};
 
-        EXPECT_EQ(ReadRfc4180Fields(CreateEscapedCsvLine(values), ','), values);
-        EXPECT_EQ(ReadRfc4180Fields(CreateEscapedCsvLine(values, ";"), ';'), values);
+        EXPECT_EQ(ReadRfc4180Fields(CreateCsvLine(values), ','), values);
+        EXPECT_EQ(ReadRfc4180Fields(CreateCsvLine(values, ";"), ';'), values);
     }
 
-    TEST(CsvUtilTest, CreateEscapedCsvLineOfNoValueIsAnEmptyLine)
+    TEST(CsvUtilTest, CreateCsvLineOfNoValueIsAnEmptyLine)
     {
-        EXPECT_EQ(CreateEscapedCsvLine({}), "\n");
+        EXPECT_EQ(CreateCsvLine({}), "\n");
     }
 
     TEST(CsvUtilTest, ParseCsvFileSplitsContentIntoLines)
@@ -206,9 +206,9 @@ namespace
         EXPECT_THAT(ParseCsvLine(""), IsEmpty());
     }
 
-    TEST(CsvUtilTest, ParseCsvLineReversesCreateCsvLine)
+    TEST(CsvUtilTest, ParseCsvLineReversesJoinCsvLine)
     {
-        std::string line = CreateCsvLine({"first", "second", "third"});
+        std::string line = JoinCsvLine({"first", "second", "third"});
 
         EXPECT_THAT(ParseCsvLine(line), ElementsAre("first", "second", "third"));
     }

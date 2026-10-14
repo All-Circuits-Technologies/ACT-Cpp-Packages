@@ -34,8 +34,8 @@ constexpr const char *CSV_QUOTING_TRIGGER_CHARS{"\"\r\n"};
 
 /**
  * @brief Escape a value to be safely used as a field of a CSV line (RFC 4180)
- * @note CreateCsvLine and AddCsvLine join the values as they are: call this function on each value
- * which can hold free text, before creating the line.
+ * @note JoinCsvLine and AddCsvLine join the values as they are: call this function on each value
+ * which can hold free text, before joining them. CreateCsvLine escapes its values by itself.
  * @param value The raw value
  * @param separator The separator character of the CSV line (default is @ref DefaultCsvSeparator)
  * @return The value unchanged if it holds neither the separator, a double quote nor a line break,
@@ -45,10 +45,10 @@ std::string EscapeCsvValue(const std::string &value,
                            const std::string &separator = DefaultCsvSeparator);
 
 /**
- * @brief Create a CSV line from a vector of strings
- * @note Each value should be already escaped using @ref EscapeCsvValue
- * before being joined into the line.
- * @param values The values to include in the CSV line
+ * @brief Create a CSV line from a vector of strings, escaping each value (RFC 4180)
+ * @note This is JoinCsvLine applied to the values given by EscapeCsvValue: use it when the values
+ * can hold free text
+ * @param values The raw values to include in the CSV line
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
  * @return The created CSV line as a string
  */
@@ -56,15 +56,15 @@ std::string CreateCsvLine(const std::vector<std::string> &values,
                           const std::string &separator = DefaultCsvSeparator);
 
 /**
- * @brief Create a CSV line from a vector of strings, escaping each value (RFC 4180)
- * @note This is CreateCsvLine applied to the values given by EscapeCsvValue: use it when the values
- * can hold free text
- * @param values The raw values to include in the CSV line
+ * @brief Create a CSV line from a vector of strings
+ * @note Each value should be already escaped using @ref EscapeCsvValue
+ * before being joined into the line.
+ * @param values The values to include in the CSV line
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
  * @return The created CSV line as a string
  */
-std::string CreateEscapedCsvLine(const std::vector<std::string> &values,
-                                 const std::string &separator = DefaultCsvSeparator);
+std::string JoinCsvLine(const std::vector<std::string> &values,
+                        const std::string &separator = DefaultCsvSeparator);
 
 /**
  * @brief Add a line to a CSV file
