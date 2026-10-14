@@ -50,6 +50,19 @@ std::string CreateCsvLine(const std::vector<std::string> &values, const std::str
     return stream.str();
 }
 
+std::string CreateEscapedCsvLine(const std::vector<std::string> &values,
+                                 const std::string &separator)
+{
+    std::vector<std::string> escapedValues;
+    escapedValues.reserve(values.size());
+    for (const std::string &value : values)
+    {
+        escapedValues.push_back(EscapeCsvValue(value, separator));
+    }
+
+    return CreateCsvLine(escapedValues, separator);
+}
+
 bool AddCsvLine(const std::vector<std::string> &values,
                 const act::foundation::AbsLogger &logger,
                 act::files::ExtFile &file,

@@ -4,8 +4,11 @@
 
 #pragma once
 
+#include "act_files/file_util.hpp"
+
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace act::foundation
@@ -51,6 +54,17 @@ std::string EscapeCsvValue(const std::string &value,
  */
 std::string CreateCsvLine(const std::vector<std::string> &values,
                           const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Create a CSV line from a vector of strings, escaping each value (RFC 4180)
+ * @note This is CreateCsvLine applied to the values given by EscapeCsvValue: use it when the values
+ * can hold free text
+ * @param values The raw values to include in the CSV line
+ * @param separator The separator character (default is @ref DefaultCsvSeparator)
+ * @return The created CSV line as a string
+ */
+std::string CreateEscapedCsvLine(const std::vector<std::string> &values,
+                                 const std::string &separator = DefaultCsvSeparator);
 
 /**
  * @brief Add a line to a CSV file

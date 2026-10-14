@@ -6,9 +6,9 @@
  * @file test_csv_util.cpp
  * @brief Unit tests of CsvUtil.
  *
- * Covers escaping a value, building a CSV line, appending lines to a file (in a temporary
- * directory removed after each test), splitting CSV content into lines, and splitting a line into
- * trimmed values.
+ * Covers escaping a value, building a CSV line (with or without escaping its values), the UTF-8
+ * byte order mark, appending lines to a file (in a temporary directory removed after each test),
+ * splitting CSV content into lines, and splitting a line into trimmed values.
  */
 
 #include "act_files/ext_file.hpp"
@@ -24,6 +24,7 @@
 #include <optional> // IWYU pragma: keep - cf. std::optional
 #include <random>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace act::text::CsvUtil
@@ -145,6 +146,32 @@ namespace
     TEST(CsvUtilTest, CreateCsvLineOfNoValueIsAnEmptyLine)
     {
         EXPECT_EQ(CreateCsvLine({}), "\n");
+    }
+
+    TEST(CsvUtilTest, CreateEscapedCsvLineJoinsPlainValuesAsCreateCsvLineDoes)
+    {
+        EXPECT_EQ(CreateEscapedCsvLine({"a", "b", "c"}), "a,b,c\n");
+        EXPECT_EQ(CreateEscapedCsvLine({"a", "b"}, ";"), "a;b\n");
+    }
+
+    TEST(CsvUtilTest, CreateEscapedCsvLineEscapesTheValuesForItsSeparator)
+    {
+        EXPECT_EQ(CreateEscapedCsvLine({"a,b", "c;d"}), "\"a,b\",c;d\n");
+        EXPECT_EQ(CreateEscapedCsvLine({"a,b", "c;d"}, ";"), "a,b;\"c;d\"\n");
+    }
+
+    TEST(CsvUtilTest, CreateEscapedCsvLineKeepsTheColumnsOfALine)
+    {
+        const std::vector<std::string> values =
+            {"plain", "a,b", "x;y", "say \"hi\"", "two\nlines", "cr\r\nlf", "", "\"", " padded "};
+
+        EXPECT_EQ(ReadRfc4180Fields(CreateEscapedCsvLine(values), ','), values);
+        EXPECT_EQ(ReadRfc4180Fields(CreateEscapedCsvLine(values, ";"), ';'), values);
+    }
+
+    TEST(CsvUtilTest, CreateEscapedCsvLineOfNoValueIsAnEmptyLine)
+    {
+        EXPECT_EQ(CreateEscapedCsvLine({}), "\n");
     }
 
     TEST(CsvUtilTest, ParseCsvFileSplitsContentIntoLines)
