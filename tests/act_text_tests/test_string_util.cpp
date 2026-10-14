@@ -7,16 +7,20 @@
  * @brief Unit tests of StringUtil.
  *
  * Covers trimming (in place and copying), case conversion and case insensitive comparison, the
- * iterable to string conversion, the hexadecimal conversions and checks, and the IPv4 address
- * validation.
+ * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
+ * and the IPv4 address validation.
  */
 
 #include "act_text/string_util.hpp"
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
+#include <limits>
 #include <list>
+#include <locale>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -125,6 +129,78 @@ namespace
     {
         EXPECT_EQ(IterableToString(std::vector<int>{}), "");
         EXPECT_EQ(IterableToString(std::vector<int>{7}, ", "), "7");
+    }
+
+    TEST(StringUtilTest, DoubleToStringGivesTheShortestTextWhichIsReadBackAsTheValue)
+    {
+        EXPECT_EQ(DoubleToString(21.5), "21.5");
+        EXPECT_EQ(DoubleToString(0.1), "0.1");
+        EXPECT_EQ(DoubleToString(-0.5), "-0.5");
+        EXPECT_EQ(DoubleToString(21.540000915527344), "21.540000915527344");
+    }
+
+    TEST(StringUtilTest, DoubleToStringOfAWholeNumberHasNoDecimalPart)
+    {
+        EXPECT_EQ(DoubleToString(0.0), "0");
+        EXPECT_EQ(DoubleToString(100000.0), "100000");
+        EXPECT_EQ(DoubleToString(-42.0), "-42");
+    }
+
+    TEST(StringUtilTest, DoubleToStringNeverUsesAnExponent)
+    {
+        EXPECT_EQ(DoubleToString(0.0000001), "0.0000001");
+        EXPECT_EQ(DoubleToString(1e21), "1000000000000000000000");
+        EXPECT_EQ(DoubleToString(std::numeric_limits<double>::max()).size(), 309U);
+        EXPECT_EQ(DoubleToString(std::numeric_limits<double>::denorm_min()).size(), 326U);
+    }
+
+    TEST(StringUtilTest, DoubleToStringIsReadBackAsTheSameValue)
+    {
+        const std::vector<double> values{1.0 / 3.0,
+                                         123456789.123456789,
+                                         -1e-10,
+                                         std::numeric_limits<double>::min(),
+                                         std::numeric_limits<double>::max(),
+                                         std::numeric_limits<double>::denorm_min()};
+
+        for (const double value : values)
+        {
+            const std::string text = DoubleToString(value);
+
+            EXPECT_EQ(std::strtod(text.c_str(), nullptr), value) << text;
+        }
+    }
+
+    TEST(StringUtilTest, DoubleToStringOfNonFiniteValues)
+    {
+        EXPECT_EQ(DoubleToString(std::numeric_limits<double>::quiet_NaN()), "nan");
+        EXPECT_EQ(DoubleToString(std::numeric_limits<double>::infinity()), "inf");
+        EXPECT_EQ(DoubleToString(-std::numeric_limits<double>::infinity()), "-inf");
+    }
+
+    /** @brief Number punctuation whose decimal separator is a comma, as in many countries */
+    class CommaDecimalPoint : public std::numpunct<char>
+    {
+      protected:
+        char do_decimal_point() const override
+        {
+            return ',';
+        }
+    };
+
+    TEST(StringUtilTest, DoubleToStringKeepsTheDotWhateverTheLocaleIs)
+    {
+        const std::locale previousLocale =
+            std::locale::global(std::locale(std::locale::classic(), new CommaDecimalPoint));
+        std::ostringstream stream;
+        stream << 1.5;
+        const std::string streamText = stream.str();
+        const std::string text = DoubleToString(1.5);
+        std::locale::global(previousLocale);
+
+        /* The streams use the locale: without it, this test would prove nothing */
+        ASSERT_EQ(streamText, "1,5");
+        EXPECT_EQ(text, "1.5");
     }
 
     TEST(StringUtilTest, BinToHexWritesLowerCaseDigits)
