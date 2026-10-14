@@ -156,8 +156,8 @@ std::string IterableToString(const T &iterable, const std::string &delimiter = "
 /**
  * @brief Convert a double to its text, whatever the locale is
  * @note The text is the shortest one which is read back as the same value, with a dot as decimal
- *       separator and without exponent (ex: "21.5", "100000", "0.0001"). NaN and the infinities
- *       give "nan", "inf" and "-inf".
+ *       separator and without exponent (ex: "21.5", "100000", "0.0001"). Special values will
+ *       give "nan", "inf", "-0", "-nan" and "-inf".
  * @param value The value to convert
  * @return The text of the value
  */
