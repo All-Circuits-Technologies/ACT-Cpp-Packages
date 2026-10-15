@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace act::foundation
 {
@@ -122,4 +123,11 @@ bool ArePathsEqual(const std::string &path1,
  * @note Returns empty string for empty input or paths ending with '/'
  */
 std::string GetFilename(const std::string &path);
+
+/**
+ * @brief Byte order mark an UTF-8 file may start with
+ * @note ReadFileAsInt skips it. Put it at the beginning of a file which is meant to be opened in a
+ *       software which reads UTF-8 text as a legacy 8-bit encoding without it.
+ */
+constexpr std::string_view UTF8_BYTE_ORDER_MARK{"\xEF\xBB\xBF"};
 } /* namespace act::files::FileUtil */

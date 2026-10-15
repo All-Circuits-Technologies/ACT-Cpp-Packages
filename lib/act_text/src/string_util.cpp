@@ -7,13 +7,22 @@
 #include "act_foundation/constants/def_soft.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
+#include <charconv>
 #include <iomanip>
 #include <optional>
 #include <regex>
+#include <system_error>
 
 namespace
 {
+
+/**
+ * @brief Size of the buffer which receives the text of a double: the longest text of a double
+ *        written without exponent (1.7976931348623157e308, which has 309 digits) is shorter
+ */
+constexpr std::size_t DOUBLE_TEXT_BUFFER_SIZE{400U};
 
 /**
  * @brief IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some
@@ -68,6 +77,23 @@ bool AreStringEqualNoCase(const std::string &lhs, const std::string &rhs)
     return std::ranges::equal(lhs, rhs, [](char a, char b) {
         return (std::tolower(a) == std::tolower(b));
     });
+}
+
+std::string DoubleToString(double value)
+{
+    std::array<char, DOUBLE_TEXT_BUFFER_SIZE> buffer{};
+
+    const std::to_chars_result result = std::to_chars(buffer.data(),
+                                                      buffer.data() + buffer.size(),
+                                                      value,
+                                                      std::chars_format::fixed);
+    if (result.ec != std::errc())
+    {
+        /* Can't happen: the buffer is longer than the longest text of a double */
+        return {};
+    }
+
+    return {buffer.data(), result.ptr};
 }
 
 std::string BinToHex(const std::string &bin)
