@@ -23,8 +23,28 @@ namespace act::text::CsvUtil
 /** @brief Default CSV separator character */
 const constexpr char *DefaultCsvSeparator = ",";
 
+/** @brief Character which encloses a CSV value which has to be quoted */
+constexpr char CSV_QUOTE_CHAR{'"'};
+
+/** @brief Characters which force a CSV value to be quoted, whatever the separator is */
+constexpr const char *CSV_QUOTING_TRIGGER_CHARS{"\"\r\n"};
+
+/**
+ * @brief Escape a value to be safely used as a field of a CSV line (RFC 4180)
+ * @note CreateCsvLine and AddCsvLine join the values as they are: call this function on each value
+ * which can hold free text, before creating the line.
+ * @param value The raw value
+ * @param separator The separator character of the CSV line (default is @ref DefaultCsvSeparator)
+ * @return The value unchanged if it holds neither the separator, a double quote nor a line break,
+ * otherwise the value enclosed in double quotes, where the double quotes it contains are doubled
+ */
+std::string EscapeCsvValue(const std::string &value,
+                           const std::string &separator = DefaultCsvSeparator);
+
 /**
  * @brief Create a CSV line from a vector of strings
+ * @note Each value should be already escaped using @ref EscapeCsvValue
+ * before being joined into the line.
  * @param values The values to include in the CSV line
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
  * @return The created CSV line as a string
