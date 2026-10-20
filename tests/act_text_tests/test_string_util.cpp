@@ -6,9 +6,9 @@
  * @file test_string_util.cpp
  * @brief Unit tests of StringUtil.
  *
- * Covers trimming (in place and copying), case conversion and case insensitive comparison, the
- * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * and the IPv4 address validation.
+ * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
+ * kept), case conversion and case insensitive comparison, the iterable to string and the double
+ * to string conversions, the hexadecimal conversions and checks, and the IPv4 address validation.
  */
 
 #include "act_text/string_util.hpp"
@@ -74,6 +74,68 @@ namespace
         EXPECT_EQ(RtrimCopy(source), "  value");
         EXPECT_EQ(TrimCopy(source), "value");
         EXPECT_EQ(source, "  value  ");
+    }
+
+    TEST(StringUtilTest, TrimRemovesOnlyTheGivenCharacters)
+    {
+        std::string value = "._ a. b_ ._";
+
+        Trim(value, "._ ");
+
+        EXPECT_EQ(value, "a. b");
+    }
+
+    TEST(StringUtilTest, LtrimAndRtrimHonourTheGivenCharacters)
+    {
+        std::string leading = "--value--";
+        std::string trailing = "--value--";
+
+        Ltrim(leading, "-");
+        Rtrim(trailing, "-");
+
+        EXPECT_EQ(leading, "value--");
+        EXPECT_EQ(trailing, "--value");
+    }
+
+    TEST(StringUtilTest, TrimCopiesHonourTheGivenCharacters)
+    {
+        const std::string source = "**value**";
+
+        EXPECT_EQ(LtrimCopy(source, "*"), "value**");
+        EXPECT_EQ(RtrimCopy(source, "*"), "**value");
+        EXPECT_EQ(TrimCopy(source, "*"), "value");
+    }
+
+    TEST(StringUtilTest, TrimOfOnlyGivenCharactersGivesAnEmptyString)
+    {
+        std::string value = "..__..";
+
+        Trim(value, "._");
+
+        EXPECT_TRUE(value.empty());
+    }
+
+    TEST(StringUtilTest, TrimWithoutCharactersLeavesTheStringUntouched)
+    {
+        std::string value = "  value  ";
+
+        Trim(value, "");
+
+        EXPECT_EQ(value, "  value  ");
+    }
+
+    TEST(StringUtilTest, TrimKeepsTheBytesOfMultiByteCharacters)
+    {
+        // U+00E0 is C3 A0 in UTF-8; A0 is a no-break space in Latin-1, which std::isspace could
+        // remove under such a locale. U+00A0 is C2 A0 in UTF-8.
+        std::string accented = " \xC3\xA0 ";
+        std::string noBreakSpaces = "\xC2\xA0value\xC2\xA0";
+
+        Trim(accented);
+        Trim(noBreakSpaces);
+
+        EXPECT_EQ(accented, "\xC3\xA0");
+        EXPECT_EQ(noBreakSpaces, "\xC2\xA0value\xC2\xA0");
     }
 
     TEST(StringUtilTest, ToUpperConvertsOnlyLetters)

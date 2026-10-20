@@ -20,73 +20,92 @@ namespace act::text::StringUtil
 {
 /* ## Types */
 
+/* ## Constants */
+
+/**
+ * @brief The characters the trim helpers remove by default: the whitespace characters, as
+ *        std::isspace in the default locale
+ * @note Declared before the methods, as it is the default argument of the trim helpers.
+ */
+constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
+
 /* ## Methods (members, then non-members) */
 
 /**
  * @brief Trim from start (in place)
  * @param s The string to alter
+ * @param chars The characters to remove
  * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
  */
-inline std::string &Ltrim(std::string &s)
+inline std::string &Ltrim(std::string &s, const std::string &chars = WHITESPACE_CHARS)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
+    s.erase(0, s.find_first_not_of(chars));
     return s;
 }
 
 /**
  * @brief Trim from end (in place)
  * @param s The string to alter
+ * @param chars The characters to remove
  * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
  */
-inline std::string &Rtrim(std::string &s)
+inline std::string &Rtrim(std::string &s, const std::string &chars = WHITESPACE_CHARS)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(),
-            s.end());
+    const std::size_t lastKept = s.find_last_not_of(chars);
+    s.erase(lastKept == std::string::npos ? 0 : lastKept + 1);
     return s;
 }
 
 /**
  * @brief Trim from both ends (in place)
  * @param s The string to alter
+ * @param chars The characters to remove
  * @return The trimmed string
  */
-inline std::string &Trim(std::string &s)
+inline std::string &Trim(std::string &s, const std::string &chars = WHITESPACE_CHARS)
 {
-    Rtrim(s);
-    Ltrim(s);
+    Rtrim(s, chars);
+    Ltrim(s, chars);
     return s;
 }
 
 /**
  * @brief Trim from the start (copying)
  * @param s The string to trim
- * @return A new string with the leading whitespace removed
+ * @param chars The characters to remove
+ * @return A new string with the leading characters removed
  */
-inline std::string LtrimCopy(std::string s)
+inline std::string LtrimCopy(std::string s, const std::string &chars = WHITESPACE_CHARS)
 {
-    Ltrim(s);
+    Ltrim(s, chars);
     return s;
 }
 
 /**
  * @brief Trim from the end (copying)
  * @param s The string to trim
- * @return A new string with the trailing whitespace removed
+ * @param chars The characters to remove
+ * @return A new string with the trailing characters removed
  */
-inline std::string RtrimCopy(std::string s)
+inline std::string RtrimCopy(std::string s, const std::string &chars = WHITESPACE_CHARS)
 {
-    Rtrim(s);
+    Rtrim(s, chars);
     return s;
 }
 
 /**
  * @brief Trim from both ends (copying)
  * @param s The string to trim
- * @return A new string with the whitespace removed
+ * @param chars The characters to remove
+ * @return A new string with the leading and trailing characters removed
  */
-inline std::string TrimCopy(std::string s)
+inline std::string TrimCopy(std::string s, const std::string &chars = WHITESPACE_CHARS)
 {
-    Trim(s);
+    Trim(s, chars);
     return s;
 }
 
@@ -192,7 +211,5 @@ bool IsHexOnly(const std::string &data);
  * @return true if the string is a valid IPv4 address, false otherwise
  */
 bool IsValidIpAddress(const std::string &ipAddress);
-
-/* ## Constants */
 
 } // namespace act::text::StringUtil
