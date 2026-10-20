@@ -177,6 +177,13 @@ namespace
         EXPECT_FALSE(AreStringEqualNoCase("value", "valve"));
     }
 
+    TEST(StringUtilTest, AreStringEqualNoCaseComparesNonAsciiBytes)
+    {
+        // "COM¹", the superscript one being C2 B9 in UTF-8
+        EXPECT_TRUE(AreStringEqualNoCase("com\xC2\xB9", "COM\xC2\xB9"));
+        EXPECT_FALSE(AreStringEqualNoCase("COM\xC2\xB9", "COM\xC2\xB2"));
+    }
+
     TEST(StringUtilTest, IterableToStringJoinsElementsWithTheDelimiter)
     {
         const std::vector<int> numbers{1, 2, 3};
