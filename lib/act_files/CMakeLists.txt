@@ -15,6 +15,7 @@ add_library(act_files STATIC
     src/ext_file.cpp
     src/file_path_util.cpp
     src/file_util.cpp
+    src/types/file_name_charset.cpp
 )
 
 # Public headers are exposed via include/<module_name>/
