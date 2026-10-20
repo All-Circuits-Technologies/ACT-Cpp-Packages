@@ -8,18 +8,11 @@
 
 #include "act_files/ext_file.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_text/string_util.hpp"
 
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
-namespace
-{
-
-/** @brief Whitespace characters, as std::isspace in the default locale */
-constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
-
-} // namespace
 
 namespace act::files::FileUtil
 {
@@ -60,8 +53,7 @@ std::optional<int> ReadFileAsInt(const std::string &path,
 
     // Trailing whitespace is accepted, as the line feed ending the files of sysfs; std::stoi
     // already skips the leading one
-    const auto lastNonSpace = content.find_last_not_of(WHITESPACE_CHARS);
-    content.erase((lastNonSpace == std::string::npos) ? 0 : (lastNonSpace + 1));
+    act::text::StringUtil::Rtrim(content);
 
     int value = 0;
     std::size_t parsedLength = 0;

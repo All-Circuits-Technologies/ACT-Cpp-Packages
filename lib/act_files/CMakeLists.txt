@@ -8,7 +8,7 @@
 # File I/O, path manipulation, and file management utilities.
 # Provides file operations and extended file abstractions.
 #
-# Dependencies: act_foundation, act_logger
+# Dependencies: act_foundation, act_logger, act_text
 # -----------------------------------------------------------------------------
 
 add_library(act_files STATIC
@@ -32,6 +32,7 @@ target_link_libraries(act_files
     PUBLIC
     act_foundation
     act_logger
+    act_text
 )
 
 # Install targets

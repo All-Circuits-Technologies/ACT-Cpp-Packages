@@ -20,6 +20,7 @@ This module provides utilities for file I/O operations, path manipulation, and f
 
 - act_foundation
 - act_logger
+- act_text
 
 ## Usage
 
