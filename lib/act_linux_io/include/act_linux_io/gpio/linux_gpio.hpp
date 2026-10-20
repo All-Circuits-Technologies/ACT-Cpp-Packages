@@ -134,6 +134,12 @@ class LinuxGpio
 
   private:
     /**
+     * @brief Tells if the GPIO exists, and logs a warning when it does not
+     * @return True if the GPIO exists, false otherwise
+     */
+    [[nodiscard]] bool ensureExists() const;
+
+    /**
      * @brief Open a GPIO chip device
      * @param chipPath Path of the chip device
      * @return The opened chip, or nullptr if it cannot be opened (missing, no permission...)

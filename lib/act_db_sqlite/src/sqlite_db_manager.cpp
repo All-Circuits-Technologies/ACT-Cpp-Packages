@@ -26,7 +26,7 @@ ASqLiteDbManager::ASqLiteDbManager(std::filesystem::path dbFilePath,
 
 int ASqLiteDbManager::getMigrationVersion() const
 {
-    // Reading the schema version changes nothing, but the executor interface is not const
+    // execAndGetInt is not const but calling it for "PRAGMA user_version;" has no side effect
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     return const_cast<ASqLiteDbManager *>(this)->execAndGetInt("PRAGMA user_version;").value_or(0);
 }
@@ -128,14 +128,14 @@ bool ASqLiteDbManager::openImpl()
                            {
                                // sqlite3's C API hands the arguments as an array and the
                                // text as unsigned char
-                               // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,
-                               // cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                               // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+                               // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                                const char *pattern =
                                    reinterpret_cast<const char *>(sqlite3_value_text(argv[0]));
                                const char *text =
                                    reinterpret_cast<const char *>(sqlite3_value_text(argv[1]));
-                               // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,
-                               // cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                               // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                               // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
                                if (!pattern || !text)
                                {

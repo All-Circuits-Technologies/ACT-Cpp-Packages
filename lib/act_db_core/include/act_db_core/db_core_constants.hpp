@@ -7,6 +7,8 @@
 #include <string_view>
 
 /// @brief Set of constants related to SQL transaction statements
+/// @note A std::string_view does not convert to std::string on its own: write
+///       std::string{DbCoreConstants::BEGIN_NAME} where a std::string is expected
 namespace act::db::core::DbCoreConstants
 {
 /**
