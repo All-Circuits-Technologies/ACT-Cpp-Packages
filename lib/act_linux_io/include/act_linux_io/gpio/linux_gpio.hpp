@@ -14,11 +14,14 @@ namespace act::logger
 class LoggerHelper;
 } // namespace act::logger
 
+// Forward declarations of libgpiod types, whose names follow libgpiod's style
+// NOLINTBEGIN(readability-identifier-naming)
 namespace gpiod
 {
 class chip;
 class line_settings;
 } // namespace gpiod
+// NOLINTEND(readability-identifier-naming)
 
 namespace act::linux_io
 {

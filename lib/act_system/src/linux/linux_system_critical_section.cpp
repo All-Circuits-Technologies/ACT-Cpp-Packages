@@ -32,7 +32,8 @@ LinuxSystemCriticalSection::LinuxSystemCriticalSection(const char *slug,
 
 LinuxSystemCriticalSection::~LinuxSystemCriticalSection()
 {
-    UNUSED(leave());
+    // Qualified call: a destructor must not dispatch to a derived class, which is already gone
+    UNUSED(LinuxSystemCriticalSection::leave());
 
     if (m_fd >= 0)
     {
