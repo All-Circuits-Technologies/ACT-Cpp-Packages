@@ -11,6 +11,7 @@
 #include <cctype>
 #include <charconv>
 #include <iomanip>
+#include <iterator>
 #include <optional>
 #include <regex>
 #include <system_error>
@@ -24,14 +25,6 @@ namespace
  */
 constexpr std::size_t DOUBLE_TEXT_BUFFER_SIZE{400U};
 
-/**
- * @brief IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some
- *        parsers (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10
- * @note Built once, at load time: compiling a regular expression is costly.
- */
-const std::regex IP_ADDRESS_PATTERN(R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
-                                    R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
-
 } // namespace
 
 namespace act::text::StringUtil
@@ -39,9 +32,7 @@ namespace act::text::StringUtil
 
 void ToUpperInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::toupper(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::toupper(c); });
 }
 
 std::string ToUpper(const std::string &str)
@@ -53,9 +44,7 @@ std::string ToUpper(const std::string &str)
 
 void ToLowerInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::tolower(c); });
 }
 
 std::string ToLower(const std::string &str)
@@ -83,10 +72,11 @@ std::string DoubleToString(double value)
 {
     std::array<char, DOUBLE_TEXT_BUFFER_SIZE> buffer{};
 
-    const std::to_chars_result result = std::to_chars(buffer.data(),
-                                                      buffer.data() + buffer.size(),
-                                                      value,
-                                                      std::chars_format::fixed);
+    const std::to_chars_result result =
+        std::to_chars(buffer.data(),
+                      std::next(buffer.data(), DOUBLE_TEXT_BUFFER_SIZE),
+                      value,
+                      std::chars_format::fixed);
     if (result.ec != std::errc())
     {
         /* Can't happen: the buffer is longer than the longest text of a double */
@@ -102,9 +92,9 @@ std::string BinToHex(const std::string &bin)
 
     /* configure hex output; the width is reset by each insertion, so it is set for every byte */
     hex << std::hex << std::setfill('0');
-    for (unsigned char c : bin)
+    for (const unsigned char c : bin)
     {
-        hex << std::setw(2) << (int)c;
+        hex << std::setw(2) << static_cast<int>(c);
     }
     return hex.str();
 }
@@ -121,8 +111,8 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
     for (size_t i{0}; i + 1 < hex.length(); i += act::foundation::HexConstants::HEX_CHARS_PER_BYTE)
     {
-        std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
-        char byte{static_cast<char>(
+        const std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
+        const char byte{static_cast<char>(
             std::stoul(hexByte, nullptr, act::foundation::HexConstants::HEXADECIMAL_BASE))};
         binaryString.push_back(byte);
     }
@@ -132,13 +122,19 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
 bool IsHexOnly(const std::string &data)
 {
-    return std::all_of(data.begin(), data.end(), [](char c) {
-        return std::isxdigit(static_cast<unsigned char>(c));
-    });
+    return std::ranges::all_of(data,
+                               [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); });
 }
 
 bool IsValidIpAddress(const std::string &ipAddress)
 {
+    // IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some parsers
+    // (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10. Built once,
+    // on first use: compiling a regular expression is costly, and a function-local static is
+    // initialized where an exception can be caught.
+    static const std::regex IP_ADDRESS_PATTERN(
+        R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
+        R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
     return std::regex_match(ipAddress, IP_ADDRESS_PATTERN);
 }
 

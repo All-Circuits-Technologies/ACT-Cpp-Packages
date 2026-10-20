@@ -12,8 +12,8 @@ namespace act::db::core
 {
 DbTransaction::DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger)
     : m_db(db),
-      m_logger(logger),
-      m_state{State::NOT_STARTED}
+      m_logger(logger)
+
 {
 }
 
@@ -31,7 +31,7 @@ bool DbTransaction::begin(std::string_view beginExtension)
         return false;
     }
 
-    std::string query = DbCoreConstants::BEGIN_NAME;
+    std::string query{DbCoreConstants::BEGIN_NAME};
     if (!beginExtension.empty())
     {
         query += " " + std::string(beginExtension);

@@ -15,7 +15,7 @@ the foundation layer.
 ## Contents
 
 - **Base Classes:** NotCopiableNotMovable, AbsManager, AbsService, AbsWithLifeCycle
-- **Constants:** Software-wide constants and macros (def_soft.hpp)
+- **Constants:** Software-wide constants (def_soft.hpp)
 - **Logger interface:** AbsLogger, the interface every module logs through, with its levels
   (LogsLevel) and its stream syntax (LoggerStream); the implementations are provided elsewhere
 - **Patterns:** Singleton pattern, Finally (RAII guard)

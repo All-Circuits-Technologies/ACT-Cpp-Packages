@@ -58,7 +58,7 @@ class SimpleLedTriggerConfig : public AbsLedTriggerConfig
     /* ## Constants */
   public:
     /** @brief Name of the "panic" trigger */
-    static inline const std::string PANIC_TRIGGER_NAME{"panic"};
+    static constexpr const char *PANIC_TRIGGER_NAME{"panic"};
 
     /* ## Data members */
 };

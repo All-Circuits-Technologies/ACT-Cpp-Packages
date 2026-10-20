@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "act_db_core/db_core_constants.hpp"
+#include "act_foundation/not_copiable_not_movable.hpp"
 
 namespace act::foundation
 {
@@ -23,7 +24,7 @@ class AbsDbManager;
  *       destructed, so it is recommended to use it with a local scope to ensure proper transaction
  *       handling.
  */
-class DbTransaction
+class DbTransaction : private act::foundation::NotCopiableNotMovable
 {
   private:
     /**
@@ -47,7 +48,7 @@ class DbTransaction
     explicit DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger);
 
     /** @brief Destructor */
-    virtual ~DbTransaction();
+    ~DbTransaction() override;
 
   public:
     /**
@@ -84,15 +85,13 @@ class DbTransaction
     /**
      * @brief Default SQL command to commit a transaction, using the standard "COMMIT TRANSACTION"
      */
-    static inline const std::string COMMIT_TRANSACTION =
-        DbCoreConstants::COMMIT_NAME + " " + DbCoreConstants::TRANSACTION_NAME;
+    static constexpr const char *COMMIT_TRANSACTION = "COMMIT TRANSACTION";
 
     /**
      * @brief Default SQL command to rollback a transaction, using the standard "ROLLBACK
      * TRANSACTION"
      */
-    static inline const std::string ROLLBACK_TRANSACTION =
-        DbCoreConstants::ROLLBACK_NAME + " " + DbCoreConstants::TRANSACTION_NAME;
+    static constexpr const char *ROLLBACK_TRANSACTION = "ROLLBACK TRANSACTION";
 
   private:
     /** @brief Shared database manager */
@@ -102,6 +101,6 @@ class DbTransaction
     const act::foundation::AbsLogger &m_logger;
 
     /** @brief Flag to indicate if the transaction has been committed or rolled back */
-    State m_state;
+    State m_state{State::NOT_STARTED};
 };
 } // namespace act::db::core

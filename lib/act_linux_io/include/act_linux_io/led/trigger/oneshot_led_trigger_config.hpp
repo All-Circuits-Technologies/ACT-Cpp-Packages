@@ -65,26 +65,26 @@ class OneShotLedTriggerConfig : public AbsLedTriggerConfig
     /* ## Constants */
   private:
     /** @brief Name of the "oneshot" trigger */
-    static inline const std::string ONESHOT_TRIGGER_NAME{"oneshot"};
+    static constexpr const char *ONESHOT_TRIGGER_NAME{"oneshot"};
 
     /** @brief Name of the "delay_on" file in sysfs */
-    static inline const std::string DELAY_ON_FILE_NAME{"delay_on"};
+    static constexpr const char *DELAY_ON_FILE_NAME{"delay_on"};
 
     /** @brief Name of the "delay_off" file in sysfs */
-    static inline const std::string DELAY_OFF_FILE_NAME{"delay_off"};
+    static constexpr const char *DELAY_OFF_FILE_NAME{"delay_off"};
 
     /** @brief Name of the "invert" file in sysfs */
-    static inline const std::string INVERT_FILE_NAME{"invert"};
+    static constexpr const char *INVERT_FILE_NAME{"invert"};
 
     /** @brief Name of the "shot" file in sysfs */
-    static inline const std::string SHOT_FILE_NAME{"shot"};
+    static constexpr const char *SHOT_FILE_NAME{"shot"};
 
     /**
      * @brief Minimum accepted delay_off value
      * @note Linux will not turn the LED off if delay_off is set to 0.
      *       Therefore we internally enforce a minimum of 1ms here.
      */
-    static inline const std::chrono::milliseconds MIN_DELAY_OFF{1};
+    static constexpr std::chrono::milliseconds MIN_DELAY_OFF{1};
 
     /* ## Data members */
   private:

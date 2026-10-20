@@ -122,7 +122,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     std::ios::openmode mode,
                                     bool isTemp)
 {
-    auto extFile = ExtFile::CreateFileAndTryToOpenIt(path, mode, logger, isTemp);
+    auto *extFile = ExtFile::CreateFileAndTryToOpenIt(path, mode, logger, isTemp);
     if (extFile == nullptr)
     {
         return nullptr;
@@ -135,7 +135,7 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     const act::foundation::AbsLogger &logger,
                                     bool isTemp)
 {
-    auto extFile = new ExtFile(path, logger, isTemp);
+    auto *extFile = new ExtFile(path, logger, isTemp);
     return std::shared_ptr<ExtFile>(extFile);
 }
 
@@ -152,8 +152,6 @@ bool ArePathsEqual(const std::string &path1,
     bool isEqual = false;
     try
     {
-        auto path1Obj = std::filesystem::absolute(path1);
-        auto path2Obj = std::filesystem::absolute(path2);
         isEqual = std::filesystem::equivalent(path1, path2);
     }
     catch (const std::exception &e)
@@ -172,7 +170,7 @@ std::string GetFilename(const std::string &path)
         return "";
     }
 
-    std::filesystem::path fsPath(path);
+    const std::filesystem::path fsPath(path);
     return fsPath.filename().string();
 }
 } /* namespace act::files::FileUtil */

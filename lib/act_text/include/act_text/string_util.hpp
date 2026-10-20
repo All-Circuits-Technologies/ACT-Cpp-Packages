@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cctype>
 #include <optional>
+#include <ranges>
 #include <sstream>
 #include <string>
 
@@ -29,7 +30,7 @@ namespace act::text::StringUtil
  */
 inline std::string &Ltrim(std::string &s)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
+    s.erase(s.begin(), std::ranges::find_if(s, [](int c) { return !std::isspace(c); }));
     return s;
 }
 
@@ -40,8 +41,10 @@ inline std::string &Ltrim(std::string &s)
  */
 inline std::string &Rtrim(std::string &s)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(),
-            s.end());
+    s.erase(
+        std::ranges::find_if(std::ranges::reverse_view(s), [](int c) { return !std::isspace(c); })
+            .base(),
+        s.end());
     return s;
 }
 

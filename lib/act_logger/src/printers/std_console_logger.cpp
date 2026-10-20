@@ -27,14 +27,15 @@ void StdConsoleLogger::logToExternal(act::foundation::LogsLevel::Enum level,
 {
     auto formattedMessage = FormatLogMessage(level, message, categories);
 
-    // Output to standard console
+    // Output to standard console. Each line is flushed on purpose: stdout is fully buffered when it
+    // is not a terminal, and a crash must not lose the lines before it.
     if (level < m_minLevelToPrintToStdErr)
     {
-        std::cout << formattedMessage << std::endl;
+        std::cout << formattedMessage << '\n' << std::flush;
     }
     else
     {
-        std::cerr << formattedMessage << std::endl;
+        std::cerr << formattedMessage << '\n' << std::flush;
     }
 }
 

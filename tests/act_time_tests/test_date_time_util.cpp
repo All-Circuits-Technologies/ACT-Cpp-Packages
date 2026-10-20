@@ -13,8 +13,6 @@
 
 #include "act_time/date_time_util.hpp"
 
-#include "act_foundation/constants/def_soft.hpp"
-
 #include <array>
 #include <atomic>
 #include <cstdlib>
@@ -25,6 +23,7 @@
 #include <thread>
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 namespace act::time
 {
@@ -155,7 +154,7 @@ namespace
         std::thread localReader([&done]() {
             while (!done.load())
             {
-                UNUSED(DateTimeUtil::GetCurrentIsoDateTimeLocal());
+                std::ignore = DateTimeUtil::GetCurrentIsoDateTimeLocal();
             }
         });
 

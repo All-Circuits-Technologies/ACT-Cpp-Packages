@@ -12,9 +12,6 @@ namespace act::linux_io
 {
 
 const int PatternLedTriggerConfig::REPEAT_INFINITE = -1;
-const std::string PatternLedTriggerConfig::PATTERN_TRIGGER_NAME = "pattern";
-const std::string PatternLedTriggerConfig::PATTERN_FILE_NAME = "pattern";
-const std::string PatternLedTriggerConfig::REPEAT_FILE_NAME = "repeat";
 
 /* # Constructors */
 

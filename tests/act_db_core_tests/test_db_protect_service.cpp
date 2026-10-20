@@ -14,7 +14,6 @@
 
 #include "act_db_core/services/db_protect_service.hpp"
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "act_logger/services/logger_manager.hpp"
 #include "fake_db_manager.hpp"
 
@@ -25,6 +24,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 namespace act::db::core
 {
@@ -111,7 +111,7 @@ namespace
     TEST_F(DbProtectServiceTest, ThrowingQueryIsRolledBackAndReportedAsFailed)
     {
         EXPECT_FALSE(getService().protectQuery([](AbsDbManager &db) -> bool {
-            UNUSED(db.exec(QUERY));
+            std::ignore = db.exec(QUERY);
             throw std::runtime_error("query failure");
         }));
 

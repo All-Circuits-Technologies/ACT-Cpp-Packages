@@ -42,9 +42,7 @@ std::string join(const std::vector<std::string> &vec, const std::string &separat
 
 std::vector<std::string> split(const std::string &str, const std::string &separator)
 {
-    std::stringstream stringStream(str);
     std::vector<std::string> tmpList;
-    std::string element;
 
     if (separator.empty())
     {
@@ -58,11 +56,11 @@ std::vector<std::string> split(const std::string &str, const std::string &separa
 
     if (!str.empty())
     {
-        int start = 0;
-        size_t idx = str.find(separator, start);
+        std::string::size_type start = 0;
+        std::string::size_type idx = str.find(separator, start);
         while (idx != std::string::npos)
         {
-            int length = idx - start;
+            const std::string::size_type length = idx - start;
             tmpList.push_back(str.substr(start, length));
             start += (length + separator.size());
 

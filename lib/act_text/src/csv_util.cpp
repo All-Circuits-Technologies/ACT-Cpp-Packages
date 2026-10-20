@@ -59,7 +59,7 @@ std::string JoinCsvLine(const std::vector<std::string> &values, const std::strin
 {
     std::stringstream stream;
     stream << VectorStringUtil::join(values, separator);
-    stream << std::endl;
+    stream << '\n';
     return stream.str();
 }
 
@@ -77,7 +77,7 @@ bool AddCsvLine(const std::vector<std::string> &values,
     std::fstream &fs = file.accessFilePtr();
 
     fs << VectorStringUtil::join(values, separator);
-    fs << std::endl;
+    fs << '\n';
     auto errorCode = fs.sync();
     if (errorCode != 0)
     {
