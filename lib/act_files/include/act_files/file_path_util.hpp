@@ -22,9 +22,9 @@ namespace act::files::FilePathUtil
  * @param logger The logger to use for logging
  * @return True if the paths are equal, false otherwise
  */
-bool ArePathsEqual(const std::string &path1,
-                   const std::string &path2,
-                   const act::foundation::AbsLogger &logger);
+[[nodiscard]] bool ArePathsEqual(const std::string &path1,
+                                 const std::string &path2,
+                                 const act::foundation::AbsLogger &logger);
 
 /**
  * @brief Extract the filename from a file path
@@ -33,5 +33,5 @@ bool ArePathsEqual(const std::string &path1,
  * @note Returns the full path if it has no directory components
  * @note Returns empty string for empty input or paths ending with '/'
  */
-std::string GetFilename(const std::string &path);
+[[nodiscard]] std::string GetFilename(const std::string &path);
 } // namespace act::files::FilePathUtil
