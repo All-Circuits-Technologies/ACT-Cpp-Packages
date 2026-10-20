@@ -20,8 +20,7 @@ namespace
 } // namespace
 
 AbsPropertyManager::AbsPropertyManager(act::logger::LoggerManager &logger)
-    : act::foundation::AbsManager(),
-      m_logger(logger.createSubLogger(LoggerCategory))
+    : m_logger(logger.createSubLogger(LoggerCategory))
 {
 }
 

@@ -103,6 +103,9 @@ namespace
         return quoted;
     }
 
+    // The accessors are read without a check on purpose: one that does not match the tag
+    // throws, and the protect service catches it (see bindValue)
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     /**
      * @brief Bind an integer value, reading it through its typed accessor
      * @param statement The statement to bind the value to
@@ -167,6 +170,7 @@ namespace
                 break;
         }
     }
+    // NOLINTEND(bugprone-unchecked-optional-access)
 
     /** @brief The row being read, so a rejected row is logged on a single line naming it */
     struct RowContext
@@ -410,7 +414,10 @@ namespace
             return std::nullopt;
         }
 
-        const RowContext taggedRow{row.logger, row.key, row.tableName, typeTag};
+        const RowContext taggedRow{.logger = row.logger,
+                                   .key = row.key,
+                                   .tableName = row.tableName,
+                                   .typeTag = typeTag};
 
         // The underlying type is fixed, so any int is a valid StoredType; unknown tags hit default
         switch (static_cast<StoredType>(static_cast<int>(typeTag)))
@@ -450,8 +457,7 @@ SqlitePropertyStore::SqlitePropertyStore(act::db::sqlite::SQLiteDbProtectService
                                          act::foundation::AbsLogger &parentLogger,
                                          std::string tableName,
                                          TableProvisioning provisioning)
-    : AbsPropertyStore(),
-      m_dbProtectService(dbProtectService),
+    : m_dbProtectService(dbProtectService),
       m_logger(
           parentLogger.createAbsSubLogger(LoggerCategory, act::foundation::LogsLevel::Enum::TRACE)),
       m_tableName(std::move(tableName)),
@@ -490,7 +496,10 @@ std::optional<StoredValue> SqlitePropertyStore::get(const std::string &key) cons
                 return std::nullopt;
             }
 
-            const RowContext row{*m_logger, key, m_tableName, std::nullopt};
+            const RowContext row{.logger = *m_logger,
+                                 .key = key,
+                                 .tableName = m_tableName,
+                                 .typeTag = std::nullopt};
             return readRow(row,
                            statement.getColumn(TypeResultIndex),
                            statement.getColumn(ValueResultIndex));

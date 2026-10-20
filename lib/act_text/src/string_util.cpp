@@ -11,6 +11,7 @@
 #include <cctype>
 #include <charconv>
 #include <iomanip>
+#include <iterator>
 #include <optional>
 #include <regex>
 #include <system_error>
@@ -71,10 +72,11 @@ std::string DoubleToString(double value)
 {
     std::array<char, DOUBLE_TEXT_BUFFER_SIZE> buffer{};
 
-    const std::to_chars_result result = std::to_chars(buffer.data(),
-                                                      buffer.data() + buffer.size(),
-                                                      value,
-                                                      std::chars_format::fixed);
+    const std::to_chars_result result =
+        std::to_chars(buffer.data(),
+                      std::next(buffer.data(), DOUBLE_TEXT_BUFFER_SIZE),
+                      value,
+                      std::chars_format::fixed);
     if (result.ec != std::errc())
     {
         /* Can't happen: the buffer is longer than the longest text of a double */
