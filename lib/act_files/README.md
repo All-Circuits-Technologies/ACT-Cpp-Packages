@@ -13,6 +13,7 @@ This module provides utilities for file I/O operations, path manipulation, and f
 ## Contents
 
 - **ExtFile:** Extended file abstraction with automatic cleanup
+- **FilePathUtil:** File path utilities (comparison, file name extraction)
 - **FileUtil:** File system utilities (read, write, exists, etc.)
 
 ## Dependencies
@@ -24,6 +25,7 @@ This module provides utilities for file I/O operations, path manipulation, and f
 
 ```cpp
 #include "act_files/ext_file.hpp"
+#include "act_files/file_path_util.hpp"
 #include "act_files/file_util.hpp"
 ```
 

@@ -13,6 +13,7 @@
 
 add_library(act_files STATIC
     src/ext_file.cpp
+    src/file_path_util.cpp
     src/file_util.cpp
 )
 

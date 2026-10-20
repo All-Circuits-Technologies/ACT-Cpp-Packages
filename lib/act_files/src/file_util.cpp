@@ -9,7 +9,6 @@
 #include "act_files/ext_file.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -137,42 +136,5 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 {
     auto extFile = new ExtFile(path, logger, isTemp);
     return std::shared_ptr<ExtFile>(extFile);
-}
-
-bool ArePathsEqual(const std::string &path1,
-                   const std::string &path2,
-                   const act::foundation::AbsLogger &logger)
-{
-    if (path1 == path2)
-    {
-        // No need to check further if the strings are identical
-        return true;
-    }
-
-    bool isEqual = false;
-    try
-    {
-        auto path1Obj = std::filesystem::absolute(path1);
-        auto path2Obj = std::filesystem::absolute(path2);
-        isEqual = std::filesystem::equivalent(path1, path2);
-    }
-    catch (const std::exception &e)
-    {
-        logger.warningStream() << "IsPathEqual: Exception occurred while comparing paths '" << path1
-                               << "' and '" << path2 << "': " << e.what();
-    }
-
-    return isEqual;
-}
-
-std::string GetFilename(const std::string &path)
-{
-    if (path.empty())
-    {
-        return "";
-    }
-
-    std::filesystem::path fsPath(path);
-    return fsPath.filename().string();
 }
 } /* namespace act::files::FileUtil */
