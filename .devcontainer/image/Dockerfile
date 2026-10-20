@@ -19,7 +19,9 @@
 # earlier: an early layer rebuilds everything below it.
 # =============================================================================
 
-FROM debian:trixie
+# Pinned to the image index digest (multi-arch), which docker resolves instead of the tag; the tag
+# names the matching dated snapshot for a human reader. Bump both together.
+FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
@@ -58,9 +60,9 @@ RUN echo "deb [trusted=yes] http://apt.llvm.org/trixie/ llvm-toolchain-trixie-21
     clangd-21 \
     clang-tidy-21 \
     clang-format-21 \
-    && ln -sf clang-21 /usr/bin/clang \
-    && ln -sf clang-format-21 /usr/bin/clang-format \
-    && ln -sf clang-tidy-21 /usr/bin/clang-tidy \
+    && ln -sf "$(which clang-21)" /usr/bin/clang \
+    && ln -sf "$(which clang-format-21)" /usr/bin/clang-format \
+    && ln -sf "$(which clang-tidy-21)" /usr/bin/clang-tidy \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================

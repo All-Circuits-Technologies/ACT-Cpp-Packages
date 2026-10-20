@@ -13,13 +13,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string_view>
 
 namespace
 {
-
-/** @brief Byte order mark an UTF-8 file may start with */
-constexpr std::string_view UTF8_BYTE_ORDER_MARK = "\xEF\xBB\xBF";
 
 /** @brief Whitespace characters, as std::isspace in the default locale */
 constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
