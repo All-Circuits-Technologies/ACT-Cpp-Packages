@@ -48,6 +48,19 @@ namespace
         EXPECT_TRUE(ArePathsEqual(path, otherSpelling, getLogger()));
     }
 
+    TEST_F(FilePathUtilTest, ArePathsEqualResolvesRelativePathsAgainstTheCurrentDirectory)
+    {
+        const std::string path = getPath("relative.txt");
+        ASSERT_TRUE(FileUtil::WriteFile(path, std::string("content"), getLogger()));
+        const std::filesystem::path previousDirectory = std::filesystem::current_path();
+        std::filesystem::current_path(getDirectory());
+
+        const bool isEqual = ArePathsEqual("relative.txt", path, getLogger());
+
+        std::filesystem::current_path(previousDirectory);
+        EXPECT_TRUE(isEqual);
+    }
+
     TEST_F(FilePathUtilTest, ArePathsEqualRejectsDifferentFiles)
     {
         const std::string first = getPath("first.txt");
@@ -62,6 +75,7 @@ namespace
     {
         EXPECT_FALSE(ArePathsEqual(getPath("missing.txt"), getPath("./missing.txt"), getLogger()));
         EXPECT_EQ(getLogger().count(LogsLevel::WARNING), 1U);
+        EXPECT_TRUE(getLogger().contains(LogsLevel::WARNING, "ArePathsEqual"));
     }
 
     TEST(FilePathUtilFilenameTest, GetFilenameKeepsOnlyTheLastComponent)

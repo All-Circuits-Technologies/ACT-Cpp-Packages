@@ -24,14 +24,13 @@ bool ArePathsEqual(const std::string &path1,
     bool isEqual = false;
     try
     {
-        auto path1Obj = std::filesystem::absolute(path1);
-        auto path2Obj = std::filesystem::absolute(path2);
+        // A relative path is resolved against the current directory
         isEqual = std::filesystem::equivalent(path1, path2);
     }
     catch (const std::exception &e)
     {
-        logger.warningStream() << "IsPathEqual: Exception occurred while comparing paths '" << path1
-                               << "' and '" << path2 << "': " << e.what();
+        logger.warningStream() << "ArePathsEqual: Exception occurred while comparing paths '"
+                               << path1 << "' and '" << path2 << "': " << e.what();
     }
 
     return isEqual;
