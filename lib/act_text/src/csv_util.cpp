@@ -9,9 +9,30 @@
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
 
+#include <cctype>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+namespace
+{
+
+/**
+ * @brief Tell if a separator is found at a position of a text
+ * @note An empty separator is never found: it would match at every position, while there is no
+ * separator to look for.
+ * @param text The text to look into
+ * @param position The position to look at, which must be inside the text
+ * @param separator The separator to look for
+ * @return True if the separator is not empty and the text holds it at this position
+ */
+bool IsSeparatorAt(const std::string &text, std::size_t position, const std::string &separator)
+{
+    return !separator.empty() && (text.compare(position, separator.size(), separator) == 0);
+}
+
+} // namespace
 
 namespace act::text::CsvUtil
 {
@@ -104,16 +125,84 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent)
 
 std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::string &separator)
 {
-    auto values = VectorStringUtil::split(csvLine, separator);
-    std::vector<std::string> trimmedValues;
-    trimmedValues.reserve(values.size());
-    for (auto &value : values)
+    std::vector<std::string> values;
+    if (csvLine.empty())
     {
-        /* Trim whitespace from value */
-        trimmedValues.push_back(act::text::StringUtil::Trim(value));
+        return values;
     }
 
-    return trimmedValues;
+    std::size_t position{0};
+    bool hasNextValue{true};
+    while (hasNextValue)
+    {
+        /* The whitespace before a value is skipped, but for the one the separator is made of */
+        std::size_t valueStart{position};
+        while ((valueStart < csvLine.size()) &&
+               std::isspace(static_cast<unsigned char>(csvLine[valueStart])) &&
+               !IsSeparatorAt(csvLine, valueStart, separator))
+        {
+            ++valueStart;
+        }
+
+        std::string value;
+        if ((valueStart < csvLine.size()) && (csvLine[valueStart] == CSV_QUOTE_CHAR))
+        {
+            /* A value between double quotes is read as it is: it ends at the double quote which
+             * is not doubled, or at the end of the line if there is none */
+            position = valueStart + 1;
+            bool isClosed{false};
+            while ((position < csvLine.size()) && !isClosed)
+            {
+                if (csvLine[position] != CSV_QUOTE_CHAR)
+                {
+                    value += csvLine[position];
+                    ++position;
+                }
+                else if (((position + 1) < csvLine.size()) &&
+                         (csvLine[position + 1] == CSV_QUOTE_CHAR))
+                {
+                    value += CSV_QUOTE_CHAR;
+                    position += 2;
+                }
+                else
+                {
+                    isClosed = true;
+                    ++position;
+                }
+            }
+
+            /* What follows the closing double quote, up to the next separator, is kept but for
+             * its surrounding whitespace */
+            std::string trailing;
+            while ((position < csvLine.size()) && !IsSeparatorAt(csvLine, position, separator))
+            {
+                trailing += csvLine[position];
+                ++position;
+            }
+            value += act::text::StringUtil::Trim(trailing);
+        }
+        else
+        {
+            /* A value which is not between double quotes ends at the next separator, and is
+             * trimmed */
+            position = valueStart;
+            while ((position < csvLine.size()) && !IsSeparatorAt(csvLine, position, separator))
+            {
+                ++position;
+            }
+            value = csvLine.substr(valueStart, position - valueStart);
+            act::text::StringUtil::Trim(value);
+        }
+
+        values.push_back(value);
+        hasNextValue = (position < csvLine.size());
+        if (hasNextValue)
+        {
+            position += separator.size();
+        }
+    }
+
+    return values;
 }
 
 } // namespace act::text::CsvUtil
