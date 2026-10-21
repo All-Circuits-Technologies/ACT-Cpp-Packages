@@ -96,7 +96,7 @@ bool IsWindowsReservedName(const std::string &fileName)
     // Only the stem counts, the part before the first dot, without its trailing spaces: Windows
     // takes "con.txt" and "con .txt" for the console too
     std::string stem = fileName.substr(0, fileName.find(DOT));
-    act::text::StringUtil::Rtrim(stem, std::string(1, SPACE));
+    act::text::StringUtil::RtrimChars(stem, std::string(1, SPACE));
 
     return std::ranges::any_of(WINDOWS_RESERVED_NAMES, [&stem](const std::string &reserved) {
         return act::text::StringUtil::AreStringEqualNoCase(stem, reserved);
@@ -151,12 +151,12 @@ std::string SanitizeFileName(const std::string &name,
 
     // Windows forbids a name ending with a dot or a space, and "." and ".." are not names
     const std::string charsToTrim{DOT, SPACE, replacementChar};
-    act::text::StringUtil::Trim(result, charsToTrim);
+    act::text::StringUtil::TrimChars(result, charsToTrim);
 
     if (result.size() > maxLength)
     {
         result.resize(maxLength);
-        act::text::StringUtil::Rtrim(result, charsToTrim);
+        act::text::StringUtil::RtrimChars(result, charsToTrim);
     }
 
     if (result.empty())
@@ -169,7 +169,7 @@ std::string SanitizeFileName(const std::string &name,
     {
         // Right after the stem, before the spaces which may end it
         std::string stem = result.substr(0, result.find(DOT));
-        act::text::StringUtil::Rtrim(stem, std::string(1, SPACE));
+        act::text::StringUtil::RtrimChars(stem, std::string(1, SPACE));
 
         if (result.size() < maxLength)
         {
