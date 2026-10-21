@@ -5,6 +5,7 @@
 #include "act_text/csv_util.hpp"
 
 #include "act_files/ext_file.hpp"
+#include "act_files/file_util.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
@@ -116,7 +117,10 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
     bool isInQuotes{false};
     bool isValueStart{true};
 
-    std::size_t position{0};
+    /* A UTF-8 byte order mark at the very beginning is not a part of the content */
+    using act::files::FileUtil::UTF8_BYTE_ORDER_MARK;
+    std::size_t position{csvContent.starts_with(UTF8_BYTE_ORDER_MARK) ? UTF8_BYTE_ORDER_MARK.size()
+                                                                      : 0};
     while (position < csvContent.size())
     {
         const char character{csvContent[position]};
