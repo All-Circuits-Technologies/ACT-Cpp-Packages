@@ -115,6 +115,11 @@ if (!entries)
 The data must outlive the reader. A nested archive is read by opening another reader on the
 content of its entry.
 
+When `readAllEntries()` rejects an archive, `getRejectionReason()` tells why, in English (for
+instance `the entry 'a.bin' exceeds 1048576 bytes (announced size)`), to be reported as a technical
+detail. When `OpenFromMemory()` fails, the reason is only logged: the data is not in an allowed
+format, or is damaged.
+
 ---
 
 ## Security

@@ -78,10 +78,18 @@ class ArchiveReader : private act::foundation::NotCopiableNotMovable
      *            same separator);
      *          - exceeds one of the limits.
      * @return The entries, in archive order, or std::nullopt if the archive is rejected (the
-     *         reason is logged)
+     *         reason is logged, and given by getRejectionReason())
      * @note The entries can be read once: any further call fails.
      */
     [[nodiscard]] std::optional<std::vector<ArchiveEntry>> readAllEntries();
+
+    /**
+     * @brief Get why readAllEntries() rejected the archive
+     * @return The reason, in English, meant for logs or technical details, such as
+     *         `the entry 'a.bin' exceeds 1024 bytes (announced size)`; empty while the entries
+     *         are not read, and once they are read successfully
+     */
+    [[nodiscard]] const std::string &getRejectionReason() const;
 
     // Extension point: nextEntry() / readContent() to read entry by entry
 

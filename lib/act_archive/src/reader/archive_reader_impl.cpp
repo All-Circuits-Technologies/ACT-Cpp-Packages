@@ -93,6 +93,11 @@ std::optional<std::vector<ArchiveEntry>> ArchiveReader::Impl::readAllEntries()
     return entries;
 }
 
+const std::string &ArchiveReader::Impl::getRejectionReason() const
+{
+    return m_rejectionReason;
+}
+
 bool ArchiveReader::Impl::createLibarchiveReader()
 {
     m_archive = archive_read_new();
@@ -333,8 +338,9 @@ std::optional<std::string> ArchiveReader::Impl::readContent(const std::string &p
     return content;
 }
 
-std::nullopt_t ArchiveReader::Impl::reject(const std::string &reason) const
+std::nullopt_t ArchiveReader::Impl::reject(const std::string &reason)
 {
+    m_rejectionReason = reason;
     m_logger.warningStream() << "ArchiveReader: archive rejected: " << reason;
     return std::nullopt;
 }
