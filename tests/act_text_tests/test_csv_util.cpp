@@ -6,9 +6,14 @@
  * @file test_csv_util.cpp
  * @brief Unit tests of CsvUtil.
  *
- * Covers escaping a value, building a CSV line (with or without escaping its values), the UTF-8
- * byte order mark, appending lines to a file (in a temporary directory removed after each test),
- * splitting CSV content into lines, and splitting a line into trimmed values.
+ * Covers
+ * - escaping a value,
+ * - building a CSV line (with or without escaping its values),
+ * - the UTF-8 byte order mark,
+ * - appending lines to a file (in a temporary directory removed after each test),
+ * - splitting CSV content into lines (a line break between double quotes does not end one), and
+ * - splitting a line into values (trimmed, or read as they are when they are between double
+ *   quotes).
  */
 
 #include "act_files/ext_file.hpp"
@@ -33,6 +38,7 @@ namespace
 {
 
     using ::testing::ElementsAre;
+    using ::testing::ElementsAreArray;
     using ::testing::IsEmpty;
 
     /**
@@ -190,6 +196,51 @@ namespace
         EXPECT_THAT(ParseCsvFile(""), IsEmpty());
     }
 
+    TEST(CsvUtilTest, ParseCsvFileKeepsTheLineBreaksOfAQuotedValueInOneLine)
+    {
+        EXPECT_THAT(ParseCsvFile("a,\"two\nlines\"\nc,d\n"),
+                    ElementsAre("a,\"two\nlines\"", "c,d"));
+        EXPECT_THAT(ParseCsvFile("\"cr\r\nlf\",b\nc"), ElementsAre("\"cr\r\nlf\",b", "c"));
+        EXPECT_THAT(ParseCsvFile("a, \"x\ny\"\nb"), ElementsAre("a, \"x\ny\"", "b"));
+        EXPECT_THAT(ParseCsvFile("a\n\"x\ny\"\nb"), ElementsAre("a", "\"x\ny\"", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsTheDoubledDoubleQuotesOfAQuotedValueInOneLine)
+    {
+        EXPECT_THAT(ParseCsvFile("\"say \"\"hi\"\"\nthere\"\nb"),
+                    ElementsAre("\"say \"\"hi\"\"\nthere\"", "b"));
+        EXPECT_THAT(ParseCsvFile("\"\"\nb"), ElementsAre("\"\"", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileLooksForTheQuotesAfterTheSeparatorItIsGiven)
+    {
+        EXPECT_THAT(ParseCsvFile("a;\"x\ny\"\nb;c", ";"), ElementsAre("a;\"x\ny\"", "b;c"));
+        EXPECT_THAT(ParseCsvFile("a;\"x\ny\"\nb;c"), ElementsAre("a;\"x", "y\"", "b;c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsADoubleQuoteWhichDoesNotStartAValue)
+    {
+        EXPECT_THAT(ParseCsvFile("5\" pipe,b\nc,d"), ElementsAre("5\" pipe,b", "c,d"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileTakesTheRestOfTheContentWhenAQuoteIsNotClosed)
+    {
+        EXPECT_THAT(ParseCsvFile("a,\"b\nc\nd"), ElementsAre("a,\"b\nc\nd"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileReversesCreateCsvLine)
+    {
+        const std::vector<std::string> first = {"plain", "two\nlines", "a;b", "say \"hi\""};
+        const std::vector<std::string> second = {"", "cr\r\nlf", "\"", "last"};
+
+        const std::vector<std::string> lines =
+            ParseCsvFile(CreateCsvLine(first, ";") + CreateCsvLine(second, ";"), ";");
+
+        ASSERT_EQ(lines.size(), 2U);
+        EXPECT_THAT(ParseCsvLine(lines[0], ";"), ElementsAreArray(first));
+        EXPECT_THAT(ParseCsvLine(lines[1], ";"), ElementsAreArray(second));
+    }
+
     TEST(CsvUtilTest, ParseCsvLineSplitsAndTrimsValues)
     {
         EXPECT_THAT(ParseCsvLine(" a , b,c "), ElementsAre("a", "b", "c"));
@@ -199,6 +250,8 @@ namespace
     TEST(CsvUtilTest, ParseCsvLineKeepsEmptyValues)
     {
         EXPECT_THAT(ParseCsvLine("a,,  ,b"), ElementsAre("a", "", "", "b"));
+        EXPECT_THAT(ParseCsvLine("a,"), ElementsAre("a", ""));
+        EXPECT_THAT(ParseCsvLine("\"a\",\"b\","), ElementsAre("a", "b", ""));
     }
 
     TEST(CsvUtilTest, ParseCsvLineOfEmptyLineHasNoValue)
@@ -211,6 +264,74 @@ namespace
         std::string line = JoinCsvLine({"first", "second", "third"});
 
         EXPECT_THAT(ParseCsvLine(line), ElementsAre("first", "second", "third"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineReadsAValueBetweenDoubleQuotes)
+    {
+        EXPECT_THAT(ParseCsvLine("a,\"b\",c"), ElementsAre("a", "b", "c"));
+        EXPECT_THAT(ParseCsvLine("\"a\";\"b\"", ";"), ElementsAre("a", "b"));
+        EXPECT_THAT(ParseCsvLine("\"\",b,\"\""), ElementsAre("", "b", ""));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsTheSeparatorOfAQuotedValue)
+    {
+        EXPECT_THAT(ParseCsvLine("\"a,b\",c"), ElementsAre("a,b", "c"));
+        EXPECT_THAT(ParseCsvLine("x;\"a;b;\";y", ";"), ElementsAre("x", "a;b;", "y"));
+        EXPECT_THAT(ParseCsvLine("\"a,b\";c", ";"), ElementsAre("a,b", "c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineUndoublesTheDoubleQuotesOfAQuotedValue)
+    {
+        EXPECT_THAT(ParseCsvLine("\"say \"\"hi\"\"\",b"), ElementsAre("say \"hi\"", "b"));
+        EXPECT_THAT(ParseCsvLine("\"\"\"\""), ElementsAre("\""));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsTheSpacesOfAQuotedValueAndSkipsTheOnesAroundIt)
+    {
+        EXPECT_THAT(ParseCsvLine(" \" a \" ,b"), ElementsAre(" a ", "b"));
+        EXPECT_THAT(ParseCsvLine("a,\"b\"\r\n"), ElementsAre("a", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsADoubleQuoteWhichDoesNotStartAValue)
+    {
+        EXPECT_THAT(ParseCsvLine("5\" pipe,b"), ElementsAre("5\" pipe", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineTakesTheRestOfALineWhenAQuoteIsNotClosed)
+    {
+        EXPECT_THAT(ParseCsvLine("a,\"b,c"), ElementsAre("a", "b,c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsWhatFollowsTheClosingQuote)
+    {
+        EXPECT_THAT(ParseCsvLine("\"ab\"cd,e"), ElementsAre("abcd", "e"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsEmptyValuesOfAWhitespaceSeparator)
+    {
+        EXPECT_THAT(ParseCsvLine("a\t\tb", "\t"), ElementsAre("a", "", "b"));
+        EXPECT_THAT(ParseCsvLine("a\t\"b\tc\"", "\t"), ElementsAre("a", "b\tc"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineOfAnEmptySeparatorIsOneValue)
+    {
+        EXPECT_THAT(ParseCsvLine(" a,b ", ""), ElementsAre("a,b"));
+        EXPECT_THAT(ParseCsvLine("\"a,b\"", ""), ElementsAre("a,b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineReversesCreateCsvLine)
+    {
+        /* A value which has leading or trailing spaces is not quoted by EscapeCsvValue: it is
+         * trimmed */
+        const std::vector<std::string> values =
+            {"plain", "a,b", "a;b", "say \"hi\"", "two\nlines", "cr\r\nlf", "", "\"", "\"\""};
+
+        for (const std::string separator : {",", ";", "\t"})
+        {
+            EXPECT_THAT(ParseCsvLine(CreateCsvLine(values, separator), separator),
+                        ElementsAreArray(values))
+                << "separator: " << separator;
+        }
     }
 
     /** @brief Gives each test a temporary directory for the CSV files it writes */

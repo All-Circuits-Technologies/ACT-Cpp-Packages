@@ -81,16 +81,25 @@ bool AddCsvLine(const std::vector<std::string> &values,
 
 /**
  * @brief Parse CSV content into lines
+ * @note A line break between double quotes does not end the line,
+ *       see how @ref ParseCsvLine reads it.
+ *       A double quote which is never closed holds the rest of the content.
  * @param csvContent The CSV content as a string
+ * @param separator The separator character (default is @ref DefaultCsvSeparator), which tells
+ * where a value starts
  * @return A vector of strings, each representing a line from the CSV content
  */
-std::vector<std::string> ParseCsvFile(const std::string &csvContent);
+std::vector<std::string> ParseCsvFile(const std::string &csvContent,
+                                      const std::string &separator = DefaultCsvSeparator);
 
 /**
- * @brief Parse a single CSV line into values
+ * @brief Parse a single CSV line into values (RFC 4180)
+ * @note It reads what @ref EscapeCsvValue and @ref CreateCsvLine write.
+ * @note Any value starting with a double quote is read as it is up to the closing double quote,
+ * and within it doubled double quotes are single ones, separators and line breaks are allowed.
  * @param csvLine The CSV line as a string
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
- * @return A vector of strings, each representing a value from the CSV line
+ * @return A vector of strings, each representing a value from the CSV line, none for an empty line
  */
 std::vector<std::string> ParseCsvLine(const std::string &csvLine,
                                       const std::string &separator = DefaultCsvSeparator);
