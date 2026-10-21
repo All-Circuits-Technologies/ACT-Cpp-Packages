@@ -81,6 +81,8 @@ bool AddCsvLine(const std::vector<std::string> &values,
 
 /**
  * @brief Parse CSV content into lines
+ * @note A line ends with a line feed, or with a carriage return followed by a line feed (RFC 4180);
+ *       neither is part of the line.
  * @note A line break between double quotes does not end the line,
  *       see how @ref ParseCsvLine reads it.
  *       A double quote which is never closed holds the rest of the content.

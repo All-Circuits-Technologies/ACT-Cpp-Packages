@@ -141,6 +141,13 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
                 }
             }
         }
+        else if ((character == '\r') && ((position + 1) < csvContent.size()) &&
+                 (csvContent[position + 1] == '\n'))
+        {
+            /* The carriage return of a CRLF line break is not a part of the line */
+            ++position;
+            continue;
+        }
         else if (character == '\n')
         {
             lines.push_back(line);
