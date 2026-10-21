@@ -46,6 +46,7 @@ option(BUILD_TESTS "Build tests" OFF)
 # Modules are listed alphabetically for simplicity.
 # -----------------------------------------------------------------------------
 
+add_subdirectory(lib/act_archive)
 add_subdirectory(lib/act_db_core)
 add_subdirectory(lib/act_files)
 add_subdirectory(lib/act_foundation)
