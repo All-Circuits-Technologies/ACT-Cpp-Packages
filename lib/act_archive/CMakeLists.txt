@@ -22,6 +22,9 @@ add_library(act_archive STATIC
     src/utilities/archive_path_util.cpp
     src/utilities/libarchive_util.cpp
     src/utilities/scoped_utf8_locale.cpp
+    src/writer/archive_writer.cpp
+    src/writer/archive_writer_impl.cpp
+    src/writer/string_archive_sink.cpp
 )
 
 # Public headers are exposed via include/<module_name>/

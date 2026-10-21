@@ -43,6 +43,11 @@ sudo apt install libarchive-dev
 | `ArchiveReader`        | `act_archive/reader/archive_reader.hpp`         | Opens an archive held in memory, reads its entries |
 | `ArchiveReaderOptions` | `act_archive/reader/archive_reader_options.hpp` | Options of a reader: allowed formats, limits       |
 | `ArchiveReaderLimits`  | `act_archive/reader/archive_reader_limits.hpp`  | Entry count and size limits of a reader            |
+| `ArchiveWriter`        | `act_archive/writer/archive_writer.hpp`         | Writes an archive, entry after entry, to a sink    |
+| `ArchiveWriterOptions` | `act_archive/writer/archive_writer_options.hpp` | Options of a writer: archive format                |
+| `EntryOptions`         | `act_archive/writer/entry_options.hpp`          | Options of an entry: compression                   |
+| `AbsArchiveSink`       | `act_archive/writer/abs_archive_sink.hpp`       | Destination of the archive bytes                   |
+| `StringArchiveSink`    | `act_archive/writer/string_archive_sink.hpp`    | Sink keeping the archive in memory                 |
 | `ArchivePathUtil`      | `act_archive/utilities/archive_path_util.hpp`   | Entry path safety check and separators             |
 | `ArchiveEntry`         | `act_archive/types/archive_entry.hpp`           | Entry read from an archive: path, type, content    |
 | `ArchiveFormat`        | `act_archive/types/archive_format.hpp`          | Archive formats: `ZIP`                             |
@@ -52,6 +57,31 @@ sudo apt install libarchive-dev
 ---
 
 ## Usage
+
+### Write a ZIP archive
+
+```cpp
+#include "act_archive/writer/archive_writer.hpp"
+#include "act_archive/writer/string_archive_sink.hpp"
+
+using namespace act::archive;
+
+StringArchiveSink sink;
+std::unique_ptr<ArchiveWriter> writer =
+    ArchiveWriter::Create({.format = ArchiveFormat::ZIP}, sink, logger);
+if (!writer || !writer->addDirectoryEntry("My Folder") ||
+    !writer->addFileFromMemory("My Folder/data.csv", csvContent) || !writer->finalize())
+{
+    return std::nullopt;
+}
+
+return sink.takeData();
+```
+
+A writer destroyed before `finalize()` abandons its archive: nothing more is written to the sink.
+
+To nest an archive, add the bytes of the inner one as a file of the outer one, with
+`EntryCompression::NONE` as it is already compressed.
 
 ### Read a ZIP archive received from a user
 
@@ -98,11 +128,35 @@ entry rejects the whole archive.
   since 2.35, Debian's `libc-bin` ships it). Without it, the archives with non ASCII names are
   rejected.
 
+`ArchiveWriter` checks the same paths and rejects duplicates, so that it never writes an archive
+`ArchiveReader` would reject. It does not check that a name is valid on Windows: see
+`FilePathUtil::SanitizeFileName` in act_files.
+
 ## ZIP specifics
 
+- Entry paths use `/` as separator: `ArchiveWriter` writes a `\` as `/`.
 - Directories are stored with a trailing `/`; `ArchiveEntry::path` never has one.
+- `EntryCompression::DEFAULT` is Deflate, `EntryCompression::NONE` stores the content.
 - An empty archive is the 22 bytes of an end of central directory record, which `ArchiveReader`
   detects specially.
+
+## Adding a format or a filter
+
+The API separates the format, which lays the entries out (ZIP, tar, 7z), from the filter,
+which compresses the whole stream (gzip, zstd, xz): a `.tar.zst` archive is the TAR format with
+the ZSTD filter.
+
+To add a format:
+
+1. add its value to `ArchiveFormat`;
+2. handle it in the `switch` statements of `src/utilities/libarchive_util.cpp` (writer
+   format, per entry compression, formats the reader recognizes);
+3. add tests, an archive of another tool included.
+
+To add the first filter, replace the "Extension point" comments of `ArchiveWriterOptions` and
+`ArchiveReaderOptions` by the fields they describe, defaulting to `NONE`, then map the values to
+`archive_write_add_filter_*()` and `archive_read_support_filter_*()`, and reject the invalid
+format and filter combinations when creating a writer. Existing callers are not affected.
 
 ## CMake integration
 
