@@ -10,6 +10,7 @@
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <fstream>
@@ -176,6 +177,14 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
     }
 
     return lines;
+}
+
+void RemoveBlankLines(std::vector<std::string> &lines, const std::string &separator)
+{
+    std::erase_if(lines, [&separator](const std::string &line) {
+        const std::vector<std::string> values{ParseCsvLine(line, separator)};
+        return std::ranges::all_of(values, [](const std::string &value) { return value.empty(); });
+    });
 }
 
 std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::string &separator)

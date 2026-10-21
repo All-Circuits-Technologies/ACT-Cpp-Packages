@@ -97,6 +97,17 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent,
                                       const std::string &separator = DefaultCsvSeparator);
 
 /**
+ * @brief Remove the blank lines of CSV lines, such as a spreadsheet may leave
+ * @note A line is blank when all its values are empty, as @ref ParseCsvLine reads them: an empty
+ *       line, a line of whitespace, or a line of separators only.
+ * @param lines The CSV lines, as given by @ref ParseCsvFile; the blank ones are removed, the
+ *        others keep their order
+ * @param separator The separator character (default is @ref DefaultCsvSeparator)
+ */
+void RemoveBlankLines(std::vector<std::string> &lines,
+                      const std::string &separator = DefaultCsvSeparator);
+
+/**
  * @brief Parse a single CSV line into values (RFC 4180)
  * @note It reads what @ref EscapeCsvValue and @ref CreateCsvLine write.
  * @note Any value starting with a double quote is read as it is up to the closing double quote,
