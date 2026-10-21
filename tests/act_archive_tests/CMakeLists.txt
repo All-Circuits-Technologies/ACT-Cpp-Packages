@@ -12,6 +12,7 @@ act_add_unit_test(act_archive_tests
     SOURCES
     test_archive_path_util.cpp
     test_archive_reader.cpp
+    test_archive_writer.cpp
     LIBS
     act_archive
     act_test_common
