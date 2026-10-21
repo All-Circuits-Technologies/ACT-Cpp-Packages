@@ -7,14 +7,16 @@
  * @brief Unit tests of StringUtil.
  *
  * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
- * kept), case conversion and case insensitive comparison, the iterable to string and the double
- * to string conversions, the hexadecimal conversions and checks, and the IPv4 address validation.
+ * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
+ * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
+ * and the IPv4 address validation.
  */
 
 #include "act_text/string_util.hpp"
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <list>
@@ -76,52 +78,65 @@ namespace
         EXPECT_EQ(source, "  value  ");
     }
 
-    TEST(StringUtilTest, TrimRemovesOnlyTheGivenCharacters)
+    TEST(StringUtilTest, TrimCharsRemovesOnlyTheGivenCharacters)
     {
         std::string value = "._ a. b_ ._";
 
-        Trim(value, "._ ");
+        TrimChars(value, "._ ");
 
         EXPECT_EQ(value, "a. b");
     }
 
-    TEST(StringUtilTest, LtrimAndRtrimHonourTheGivenCharacters)
+    TEST(StringUtilTest, LtrimCharsAndRtrimCharsHonourTheGivenCharacters)
     {
         std::string leading = "--value--";
         std::string trailing = "--value--";
 
-        Ltrim(leading, "-");
-        Rtrim(trailing, "-");
+        LtrimChars(leading, "-");
+        RtrimChars(trailing, "-");
 
         EXPECT_EQ(leading, "value--");
         EXPECT_EQ(trailing, "--value");
     }
 
-    TEST(StringUtilTest, TrimCopiesHonourTheGivenCharacters)
+    TEST(StringUtilTest, TrimCharsCopiesHonourTheGivenCharacters)
     {
         const std::string source = "**value**";
 
-        EXPECT_EQ(LtrimCopy(source, "*"), "value**");
-        EXPECT_EQ(RtrimCopy(source, "*"), "**value");
-        EXPECT_EQ(TrimCopy(source, "*"), "value");
+        EXPECT_EQ(LtrimCharsCopy(source, "*"), "value**");
+        EXPECT_EQ(RtrimCharsCopy(source, "*"), "**value");
+        EXPECT_EQ(TrimCharsCopy(source, "*"), "value");
     }
 
-    TEST(StringUtilTest, TrimOfOnlyGivenCharactersGivesAnEmptyString)
+    TEST(StringUtilTest, TrimCharsOfOnlyGivenCharactersGivesAnEmptyString)
     {
         std::string value = "..__..";
 
-        Trim(value, "._");
+        TrimChars(value, "._");
 
         EXPECT_TRUE(value.empty());
     }
 
-    TEST(StringUtilTest, TrimWithoutCharactersLeavesTheStringUntouched)
+    TEST(StringUtilTest, TrimCharsWithoutCharactersLeavesTheStringUntouched)
     {
         std::string value = "  value  ";
 
-        Trim(value, "");
+        TrimChars(value, "");
 
         EXPECT_EQ(value, "  value  ");
+    }
+
+    TEST(StringUtilTest, TrimHelpersCanBePassedToAlgorithms)
+    {
+        std::vector<std::string> values{" a ", "b\t"};
+        const std::vector<std::string> sources{" c", "d "};
+        std::vector<std::string> copies(sources.size());
+
+        std::for_each(values.begin(), values.end(), Trim);
+        std::transform(sources.begin(), sources.end(), copies.begin(), TrimCopy);
+
+        EXPECT_EQ(values, (std::vector<std::string>{"a", "b"}));
+        EXPECT_EQ(copies, (std::vector<std::string>{"c", "d"}));
     }
 
     TEST(StringUtilTest, TrimKeepsTheBytesOfMultiByteCharacters)
