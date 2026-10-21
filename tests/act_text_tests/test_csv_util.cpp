@@ -10,8 +10,8 @@
  * - escaping a value,
  * - building a CSV line (with or without escaping its values),
  * - appending lines to a file (in a temporary directory removed after each test),
- * - splitting CSV content into lines (a line break between double quotes does not end one, a
- *   UTF-8 byte order mark at the beginning is skipped),
+ * - splitting CSV content into lines (a line ends with LF or CRLF, a line break between double
+ *   quotes does not end one, a UTF-8 byte order mark at the beginning is skipped),
  * - removing the blank lines,
  * - splitting a line into values (trimmed, or read as they are when they are between double
  *   quotes), and
@@ -190,6 +190,19 @@ namespace
     {
         EXPECT_THAT(ParseCsvFile("a,b\nc,d\n"), ElementsAre("a,b", "c,d"));
         EXPECT_THAT(ParseCsvFile("a,b\nc,d"), ElementsAre("a,b", "c,d"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileEndsTheLinesWithCrlfOrLf)
+    {
+        EXPECT_THAT(ParseCsvFile("a,b\r\nc,d\r\n"), ElementsAre("a,b", "c,d"));
+        EXPECT_THAT(ParseCsvFile("a\r\nb\nc"), ElementsAre("a", "b", "c"));
+        EXPECT_THAT(ParseCsvFile("a\r\n\r\nb"), ElementsAre("a", "", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsACarriageReturnWhichIsNotAPartOfALineBreak)
+    {
+        EXPECT_THAT(ParseCsvFile("a\rb\nc\r"), ElementsAre("a\rb", "c\r"));
+        EXPECT_THAT(ParseCsvFile("\"x\r\ny\",b\r\nc"), ElementsAre("\"x\r\ny\",b", "c"));
     }
 
     TEST(CsvUtilTest, ParseCsvFileKeepsEmptyLinesInTheMiddle)
