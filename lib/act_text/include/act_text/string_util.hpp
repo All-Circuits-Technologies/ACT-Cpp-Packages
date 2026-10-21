@@ -292,4 +292,13 @@ bool IsValidIpAddress(const std::string &ipAddress);
  */
 std::string ToPrintableText(const std::string &text);
 
+/**
+ * @brief Test if a string is valid UTF-8 (RFC 3629)
+ * @note Strict: overlong encodings, UTF-16 surrogates (U+D800 to U+DFFF) and code points beyond
+ *       U+10FFFF are invalid. An empty string, and a pure ASCII one, are valid.
+ * @param str The string to test
+ * @return true if the string is valid UTF-8, false otherwise
+ */
+bool IsValidUtf8(const std::string &str);
+
 } // namespace act::text::StringUtil

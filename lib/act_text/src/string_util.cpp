@@ -10,6 +10,7 @@
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <cstddef>
 #include <iomanip>
 #include <optional>
 #include <regex>
@@ -45,6 +46,54 @@ constexpr unsigned char LAST_C1_CONTROL_TRAIL_BYTE{0x9FU};
  */
 const std::regex IP_ADDRESS_PATTERN(R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
                                     R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
+
+/** @brief Largest code point UTF-8 writes on a single byte, which is ASCII */
+constexpr unsigned char UTF8_MAX_ONE_BYTE_CODE_POINT{0x7FU};
+
+/** @brief Mask of the bits telling a lead byte of a 2 bytes UTF-8 sequence (110xxxxx) */
+constexpr unsigned char UTF8_TWO_BYTES_LEAD_MASK{0xE0U};
+
+/** @brief Bits telling a lead byte of a 2 bytes UTF-8 sequence, once masked */
+constexpr unsigned char UTF8_TWO_BYTES_LEAD{0xC0U};
+
+/** @brief Mask of the bits telling a lead byte of a 3 bytes UTF-8 sequence (1110xxxx) */
+constexpr unsigned char UTF8_THREE_BYTES_LEAD_MASK{0xF0U};
+
+/** @brief Bits telling a lead byte of a 3 bytes UTF-8 sequence, once masked */
+constexpr unsigned char UTF8_THREE_BYTES_LEAD{0xE0U};
+
+/** @brief Mask of the bits telling a lead byte of a 4 bytes UTF-8 sequence (11110xxx) */
+constexpr unsigned char UTF8_FOUR_BYTES_LEAD_MASK{0xF8U};
+
+/** @brief Bits telling a lead byte of a 4 bytes UTF-8 sequence, once masked */
+constexpr unsigned char UTF8_FOUR_BYTES_LEAD{0xF0U};
+
+/** @brief Mask of the bits telling a continuation byte of a UTF-8 sequence (10xxxxxx) */
+constexpr unsigned char UTF8_CONTINUATION_MASK{0xC0U};
+
+/** @brief Bits telling a continuation byte of a UTF-8 sequence, once masked */
+constexpr unsigned char UTF8_CONTINUATION{0x80U};
+
+/** @brief Number of code point bits a continuation byte holds */
+constexpr unsigned int UTF8_CONTINUATION_BITS{6U};
+
+/** @brief Smallest code point a 2 bytes UTF-8 sequence may hold */
+constexpr char32_t UTF8_MIN_TWO_BYTES_CODE_POINT{0x80U};
+
+/** @brief Smallest code point a 3 bytes UTF-8 sequence may hold */
+constexpr char32_t UTF8_MIN_THREE_BYTES_CODE_POINT{0x800U};
+
+/** @brief Smallest code point a 4 bytes UTF-8 sequence may hold */
+constexpr char32_t UTF8_MIN_FOUR_BYTES_CODE_POINT{0x10000U};
+
+/** @brief First UTF-16 surrogate, a code point UTF-8 may not hold */
+constexpr char32_t UTF16_MIN_SURROGATE{0xD800U};
+
+/** @brief Last UTF-16 surrogate, a code point UTF-8 may not hold */
+constexpr char32_t UTF16_MAX_SURROGATE{0xDFFFU};
+
+/** @brief Largest Unicode code point */
+constexpr char32_t UNICODE_MAX_CODE_POINT{0x10FFFFU};
 
 /** @brief Append a byte as `\xNN`, with upper case hexadecimal digits */
 void AppendEscapedByte(std::string &text, unsigned char byte)
@@ -199,6 +248,76 @@ std::string ToPrintableText(const std::string &text)
     }
 
     return printableText;
+}
+
+bool IsValidUtf8(const std::string &str)
+{
+    std::size_t position{0};
+    while (position < str.size())
+    {
+        const auto leadByte{static_cast<unsigned char>(str[position])};
+        if (leadByte <= UTF8_MAX_ONE_BYTE_CODE_POINT)
+        {
+            ++position;
+            continue;
+        }
+
+        /* The lead byte tells the sequence length, and gives the first bits of the code point */
+        std::size_t length{0};
+        char32_t codePoint{0};
+        if ((leadByte & UTF8_TWO_BYTES_LEAD_MASK) == UTF8_TWO_BYTES_LEAD)
+        {
+            length = 2;
+            codePoint = leadByte & static_cast<unsigned char>(~UTF8_TWO_BYTES_LEAD_MASK);
+        }
+        else if ((leadByte & UTF8_THREE_BYTES_LEAD_MASK) == UTF8_THREE_BYTES_LEAD)
+        {
+            length = 3;
+            codePoint = leadByte & static_cast<unsigned char>(~UTF8_THREE_BYTES_LEAD_MASK);
+        }
+        else if ((leadByte & UTF8_FOUR_BYTES_LEAD_MASK) == UTF8_FOUR_BYTES_LEAD)
+        {
+            length = 4;
+            codePoint = leadByte & static_cast<unsigned char>(~UTF8_FOUR_BYTES_LEAD_MASK);
+        }
+        else
+        {
+            /* A continuation byte without lead byte, or a lead byte no valid sequence starts with
+             */
+            return false;
+        }
+
+        if ((position + length) > str.size())
+        {
+            return false;
+        }
+
+        for (std::size_t index{1}; index < length; ++index)
+        {
+            const auto continuationByte{static_cast<unsigned char>(str[position + index])};
+            if ((continuationByte & UTF8_CONTINUATION_MASK) != UTF8_CONTINUATION)
+            {
+                return false;
+            }
+            codePoint = (codePoint << UTF8_CONTINUATION_BITS) |
+                        (continuationByte & static_cast<unsigned char>(~UTF8_CONTINUATION_MASK));
+        }
+
+        /* Each length has its own smallest code point: a smaller one is an overlong encoding */
+        const char32_t minCodePoint{(length == 2)   ? UTF8_MIN_TWO_BYTES_CODE_POINT
+                                    : (length == 3) ? UTF8_MIN_THREE_BYTES_CODE_POINT
+                                                    : UTF8_MIN_FOUR_BYTES_CODE_POINT};
+        const bool isSurrogate{(codePoint >= UTF16_MIN_SURROGATE) &&
+                               (codePoint <= UTF16_MAX_SURROGATE)};
+        if ((codePoint < minCodePoint) || isSurrogate || (codePoint > UNICODE_MAX_CODE_POINT))
+        {
+            return false;
+        }
+
+        position += length;
+    }
+
+    return true;
 }
 
 } // namespace act::text::StringUtil
