@@ -156,13 +156,13 @@ namespace
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameKeepsAValidName)
     {
-        EXPECT_EQ(Sanitize("My-Profile_1.v2"), "My-Profile_1.v2");
+        EXPECT_EQ(Sanitize("My-File_1.v2"), "My-File_1.v2");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameKeepsSpacesAndAllowedPunctuation)
     {
-        EXPECT_EQ(Sanitize("Sonde #3 & relais (v2) [50%] {a,b;c} 'x' =+@^~!$`"),
-                  "Sonde #3 & relais (v2) [50%] {a,b;c} 'x' =+@^~!$`");
+        EXPECT_EQ(Sanitize("Report #3 & summary (v2) [50%] {a,b;c} 'x' =+@^~!$`"),
+                  "Report #3 & summary (v2) [50%] {a,b;c} 'x' =+@^~!$`");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameReplacesEachForbiddenCharacter)
@@ -189,8 +189,8 @@ namespace
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameReplacesNonAsciiCharacters)
     {
         // Both bytes of each accented letter are replaced by a single character
-        EXPECT_EQ(Sanitize("Capteur Temp\xC3\xA9rature (v2)"), "Capteur Temp_rature (v2)");
-        EXPECT_EQ(Sanitize("H\xC3\xA9h\xC3\xA9 hoh\xC3\xB4.txt"), "H_h_ hoh_.txt");
+        EXPECT_EQ(Sanitize("R\xC3\xA9sum\xC3\xA9 annuel (v2)"), "R_sum_ annuel (v2)");
+        EXPECT_EQ(Sanitize("R\xC3\xA9union \xC3\xA0 Gen\xC3\xA8ve.txt"), "R_union _ Gen_ve.txt");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameTrimsDotsSpacesAndReplacementsAtBothEnds)
@@ -267,7 +267,7 @@ namespace
         EXPECT_EQ(Sanitize("a/b", {.replacementChar = '-'}), "a-b");
         EXPECT_EQ(Sanitize("-a-", {.replacementChar = '-'}), "a");
         EXPECT_EQ(Sanitize("con", {.replacementChar = '-'}), "con-");
-        EXPECT_EQ(Sanitize("...", {.fallbackName = "profile"}), "profile");
+        EXPECT_EQ(Sanitize("...", {.fallbackName = "fallback"}), "fallback");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameDoesNotWarnWithValidOptions)
