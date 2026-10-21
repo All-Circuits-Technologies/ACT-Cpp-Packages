@@ -9,9 +9,9 @@
  * Covers
  * - escaping a value,
  * - building a CSV line (with or without escaping its values),
- * - the UTF-8 byte order mark,
  * - appending lines to a file (in a temporary directory removed after each test),
- * - splitting CSV content into lines (a line break between double quotes does not end one), and
+ * - splitting CSV content into lines (a line break between double quotes does not end one, a
+ *   UTF-8 byte order mark at the beginning is skipped), and
  * - splitting a line into values (trimmed, or read as they are when they are between double
  *   quotes).
  */
@@ -40,6 +40,9 @@ namespace
     using ::testing::ElementsAre;
     using ::testing::ElementsAreArray;
     using ::testing::IsEmpty;
+
+    /** @brief The UTF-8 byte order mark, as the text a CSV file may start with */
+    using act::files::FileUtil::UTF8_BYTE_ORDER_MARK;
 
     /**
      * @brief Read the fields of a CSV line as RFC 4180 describes them: the reverse of the escaping
@@ -239,6 +242,29 @@ namespace
         ASSERT_EQ(lines.size(), 2U);
         EXPECT_THAT(ParseCsvLine(lines[0], ";"), ElementsAreArray(first));
         EXPECT_THAT(ParseCsvLine(lines[1], ";"), ElementsAreArray(second));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileSkipsTheByteOrderMarkAtTheBeginning)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + "a,b\nc,d\n"), ElementsAre("a,b", "c,d"));
+        /* The quotes of a first value are read as such: its line break stays in its line */
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + "\"two\nlines\",b\nc,d\n"),
+                    ElementsAre("\"two\nlines\",b", "c,d"));
+        EXPECT_THAT(ParseCsvFile(byteOrderMark), IsEmpty());
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsWhatIsNotTheByteOrderMarkAtTheBeginning)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+        const std::string lookAlike{"\xEF\xBB\xBE"};
+
+        EXPECT_THAT(ParseCsvFile("a\n" + byteOrderMark + "b\n"),
+                    ElementsAre("a", byteOrderMark + "b"));
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + byteOrderMark + "a\n"),
+                    ElementsAre(byteOrderMark + "a"));
+        EXPECT_THAT(ParseCsvFile(lookAlike + "a,b\n"), ElementsAre(lookAlike + "a,b"));
     }
 
     TEST(CsvUtilTest, ParseCsvLineSplitsAndTrimsValues)
