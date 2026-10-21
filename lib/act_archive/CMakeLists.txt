@@ -17,6 +17,8 @@ if(NOT TARGET LibArchive::LibArchive)
 endif()
 
 add_library(act_archive STATIC
+    src/reader/archive_reader.cpp
+    src/reader/archive_reader_impl.cpp
     src/utilities/archive_path_util.cpp
     src/utilities/libarchive_util.cpp
     src/utilities/scoped_utf8_locale.cpp
