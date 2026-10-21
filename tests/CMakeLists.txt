@@ -52,6 +52,7 @@ endfunction()
 # -----------------------------------------------------------------------------
 add_subdirectory(common)
 
+add_subdirectory(act_archive_tests)
 add_subdirectory(act_db_core_tests)
 add_subdirectory(act_db_sqlite_tests)
 add_subdirectory(act_files_tests)
