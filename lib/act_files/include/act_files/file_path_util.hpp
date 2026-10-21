@@ -38,8 +38,9 @@ struct SanitizeFileNameOptions
     std::size_t maxLength{DEFAULT_MAX_LENGTH};
 
     /**
-     * @brief Name returned when nothing remains of the given name
-     * @pre It is a valid file name: it is returned as is, without being sanitized
+     * @brief Name returned when nothing remains of the given name, truncated to the maximum
+     *        length
+     * @pre It is a valid file name, once truncated: it is not sanitized
      */
     std::string fallbackName{"unnamed"};
 };
@@ -82,13 +83,15 @@ struct SanitizeFileNameOptions
  * @details The name is processed byte by byte:
  *          1. each run of bytes the character set forbids is replaced by a single
  *             replacement character;
- *          2. the dots, spaces and replacement characters are removed at both ends (Windows
- *             forbids a name ending with a dot or a space, and `.` and `..` are not names);
+ *          2. the spaces are removed at both ends, then the dots, spaces and replacement
+ *             characters at the end (Windows forbids a name ending with a dot or a space, and
+ *             `.` and `..` are not names); leading dots are kept, as in `.bashrc`;
  *          3. the name is truncated to the maximum length, and its end trimmed again;
  *          4. the fallback name is returned if nothing remains;
  *          5. a name Windows reserves (see @ref IsWindowsReservedName) gets the replacement
  *             character after its stem: `con.txt` gives `con_.txt`. When the name is already at
- *             its maximum length, the last character of its stem is replaced instead.
+ *             its maximum length, the last character of its stem is replaced instead, and the
+ *             fallback name is returned if the name is still reserved.
  * @param name The string to turn into a file name
  * @param charset The character set the file name is restricted to
  * @param logger The logger to use for logging the invalid options

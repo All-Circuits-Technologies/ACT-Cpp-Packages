@@ -149,9 +149,11 @@ std::string SanitizeFileName(const std::string &name,
         }
     }
 
-    // Windows forbids a name ending with a dot or a space, and "." and ".." are not names
+    // Spaces are unwelcome at both ends. Windows forbids a name ending with a dot or a space,
+    // and "." and ".." are not names; leading dots are kept, for hidden files such as ".bashrc"
     const std::string charsToTrim{DOT, SPACE, replacementChar};
-    act::text::StringUtil::TrimChars(result, charsToTrim);
+    act::text::StringUtil::Trim(result);
+    act::text::StringUtil::RtrimChars(result, charsToTrim);
 
     if (result.size() > maxLength)
     {
@@ -159,9 +161,10 @@ std::string SanitizeFileName(const std::string &name,
         act::text::StringUtil::RtrimChars(result, charsToTrim);
     }
 
+    std::string fallbackName = options.fallbackName.substr(0, maxLength);
     if (result.empty())
     {
-        return options.fallbackName;
+        return fallbackName;
     }
 
     // Windows reserves some device names, whatever their extension: "con.txt" is the console
@@ -178,6 +181,13 @@ std::string SanitizeFileName(const std::string &name,
         else
         {
             result[stem.size() - 1] = replacementChar;
+        }
+
+        // A letter, a digit or a '$' as replacement character may give a reserved name again:
+        // "COM1" at its maximum length gives "COM0" with '0'
+        if (IsWindowsReservedName(result))
+        {
+            return fallbackName;
         }
     }
 

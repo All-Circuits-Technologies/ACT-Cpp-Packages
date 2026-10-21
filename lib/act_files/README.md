@@ -13,9 +13,9 @@ This module provides utilities for file I/O operations, path manipulation, and f
 ## Contents
 
 - **ExtFile:** Extended file abstraction with automatic cleanup
+- **FileNameCharset:** Character sets a sanitized file name may be restricted to
 - **FilePathUtil:** File path utilities (comparison, file name extraction, file name sanitizing)
 - **FileUtil:** File system utilities (read, write, exists, etc.)
-- **FileNameCharset:** Character sets a sanitized file name may be restricted to
 
 ## Dependencies
 

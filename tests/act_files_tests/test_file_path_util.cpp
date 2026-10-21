@@ -9,8 +9,8 @@
  *
  * Covers comparing paths (files living in a temporary directory removed after each test),
  * extracting file names, detecting Windows reserved names, and sanitizing file names: allowed and
- * forbidden characters, ends of the name, empty results, Windows reserved names, truncation, and
- * the options, valid or not.
+ * forbidden characters, ends of the name, hidden files, empty results, Windows reserved names,
+ * truncation, of the fallback name too, and the options, valid or not.
  */
 
 #include "act_files/file_path_util.hpp"
@@ -193,12 +193,20 @@ namespace
         EXPECT_EQ(Sanitize("R\xC3\xA9union \xC3\xA0 Gen\xC3\xA8ve.txt"), "R_union _ Gen_ve.txt");
     }
 
-    TEST(FilePathUtilSanitizeTest, SanitizeFileNameTrimsDotsSpacesAndReplacementsAtBothEnds)
+    TEST(FilePathUtilSanitizeTest, SanitizeFileNameTrimsSpacesAndTheEndOnly)
     {
-        EXPECT_EQ(Sanitize("  .hidden. "), "hidden");
-        EXPECT_EQ(Sanitize("/name/"), "name");
+        EXPECT_EQ(Sanitize("  .hidden. "), ".hidden");
+        EXPECT_EQ(Sanitize(" name "), "name");
+        EXPECT_EQ(Sanitize("/name/"), "_name");
         EXPECT_EQ(Sanitize("name. . ."), "name");
         EXPECT_EQ(Sanitize("a..b"), "a..b");
+    }
+
+    TEST(FilePathUtilSanitizeTest, SanitizeFileNameKeepsTheStartOfHiddenAndSpecialFiles)
+    {
+        EXPECT_EQ(Sanitize(".bashrc"), ".bashrc");
+        EXPECT_EQ(Sanitize("__init__.py"), "__init__.py");
+        EXPECT_EQ(Sanitize("..name"), "..name");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameFallsBackWhenNothingRemains)
@@ -265,9 +273,25 @@ namespace
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameHonoursCustomOptions)
     {
         EXPECT_EQ(Sanitize("a/b", {.replacementChar = '-'}), "a-b");
-        EXPECT_EQ(Sanitize("-a-", {.replacementChar = '-'}), "a");
+        EXPECT_EQ(Sanitize("-a-", {.replacementChar = '-'}), "-a");
         EXPECT_EQ(Sanitize("con", {.replacementChar = '-'}), "con-");
         EXPECT_EQ(Sanitize("...", {.fallbackName = "fallback"}), "fallback");
+    }
+
+    TEST(FilePathUtilSanitizeTest, SanitizeFileNameTruncatesTheFallbackName)
+    {
+        EXPECT_EQ(Sanitize("...", {.maxLength = 3}), "unn");
+    }
+
+    TEST(FilePathUtilSanitizeTest, SanitizeFileNameFallsBackWhenTheReplacementKeepsItReserved)
+    {
+        EXPECT_EQ(
+            Sanitize("COM1", {.replacementChar = '0', .maxLength = 4, .fallbackName = "file"}),
+            "file");
+        EXPECT_EQ(Sanitize("CONIN$.txt",
+                           {.replacementChar = '$', .maxLength = 10, .fallbackName = "file"}),
+                  "file");
+        EXPECT_EQ(Sanitize("COM1", {.replacementChar = '0', .maxLength = 5}), "COM10");
     }
 
     TEST(FilePathUtilSanitizeTest, SanitizeFileNameDoesNotWarnWithValidOptions)
