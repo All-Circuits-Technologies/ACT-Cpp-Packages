@@ -109,13 +109,64 @@ bool AddCsvLine(const std::vector<std::string> &values,
     return true;
 }
 
-std::vector<std::string> ParseCsvFile(const std::string &csvContent)
+std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::string &separator)
 {
     std::vector<std::string> lines;
-    std::stringstream streamContent(csvContent);
     std::string line;
+    bool isInQuotes{false};
+    bool isValueStart{true};
 
-    while (std::getline(streamContent, line))
+    std::size_t position{0};
+    while (position < csvContent.size())
+    {
+        const char character{csvContent[position]};
+        if (isInQuotes)
+        {
+            if (character == CSV_QUOTE_CHAR)
+            {
+                if (((position + 1) < csvContent.size()) &&
+                    (csvContent[position + 1] == CSV_QUOTE_CHAR))
+                {
+                    /* A doubled double quote is a value character, not the end of the value */
+                    line += character;
+                    ++position;
+                }
+                else
+                {
+                    isInQuotes = false;
+                }
+            }
+        }
+        else if (character == '\n')
+        {
+            lines.push_back(line);
+            line.clear();
+            isValueStart = true;
+            ++position;
+            continue;
+        }
+        else if (isValueStart && (character == CSV_QUOTE_CHAR))
+        {
+            isInQuotes = true;
+            isValueStart = false;
+        }
+        else if (IsSeparatorAt(csvContent, position, separator))
+        {
+            isValueStart = true;
+            line += separator;
+            position += separator.size();
+            continue;
+        }
+        else if (!std::isspace(static_cast<unsigned char>(character)))
+        {
+            isValueStart = false;
+        }
+
+        line += character;
+        ++position;
+    }
+
+    if (!line.empty())
     {
         lines.push_back(line);
     }
