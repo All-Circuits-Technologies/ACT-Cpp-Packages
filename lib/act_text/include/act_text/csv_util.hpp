@@ -84,6 +84,8 @@ bool AddCsvLine(const std::vector<std::string> &values,
  * @note A line break between double quotes does not end the line,
  *       see how @ref ParseCsvLine reads it.
  *       A double quote which is never closed holds the rest of the content.
+ * @note A UTF-8 byte order mark at the very beginning of the content is skipped:
+ *       the first line, and its first value, are the same with and without it.
  * @param csvContent The CSV content as a string
  * @param separator The separator character (default is @ref DefaultCsvSeparator), which tells
  * where a value starts
