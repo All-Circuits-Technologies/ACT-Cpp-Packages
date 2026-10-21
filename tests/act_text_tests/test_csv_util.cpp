@@ -7,7 +7,8 @@
  * @brief Unit tests of CsvUtil.
  *
  * Covers
- * - escaping a value,
+ * - escaping a value (quoted when it holds the separator, a double quote or a line break, or
+ *   starts or ends with whitespace),
  * - building a CSV line (with or without escaping its values),
  * - appending lines to a file (in a temporary directory removed after each test),
  * - splitting CSV content into lines (a line ends with LF or CRLF, a line break between double
@@ -98,8 +99,22 @@ namespace
     TEST(CsvUtilTest, EscapeCsvValueKeepsAPlainValue)
     {
         EXPECT_EQ(EscapeCsvValue("plain value"), "plain value");
-        EXPECT_EQ(EscapeCsvValue(" padded "), " padded ");
         EXPECT_EQ(EscapeCsvValue(""), "");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueQuotesAValueStartingOrEndingWithWhitespace)
+    {
+        EXPECT_EQ(EscapeCsvValue(" padded "), "\" padded \"");
+        EXPECT_EQ(EscapeCsvValue(" leading"), "\" leading\"");
+        EXPECT_EQ(EscapeCsvValue("trailing\t"), "\"trailing\t\"");
+        EXPECT_EQ(EscapeCsvValue(" "), "\" \"");
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineReadsBackAValueStartingOrEndingWithWhitespace)
+    {
+        const std::vector<std::string> values = {" padded ", " leading", "trailing ", "plain"};
+
+        EXPECT_THAT(ParseCsvLine(CreateCsvLine(values, ";"), ";"), ElementsAreArray(values));
     }
 
     TEST(CsvUtilTest, EscapeCsvValueQuotesAValueHoldingTheSeparator)
