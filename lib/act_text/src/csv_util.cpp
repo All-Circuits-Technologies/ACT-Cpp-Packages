@@ -43,7 +43,11 @@ std::string EscapeCsvValue(const std::string &value, const std::string &separato
     /* An empty separator is found at every position: there is no separator to protect */
     const bool hasSeparator {!separator.empty() && (value.find(separator) != std::string::npos)};
     const bool hasQuotingTriggerChars {value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) != std::string::npos};
-    if (!hasSeparator && !hasQuotingTriggerChars)
+    /* ParseCsvLine trims the values which are not quoted: a surrounding whitespace has to be */
+    const bool hasSurroundingWhitespace{!value.empty() &&
+                                        (std::isspace(static_cast<unsigned char>(value.front())) ||
+                                         std::isspace(static_cast<unsigned char>(value.back())))};
+    if (!hasSeparator && !hasQuotingTriggerChars && !hasSurroundingWhitespace)
     {
         return value;
     }

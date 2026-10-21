@@ -39,7 +39,10 @@ constexpr const char *CSV_QUOTING_TRIGGER_CHARS{"\"\r\n"};
  * @param value The raw value
  * @param separator The separator character of the CSV line (default is @ref DefaultCsvSeparator)
  * @return The value unchanged if it holds neither the separator, a double quote nor a line break,
- * otherwise the value enclosed in double quotes, where the double quotes it contains are doubled
+ * and neither starts nor ends with whitespace, otherwise the value enclosed in double quotes,
+ * where the double quotes it contains are doubled
+ * @note A value starting or ending with whitespace is quoted, so that @ref ParseCsvLine, which
+ * trims the values which are not quoted, reads it back unchanged.
  */
 std::string EscapeCsvValue(const std::string &value,
                            const std::string &separator = DefaultCsvSeparator);
