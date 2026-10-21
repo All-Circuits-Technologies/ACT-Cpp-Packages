@@ -12,6 +12,7 @@
  * - appending lines to a file (in a temporary directory removed after each test),
  * - splitting CSV content into lines (a line break between double quotes does not end one, a
  *   UTF-8 byte order mark at the beginning is skipped),
+ * - removing the blank lines,
  * - splitting a line into values (trimmed, or read as they are when they are between double
  *   quotes), and
  * - finding columns by their title (trimmed, without case, ambiguous when found several times).
@@ -266,6 +267,33 @@ namespace
         EXPECT_THAT(ParseCsvFile(byteOrderMark + byteOrderMark + "a\n"),
                     ElementsAre(byteOrderMark + "a"));
         EXPECT_THAT(ParseCsvFile(lookAlike + "a,b\n"), ElementsAre(lookAlike + "a,b"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesRemovesTheLinesWithoutAnyValue)
+    {
+        std::vector<std::string> lines = {"a;b", "", "  ", ";;;", " ; \t", "\"\";", "c;d", "e"};
+
+        RemoveBlankLines(lines, ";");
+
+        EXPECT_THAT(lines, ElementsAre("a;b", "c;d", "e"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesUsesTheSeparatorItIsGiven)
+    {
+        std::vector<std::string> lines = {",,", ";;"};
+
+        RemoveBlankLines(lines);
+
+        EXPECT_THAT(lines, ElementsAre(";;"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesOfNoLineHasNoLine)
+    {
+        std::vector<std::string> lines;
+
+        RemoveBlankLines(lines);
+
+        EXPECT_THAT(lines, IsEmpty());
     }
 
     TEST(CsvUtilTest, ParseCsvLineSplitsAndTrimsValues)
