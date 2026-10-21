@@ -51,7 +51,7 @@ general-purpose applications developed by All-Circuits Technologies.
 
 - **C++ Standard:** C++20 or later
 - **CMake:** Version 3.23 or later (3.25 or later to use the presets)
-- **Compiler:** GCC 9+ or Clang 10+
+- **Compiler:** GCC 13+ or Clang 18+
 - **OS:** Linux (some libraries are Linux-specific)
 
 ### Dependencies

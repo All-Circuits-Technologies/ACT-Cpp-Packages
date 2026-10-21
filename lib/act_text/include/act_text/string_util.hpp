@@ -20,45 +20,107 @@ namespace act::text::StringUtil
 {
 /* ## Types */
 
+/* ## Constants */
+
+/**
+ * @brief The characters Ltrim, Rtrim, Trim and their copying variants remove: the whitespace
+ *        characters, as std::isspace in the default locale
+ * @note Declared before the methods, which use it.
+ */
+constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
+
 /* ## Methods (members, then non-members) */
 
 /**
- * @brief Trim from start (in place)
+ * @brief Trim the given characters from start (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
+ * @note Not an overload of Ltrim(), which could no longer be passed to std::for_each
+ */
+inline std::string &LtrimChars(std::string &s, const std::string &chars)
+{
+    s.erase(0, s.find_first_not_of(chars));
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from start (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Ltrim(std::string &s)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
+    return LtrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from end (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
+ * @note Not an overload of Rtrim(), which could no longer be passed to std::for_each
+ */
+inline std::string &RtrimChars(std::string &s, const std::string &chars)
+{
+    const std::size_t lastKept = s.find_last_not_of(chars);
+    s.erase(lastKept == std::string::npos ? 0 : lastKept + 1);
     return s;
 }
 
 /**
- * @brief Trim from end (in place)
+ * @brief Trim the whitespace from end (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Rtrim(std::string &s)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(),
-            s.end());
+    return RtrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from both ends (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note Not an overload of Trim(), which could no longer be passed to std::for_each
+ */
+inline std::string &TrimChars(std::string &s, const std::string &chars)
+{
+    RtrimChars(s, chars);
+    LtrimChars(s, chars);
     return s;
 }
 
 /**
- * @brief Trim from both ends (in place)
+ * @brief Trim the whitespace from both ends (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Trim(std::string &s)
 {
-    Rtrim(s);
-    Ltrim(s);
+    return TrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from the start (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the leading characters removed
+ * @note Not an overload of LtrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string LtrimCharsCopy(std::string s, const std::string &chars)
+{
+    LtrimChars(s, chars);
     return s;
 }
 
 /**
- * @brief Trim from the start (copying)
+ * @brief Trim the whitespace from the start (copying)
  * @param s The string to trim
  * @return A new string with the leading whitespace removed
  */
@@ -69,7 +131,20 @@ inline std::string LtrimCopy(std::string s)
 }
 
 /**
- * @brief Trim from the end (copying)
+ * @brief Trim the given characters from the end (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the trailing characters removed
+ * @note Not an overload of RtrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string RtrimCharsCopy(std::string s, const std::string &chars)
+{
+    RtrimChars(s, chars);
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from the end (copying)
  * @param s The string to trim
  * @return A new string with the trailing whitespace removed
  */
@@ -80,7 +155,20 @@ inline std::string RtrimCopy(std::string s)
 }
 
 /**
- * @brief Trim from both ends (copying)
+ * @brief Trim the given characters from both ends (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the leading and trailing characters removed
+ * @note Not an overload of TrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string TrimCharsCopy(std::string s, const std::string &chars)
+{
+    TrimChars(s, chars);
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from both ends (copying)
  * @param s The string to trim
  * @return A new string with the whitespace removed
  */
@@ -192,7 +280,5 @@ bool IsHexOnly(const std::string &data);
  * @return true if the string is a valid IPv4 address, false otherwise
  */
 bool IsValidIpAddress(const std::string &ipAddress);
-
-/* ## Constants */
 
 } // namespace act::text::StringUtil

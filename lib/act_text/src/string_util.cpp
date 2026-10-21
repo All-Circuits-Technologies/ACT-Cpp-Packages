@@ -74,7 +74,8 @@ int CompareNoCase(const std::string &lhs, const std::string &rhs)
 
 bool AreStringEqualNoCase(const std::string &lhs, const std::string &rhs)
 {
-    return std::ranges::equal(lhs, rhs, [](char a, char b) {
+    // std::tolower() is undefined for the negative values a char takes beyond ASCII
+    return std::ranges::equal(lhs, rhs, [](unsigned char a, unsigned char b) {
         return (std::tolower(a) == std::tolower(b));
     });
 }

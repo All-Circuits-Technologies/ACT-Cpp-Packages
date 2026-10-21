@@ -6,7 +6,8 @@
  * @file test_string_util.cpp
  * @brief Unit tests of StringUtil.
  *
- * Covers trimming (in place and copying), case conversion and case insensitive comparison, the
+ * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
+ * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
  * and the IPv4 address validation.
  */
@@ -15,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <list>
@@ -76,6 +78,81 @@ namespace
         EXPECT_EQ(source, "  value  ");
     }
 
+    TEST(StringUtilTest, TrimCharsRemovesOnlyTheGivenCharacters)
+    {
+        std::string value = "._ a. b_ ._";
+
+        TrimChars(value, "._ ");
+
+        EXPECT_EQ(value, "a. b");
+    }
+
+    TEST(StringUtilTest, LtrimCharsAndRtrimCharsHonourTheGivenCharacters)
+    {
+        std::string leading = "--value--";
+        std::string trailing = "--value--";
+
+        LtrimChars(leading, "-");
+        RtrimChars(trailing, "-");
+
+        EXPECT_EQ(leading, "value--");
+        EXPECT_EQ(trailing, "--value");
+    }
+
+    TEST(StringUtilTest, TrimCharsCopiesHonourTheGivenCharacters)
+    {
+        const std::string source = "**value**";
+
+        EXPECT_EQ(LtrimCharsCopy(source, "*"), "value**");
+        EXPECT_EQ(RtrimCharsCopy(source, "*"), "**value");
+        EXPECT_EQ(TrimCharsCopy(source, "*"), "value");
+    }
+
+    TEST(StringUtilTest, TrimCharsOfOnlyGivenCharactersGivesAnEmptyString)
+    {
+        std::string value = "..__..";
+
+        TrimChars(value, "._");
+
+        EXPECT_TRUE(value.empty());
+    }
+
+    TEST(StringUtilTest, TrimCharsWithoutCharactersLeavesTheStringUntouched)
+    {
+        std::string value = "  value  ";
+
+        TrimChars(value, "");
+
+        EXPECT_EQ(value, "  value  ");
+    }
+
+    TEST(StringUtilTest, TrimHelpersCanBePassedToAlgorithms)
+    {
+        std::vector<std::string> values{" a ", "b\t"};
+        const std::vector<std::string> sources{" c", "d "};
+        std::vector<std::string> copies(sources.size());
+
+        std::for_each(values.begin(), values.end(), Trim);
+        std::transform(sources.begin(), sources.end(), copies.begin(), TrimCopy);
+
+        EXPECT_EQ(values, (std::vector<std::string>{"a", "b"}));
+        EXPECT_EQ(copies, (std::vector<std::string>{"c", "d"}));
+    }
+
+    TEST(StringUtilTest, TrimKeepsTheBytesOfMultiByteCharacters)
+    {
+        // U+00E0 is C3 A0 in UTF-8; A0 is a no-break space in Latin-1, which std::isspace could
+        // remove under such a locale. U+00A0 is C2 A0 in UTF-8.
+        std::string accented = " \xC3\xA0 ";
+        std::string noBreakSpaces = "\xC2\xA0value\xC2\xA0";
+
+        Trim(accented);
+        Trim(noBreakSpaces);
+
+        EXPECT_EQ(accented, "\xC3\xA0");
+        EXPECT_EQ(noBreakSpaces, "\xC2\xA0value\xC2\xA0");
+    }
+
     TEST(StringUtilTest, ToUpperConvertsOnlyLetters)
     {
         EXPECT_EQ(ToUpper("Hello, World 42!"), "HELLO, WORLD 42!");
@@ -113,6 +190,13 @@ namespace
         EXPECT_TRUE(AreStringEqualNoCase("", ""));
         EXPECT_FALSE(AreStringEqualNoCase("value", "values"));
         EXPECT_FALSE(AreStringEqualNoCase("value", "valve"));
+    }
+
+    TEST(StringUtilTest, AreStringEqualNoCaseComparesNonAsciiBytes)
+    {
+        // "COM¹", the superscript one being C2 B9 in UTF-8
+        EXPECT_TRUE(AreStringEqualNoCase("com\xC2\xB9", "COM\xC2\xB9"));
+        EXPECT_FALSE(AreStringEqualNoCase("COM\xC2\xB9", "COM\xC2\xB2"));
     }
 
     TEST(StringUtilTest, IterableToStringJoinsElementsWithTheDelimiter)
