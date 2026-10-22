@@ -9,7 +9,8 @@
  * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
  * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * the IPv4 address validation, the UTF-8 validation, and the escaping of the control characters.
+ * the IPv4 address validation, the UTF-8 validation, the UTF-8 byte order mark removal, and the
+ * escaping of the control characters.
  */
 
 #include "act_text/string_util.hpp"
@@ -446,6 +447,28 @@ namespace
         EXPECT_FALSE(IsValidUtf8("\xED\xBF\xBF"));     // U+DFFF
         EXPECT_TRUE(IsValidUtf8("\xED\x9F\xBF"));      // U+D7FF, just before the surrogates
         EXPECT_FALSE(IsValidUtf8("\xF4\x90\x80\x80")); // U+110000
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkRemovesTheOneStartingTheString)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+        std::string text{byteOrderMark + "text"};
+
+        EXPECT_EQ(&RemoveUtf8ByteOrderMark(text), &text);
+        EXPECT_EQ(text, "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark), "");
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkKeepsWhatIsNotABeginningByteOrderMark)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(""), "");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("text"), "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("a" + byteOrderMark), "a" + byteOrderMark);
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark + byteOrderMark + "a"),
+                  byteOrderMark + "a");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("\xEF\xBB\xBE"), "\xEF\xBB\xBE");
     }
 
 } // namespace

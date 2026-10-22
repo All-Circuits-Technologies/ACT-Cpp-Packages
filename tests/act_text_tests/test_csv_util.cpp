@@ -22,6 +22,7 @@
 #include "act_files/file_util.hpp"
 #include "act_test_common/recording_logger.hpp"
 #include "act_text/csv_util.hpp"
+#include "act_text/string_util.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -44,7 +45,7 @@ namespace
     using ::testing::IsEmpty;
 
     /** @brief The UTF-8 byte order mark, as the text a CSV file may start with */
-    using act::files::FileUtil::UTF8_BYTE_ORDER_MARK;
+    using act::text::StringUtil::UTF8_BYTE_ORDER_MARK;
 
     /**
      * @brief Read the fields of a CSV line as RFC 4180 describes them: the reverse of the escaping
