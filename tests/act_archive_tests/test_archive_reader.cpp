@@ -7,10 +7,13 @@
  * @brief Unit tests of ArchiveReader.
  *
  * Covers opening and reading, once only, the ZIP archives of other tools (7-Zip, Windows 11,
- * Info-ZIP, Python), nested ones included, under the "C" locale; the empty archive; and every
- * reason to reject an archive: no allowed format, other format, damaged data, unsafe or duplicated
- * paths, links, the entry count, entry size (zip bomb, on its announced size or while
- * decompressing) and total size limits, and an entry whose size differs from the announced one.
+ * Info-ZIP, Python), nested ones included, under the "C" locale; the empty archive; the paths given
+ * with `/` separators, and quoted in the logs with their control characters escaped; the data
+ * which cannot be a temporary; and every reason to reject an archive: no allowed format, other
+ * format, damaged data, unsafe or duplicated paths, links, encrypted entries, the entry count,
+ * entry size (zip bomb, on its announced size or while decompressing) and total size (on the
+ * announced sizes or while decompressing) limits, and an entry whose size differs from the
+ * announced one.
  */
 
 #include "act_archive/reader/archive_reader.hpp"
@@ -21,9 +24,11 @@
 #include <gtest/gtest.h>
 
 #include <clocale>
+#include <locale.h>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace act::archive
@@ -74,6 +79,20 @@ namespace
         return Read(data, options, logger);
     }
 
+    /**
+     * @brief True if ArchiveReader::OpenFromMemory accepts data of this type
+     * @note The reader keeps a reference to the data: a temporary must not compile
+     */
+    template <typename Data>
+    concept CanOpenFromMemory = requires(Data &&data, const RecordingLogger &logger) {
+        ArchiveReader::OpenFromMemory(std::forward<Data>(data), ZIP_ONLY, logger);
+    };
+
+    static_assert(CanOpenFromMemory<const std::string &>);
+    static_assert(CanOpenFromMemory<std::string &>);
+    static_assert(!CanOpenFromMemory<std::string>);
+    static_assert(!CanOpenFromMemory<const char *>);
+
     /** @brief Check the entries of the fixtures holding the accented directory */
     void ExpectAccentedDirectory(const std::vector<ArchiveEntry> &entries)
     {
@@ -94,12 +113,19 @@ namespace
     TEST(ArchiveReaderTest, ReadsSevenZipArchiveWithOemNamesUnderTheCLocale)
     {
         const std::string processLocale = std::setlocale(LC_ALL, nullptr);
+#if !defined(_WIN32)
+        // The reading switches the locale of the calling thread only, then restores it
+        ASSERT_EQ(uselocale(static_cast<locale_t>(nullptr)), LC_GLOBAL_LOCALE);
+#endif
 
         const auto entries = Read(ZipFixtures::ToString(ZipFixtures::SEVEN_ZIP_WINDOWS_BYTES));
 
         ASSERT_TRUE(entries.has_value());
         ExpectAccentedDirectory(entries.value());
         EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
+#if !defined(_WIN32)
+        EXPECT_EQ(uselocale(static_cast<locale_t>(nullptr)), LC_GLOBAL_LOCALE);
+#endif
     }
 
     TEST(ArchiveReaderTest, ReadsWindows11Archive)
@@ -270,6 +296,37 @@ namespace
         }
     }
 
+    TEST(ArchiveReaderTest, EscapesTheControlCharactersOfTheLoggedPaths)
+    {
+        const std::string zip =
+            RawArchiveBuilder().addFile("evil\n[ERROR] forged line.txt", "x").build();
+        const RecordingLogger logger;
+
+        EXPECT_FALSE(Read(zip, ZIP_ONLY, logger).has_value());
+        EXPECT_TRUE(
+            logger.contains(LogsLevel::WARNING, "'evil\\x0A[ERROR] forged line.txt' is not safe"));
+        for (const RecordingLogger::Entry &entry : logger.getEntries())
+        {
+            EXPECT_EQ(entry.message.find('\n'), std::string::npos) << entry.message;
+        }
+    }
+
+    TEST(ArchiveReaderTest, GivesThePathsWithSlashSeparators)
+    {
+        // libarchive writes the directory as dir\sub/
+        const std::string zip =
+            RawArchiveBuilder().addDirectory("dir\\sub").addFile("dir\\sub\\a.txt", "a").build();
+
+        const auto entries = Read(zip);
+
+        ASSERT_TRUE(entries.has_value());
+        ASSERT_EQ(entries->size(), 2U);
+        EXPECT_EQ(entries->at(0).path, "dir/sub");
+        EXPECT_EQ(entries->at(0).type, EntryType::DIRECTORY);
+        EXPECT_EQ(entries->at(1).path, "dir/sub/a.txt");
+        EXPECT_EQ(entries->at(1).content, "a");
+    }
+
     TEST(ArchiveReaderTest, RejectsDuplicatedPaths)
     {
         const std::string zip =
@@ -301,6 +358,15 @@ namespace
 
         EXPECT_FALSE(Read(zip, ZIP_ONLY, logger).has_value());
         EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "neither a file nor a directory"));
+    }
+
+    TEST(ArchiveReaderTest, RejectsEncryptedEntries)
+    {
+        const std::string zip = ZipFixtures::ToString(ZipFixtures::ENCRYPTED_BYTES);
+        const RecordingLogger logger;
+
+        EXPECT_FALSE(Read(zip, ZIP_ONLY, logger).has_value());
+        EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "'secret.txt' is encrypted"));
     }
 
     TEST(ArchiveReaderTest, RejectsTooManyEntries)
@@ -360,10 +426,28 @@ namespace
             RawArchiveBuilder().addFile("1", content).addFile("2", content).build();
         ArchiveReaderOptions options = ZIP_ONLY;
 
+        const RecordingLogger logger;
+
         options.limits.maxTotalSize = 2 * KIBIBYTE;
         EXPECT_TRUE(Read(zip, options).has_value());
         options.limits.maxTotalSize = 2 * KIBIBYTE - 1;
-        EXPECT_FALSE(Read(zip, options).has_value());
+        EXPECT_FALSE(Read(zip, options, logger).has_value());
+        EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "bytes together (announced size)"));
+    }
+
+    TEST(ArchiveReaderTest, RejectsEntriesExceedingTheTotalSizeWhileDecompressing)
+    {
+        // The entry announces 100 bytes, under both limits, but holds 1 MiB: only the total size
+        // limit, far below the entry size limit, is exceeded while decompressing
+        const std::string zip = ZipFixtures::ToString(ZipFixtures::UNDERSTATED_SIZE_BYTES);
+        ArchiveReaderOptions options = ZIP_ONLY;
+        options.limits.maxEntrySize = 2 * MEBIBYTE;
+        options.limits.maxTotalSize = KIBIBYTE;
+        const RecordingLogger logger;
+
+        EXPECT_FALSE(Read(zip, options, logger).has_value());
+        EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "exceed 1024 bytes together"));
+        EXPECT_FALSE(logger.contains(LogsLevel::WARNING, "announced size"));
     }
 
 } // namespace
