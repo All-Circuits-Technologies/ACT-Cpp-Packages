@@ -18,6 +18,9 @@ ScopedUtf8Locale::~ScopedUtf8Locale() = default;
 
 #else
 
+// The locale is built from scratch: its categories other than the character types are the "C"
+// ones, not the ones of the process. This is harmless, the libarchive calls made in its scope only
+// depend on the character types
 ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
     : m_utf8Locale(newlocale(LC_CTYPE_MASK, "C.UTF-8", static_cast<locale_t>(nullptr)))
 {

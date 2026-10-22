@@ -29,6 +29,8 @@ namespace act::archive::LibarchiveUtil
 
 /**
  * @brief Set the format of a libarchive writer
+ * @note The entry names are written in UTF-8 and flagged as such, whatever the locale (for ZIP,
+ *       the hdrcharset option).
  * @param writer The libarchive writer, not opened yet
  * @param format The archive format
  * @return True on success, false otherwise (see archive_error_string())
@@ -50,6 +52,7 @@ namespace act::archive::LibarchiveUtil
  * @brief Make a libarchive reader recognize a format
  * @param reader The libarchive reader, not opened yet
  * @param format The archive format to recognize
+ * @return True on success, false otherwise (see archive_error_string())
  */
-void EnableReaderFormat(struct archive *reader, ArchiveFormat format);
+[[nodiscard]] bool EnableReaderFormat(struct archive *reader, ArchiveFormat format);
 } // namespace act::archive::LibarchiveUtil

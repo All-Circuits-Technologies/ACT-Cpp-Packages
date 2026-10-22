@@ -4,9 +4,9 @@
 
 # act_archive
 
-Archive writing and reading for ACT C++ modules, on top of libarchive. It handles ZIP archives
-held in memory, nested archives included, with safe entry paths and size limits. Its API is ready
-for other formats (tar, 7z...) and compression filters (gzip, zstd...).
+Archive writing and reading for ACT C++ modules, on top of libarchive. It reads archives held in
+memory and writes archives to a sink, such as a string in memory, nested archives included, with
+safe entry paths and size limits.
 
 ## Dependencies
 
@@ -20,6 +20,15 @@ act_archive is only tested on Linux.
 It is not tested on Windows: its implementation has provisions for Windows, but they are unchecked.
 Supporting Windows needs a build there and the unit tests to pass, the archives with accented names
 included.
+
+## Supported formats
+
+| Format | Writing | Reading |
+| ------ | ------- | ------- |
+| ZIP    | Yes     | Yes     |
+
+No compression filter is supported yet. The API is ready for other formats (tar, 7z...) and
+compression filters (gzip, zstd...).
 
 ## Debian Packages
 
