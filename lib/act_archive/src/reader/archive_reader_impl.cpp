@@ -102,11 +102,21 @@ bool ArchiveReader::Impl::createLibarchiveReader()
     // never all of them, so that any other format is rejected (safer)
     for (const ArchiveFormat format : m_options.allowedFormats)
     {
-        LibarchiveUtil::EnableReaderFormat(m_archive, format);
+        if (!LibarchiveUtil::EnableReaderFormat(m_archive, format))
+        {
+            m_logger.errorStream() << "ArchiveReader: cannot enable an allowed archive format ("
+                                   << LibarchiveUtil::ErrorMessage(m_archive) << ")";
+            return false;
+        }
     }
 
     // No compression filter (gzip, zstd...) for now: only uncompressed archive data
-    archive_read_support_filter_none(m_archive);
+    if (archive_read_support_filter_none(m_archive) != ARCHIVE_OK)
+    {
+        m_logger.errorStream() << "ArchiveReader: cannot enable the uncompressed data ("
+                               << LibarchiveUtil::ErrorMessage(m_archive) << ")";
+        return false;
+    }
 
     return true;
 }
