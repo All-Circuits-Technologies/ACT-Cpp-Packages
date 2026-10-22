@@ -28,7 +28,16 @@ included.
 | ZIP    | Yes     | Yes     |
 
 No compression filter is supported yet. The API is ready for other formats (tar, 7z...) and
-compression filters (gzip, zstd...).
+compression filters (gzip, zstd...), see
+[Adding a format or a filter](#adding-a-format-or-a-filter).
+
+### ZIP specifics
+
+- Entry paths use `/` as separator: `ArchiveWriter` writes a `\` as `/`.
+- Directories are stored with a trailing `/`; `ArchiveEntry::path` never has one.
+- `EntryCompression::DEFAULT` is Deflate, `EntryCompression::NONE` stores the content.
+- An empty archive is the 22 bytes of an end of central directory record, which `ArchiveReader`
+  detects specially.
 
 ## Debian Packages
 
@@ -131,14 +140,6 @@ entry rejects the whole archive.
 `ArchiveWriter` checks the same paths and rejects duplicates, so that it never writes an archive
 `ArchiveReader` would reject. It does not check that a name is valid on Windows: see
 `FilePathUtil::SanitizeFileName` in act_files.
-
-## ZIP specifics
-
-- Entry paths use `/` as separator: `ArchiveWriter` writes a `\` as `/`.
-- Directories are stored with a trailing `/`; `ArchiveEntry::path` never has one.
-- `EntryCompression::DEFAULT` is Deflate, `EntryCompression::NONE` stores the content.
-- An empty archive is the 22 bytes of an end of central directory record, which `ArchiveReader`
-  detects specially.
 
 ## Adding a format or a filter
 
