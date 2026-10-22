@@ -172,12 +172,10 @@ namespace
 
     TEST(ArchiveReaderTest, RejectsWhenNoFormatIsAllowed)
     {
+        const std::string data = ZipFixtures::ToString(ZipFixtures::INFO_ZIP_BYTES);
         const RecordingLogger logger;
 
-        EXPECT_TRUE(
-            ArchiveReader::OpenFromMemory(ZipFixtures::ToString(ZipFixtures::INFO_ZIP_BYTES),
-                                          {},
-                                          logger) == nullptr);
+        EXPECT_TRUE(ArchiveReader::OpenFromMemory(data, {}, logger) == nullptr);
         EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "no archive format"));
     }
 

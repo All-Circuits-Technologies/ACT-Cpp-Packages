@@ -124,6 +124,14 @@ class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
      */
     [[nodiscard]] std::nullopt_t reject(const std::string &reason) const;
 
+    /**
+     * @brief Quote an entry path for a rejection reason, its control characters escaped (see
+     *        act::text::StringUtil::ToPrintableText): the path comes from the archive
+     * @param path The entry path
+     * @return The quoted path
+     */
+    [[nodiscard]] static std::string QuotePath(const std::string &path);
+
   private:
     /** @brief Size of the buffer the entry contents are read with */
     static constexpr std::size_t READ_CHUNK_SIZE = 8192;

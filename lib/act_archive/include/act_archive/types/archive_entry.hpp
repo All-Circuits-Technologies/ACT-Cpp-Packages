@@ -14,7 +14,8 @@ namespace act::archive
 struct ArchiveEntry
 {
     /**
-     * @brief Path of the entry inside the archive, in UTF-8, without trailing separator
+     * @brief Path of the entry inside the archive, in UTF-8, with `/` separators (a `\` read is
+     *        given as `/`), without trailing separator
      * @note It is safe (see ArchivePathUtil::IsSafeEntryPath).
      */
     std::string path;

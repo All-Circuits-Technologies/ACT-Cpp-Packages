@@ -6,6 +6,7 @@
 
 #include "act_archive/utilities/archive_path_util.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_text/string_util.hpp"
 #include "utilities/libarchive_util.hpp"
 #include "utilities/scoped_utf8_locale.hpp"
 
@@ -65,7 +66,9 @@ bool ArchiveReader::Impl::open()
                               m_options.allowedFormats.end();
     if (isZipAllowed && isEmptyZip())
     {
+        // Nothing to read: release the libarchive reader, which failed to open the data
         m_isEmptyZip = true;
+        closeLibarchive();
         return true;
     }
 
@@ -153,6 +156,8 @@ std::optional<std::vector<ArchiveEntry>> ArchiveReader::Impl::readEntries()
             break;
         }
 
+        // ARCHIVE_WARN rejects the archive too: libarchive warns, for instance, about an entry name
+        // it cannot convert, and an untrusted archive is read all or nothing
         if (result != ARCHIVE_OK)
         {
             return reject("cannot read an entry header (" +
@@ -222,17 +227,18 @@ std::optional<ArchiveEntry> ArchiveReader::Impl::readHeader(struct archive_entry
         return reject("an entry path cannot be decoded");
     }
 
+    // "a/b" and "a\b" are the same path (see ArchivePathUtil): give it with `/` separators only
     ArchiveEntry entry;
-    entry.path = utf8Path;
+    entry.path = ArchivePathUtil::NormalizeEntrySeparators(utf8Path);
 
     if (archive_entry_is_encrypted(libarchiveEntry) != 0)
     {
-        return reject("the entry '" + entry.path + "' is encrypted");
+        return reject("the entry " + QuotePath(entry.path) + " is encrypted");
     }
 
     if (archive_entry_hardlink(libarchiveEntry) != nullptr)
     {
-        return reject("the entry '" + entry.path + "' is a hard link");
+        return reject("the entry " + QuotePath(entry.path) + " is a hard link");
     }
 
     switch (archive_entry_filetype(libarchiveEntry))
@@ -243,26 +249,25 @@ std::optional<ArchiveEntry> ArchiveReader::Impl::readHeader(struct archive_entry
 
         case AE_IFDIR:
             entry.type = EntryType::DIRECTORY;
-            if (entry.path.ends_with(ArchivePathUtil::SEPARATOR) ||
-                entry.path.ends_with(ArchivePathUtil::WINDOWS_SEPARATOR))
+            if (entry.path.ends_with(ArchivePathUtil::SEPARATOR))
             {
                 entry.path.pop_back();
             }
             break;
 
         default:
-            return reject("the entry '" + entry.path + "' is neither a file nor a directory");
+            return reject("the entry " + QuotePath(entry.path) +
+                          " is neither a file nor a directory");
     }
 
     if (!ArchivePathUtil::IsSafeEntryPath(entry.path))
     {
-        return reject("the entry path '" + entry.path + "' is not safe");
+        return reject("the entry path " + QuotePath(entry.path) + " is not safe");
     }
 
-    // "a/b" and "a\b" are the same file on Windows
-    if (!m_paths.insert(ArchivePathUtil::NormalizeEntrySeparators(entry.path)).second)
+    if (!m_paths.insert(entry.path).second)
     {
-        return reject("the entry path '" + entry.path + "' is duplicated");
+        return reject("the entry path " + QuotePath(entry.path) + " is duplicated");
     }
 
     // Reject an oversized entry before decompressing it, on the size the archive announces;
@@ -274,7 +279,7 @@ std::optional<ArchiveEntry> ArchiveReader::Impl::readHeader(struct archive_entry
         const ArchiveReaderLimits &limits = m_options.limits;
         if (size > limits.maxEntrySize)
         {
-            return reject("the entry '" + entry.path + "' exceeds " +
+            return reject("the entry " + QuotePath(entry.path) + " exceeds " +
                           std::to_string(limits.maxEntrySize) + " bytes (announced size)");
         }
 
@@ -304,14 +309,14 @@ std::optional<std::string> ArchiveReader::Impl::readContent(const std::string &p
 
         if (readSize < 0)
         {
-            return reject("cannot read the entry '" + path + "' (" +
+            return reject("cannot read the entry " + QuotePath(path) + " (" +
                           LibarchiveUtil::ErrorMessage(m_archive) + ")");
         }
 
         const auto chunkSize = static_cast<std::size_t>(readSize);
         if ((content.size() + chunkSize) > limits.maxEntrySize)
         {
-            return reject("the entry '" + path + "' exceeds " +
+            return reject("the entry " + QuotePath(path) + " exceeds " +
                           std::to_string(limits.maxEntrySize) + " bytes");
         }
 
@@ -332,5 +337,10 @@ std::nullopt_t ArchiveReader::Impl::reject(const std::string &reason) const
 {
     m_logger.warningStream() << "ArchiveReader: archive rejected: " << reason;
     return std::nullopt;
+}
+
+std::string ArchiveReader::Impl::QuotePath(const std::string &path)
+{
+    return "'" + act::text::StringUtil::ToPrintableText(path) + "'";
 }
 } // namespace act::archive

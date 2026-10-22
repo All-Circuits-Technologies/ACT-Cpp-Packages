@@ -58,6 +58,15 @@ class ArchiveReader : private act::foundation::NotCopiableNotMovable
         const ArchiveReaderOptions &options,
         const act::foundation::AbsLogger &logger);
 
+    /**
+     * @brief Forbid opening a temporary: the reader keeps a reference to the data, which would
+     *        dangle
+     */
+    static std::unique_ptr<ArchiveReader> OpenFromMemory(std::string &&data,
+                                                         const ArchiveReaderOptions &options,
+                                                         const act::foundation::AbsLogger &logger) =
+        delete;
+
   public:
     /**
      * @brief Read all the entries, their contents included

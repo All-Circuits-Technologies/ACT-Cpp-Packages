@@ -86,13 +86,17 @@ entry rejects the whole archive.
 - **Formats:** only the formats the caller allows at runtime, in
   `ArchiveReaderOptions::allowedFormats`, are recognized: a tar file is not read when only ZIP is
   allowed.
-- **Paths:** each entry path must be safe, see `ArchivePathUtil::IsSafeEntryPath`.
+- **Paths:** each entry path must be safe, see `ArchivePathUtil::IsSafeEntryPath`. `/` and `\` are
+  both separators: the paths are given with `/` only. The paths quoted in the logs have their
+  control characters escaped.
 - **Entry types:** only regular files and directories; links, devices and the other special files
   are rejected, as are the encrypted entries and the duplicated paths.
 - **Sizes:** the entry count, the size of each entry and the total size are limited
   (`ArchiveReaderLimits`). The sizes are checked while decompressing, without trusting the archive.
 - **Names:** non ASCII names are read and written in UTF-8, even when the process runs under the
-  `C` locale; on Linux, this needs the `C.UTF-8` locale, built in glibc 2.35 or later.
+  `C` locale; on Linux, this needs the `C.UTF-8` locale, which must be installed (glibc provides it
+  since 2.35, Debian's `libc-bin` ships it). Without it, the archives with non ASCII names are
+  rejected.
 
 ## ZIP specifics
 
