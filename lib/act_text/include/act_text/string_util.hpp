@@ -9,6 +9,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 namespace act::foundation
 {
@@ -28,6 +29,13 @@ namespace act::text::StringUtil
  * @note Declared before the methods, which use it.
  */
 constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
+
+/**
+ * @brief Byte order mark an UTF-8 text may start with
+ * @note Put it at the beginning of a file which is meant to be opened in a software which reads
+ *       UTF-8 text as a legacy 8-bit encoding without it. RemoveUtf8ByteOrderMark removes it.
+ */
+constexpr std::string_view UTF8_BYTE_ORDER_MARK{"\xEF\xBB\xBF"};
 
 /* ## Methods (members, then non-members) */
 
@@ -175,6 +183,32 @@ inline std::string TrimCharsCopy(std::string s, const std::string &chars)
 inline std::string TrimCopy(std::string s)
 {
     Trim(s);
+    return s;
+}
+
+/**
+ * @brief Remove the UTF-8 byte order mark starting a string, if any (in place)
+ * @note Only one byte order mark is removed, and only at the very beginning of the string.
+ * @param s The string
+ * @return A reference to the string, without byte order mark at its beginning
+ */
+inline std::string &RemoveUtf8ByteOrderMark(std::string &s)
+{
+    if (s.starts_with(UTF8_BYTE_ORDER_MARK))
+    {
+        s.erase(0, UTF8_BYTE_ORDER_MARK.size());
+    }
+    return s;
+}
+
+/**
+ * @brief Remove the UTF-8 byte order mark starting a string, if any (copying)
+ * @param s The string
+ * @return A new string, without byte order mark at its beginning
+ */
+inline std::string RemoveUtf8ByteOrderMarkCopy(std::string s)
+{
+    RemoveUtf8ByteOrderMark(s);
     return s;
 }
 

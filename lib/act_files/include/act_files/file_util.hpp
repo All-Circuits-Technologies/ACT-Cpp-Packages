@@ -11,7 +11,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 
 namespace act::foundation
 {
@@ -103,11 +102,4 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     const act::foundation::AbsLogger &logger,
                                     bool isTemp = false);
-
-/**
- * @brief Byte order mark an UTF-8 file may start with
- * @note ReadFileAsInt skips it. Put it at the beginning of a file which is meant to be opened in a
- *       software which reads UTF-8 text as a legacy 8-bit encoding without it.
- */
-constexpr std::string_view UTF8_BYTE_ORDER_MARK{"\xEF\xBB\xBF"};
 } /* namespace act::files::FileUtil */

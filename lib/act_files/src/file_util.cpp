@@ -46,10 +46,7 @@ std::optional<int> ReadFileAsInt(const std::string &path,
     }
 
     std::string content = std::move(optContent.value());
-    if (content.starts_with(UTF8_BYTE_ORDER_MARK))
-    {
-        content.erase(0, UTF8_BYTE_ORDER_MARK.size());
-    }
+    act::text::StringUtil::RemoveUtf8ByteOrderMark(content);
 
     // Trailing whitespace is accepted, as the line feed ending the files of sysfs; std::stoi
     // already skips the leading one
