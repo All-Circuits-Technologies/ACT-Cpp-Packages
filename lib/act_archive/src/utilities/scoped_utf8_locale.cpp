@@ -26,8 +26,11 @@ ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
 {
     if (m_utf8Locale == static_cast<locale_t>(nullptr))
     {
+        // errno is not reported: glibc may leave it unset when this locale is missing
         logger.warningStream()
-            << "The C.UTF-8 locale is not available: non ASCII entry names may be rejected";
+            << "act_archive: the C.UTF-8 locale is not available, the calling thread keeps its "
+               "locale: the non ASCII text converted meanwhile may be rejected or altered; "
+               "install the C.UTF-8 locale";
         return;
     }
 
