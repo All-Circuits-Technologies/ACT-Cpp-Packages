@@ -230,6 +230,29 @@ namespace
         EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
     }
 
+    TEST(ArchiveWriterTest, NonAsciiDirectoryNamesAreFlaggedAsUtf8UnderTheCLocale)
+    {
+        const std::string processLocale = std::setlocale(LC_ALL, nullptr);
+        const std::string name = "Dossier \xC3\xA9t\xC3\xA9";
+        const RecordingLogger logger;
+        StringArchiveSink sink;
+        std::unique_ptr<ArchiveWriter> writer =
+            ArchiveWriter::Create({.format = ArchiveFormat::ZIP}, sink, logger);
+        ASSERT_NE(writer, nullptr);
+
+        ASSERT_TRUE(writer->addDirectoryEntry(name));
+        ASSERT_TRUE(writer->finalize());
+
+        const std::string data = sink.takeData();
+        EXPECT_TRUE(HasUtf8NameFlag(data, LOCAL_HEADER_SIGNATURE, LOCAL_HEADER_FLAGS_OFFSET));
+        EXPECT_TRUE(HasUtf8NameFlag(data, CENTRAL_HEADER_SIGNATURE, CENTRAL_HEADER_FLAGS_OFFSET));
+        const std::vector<ArchiveEntry> entries = ReadZip(data);
+        ASSERT_EQ(entries.size(), 1U);
+        EXPECT_EQ(entries[0].path, name);
+        EXPECT_EQ(entries[0].type, EntryType::DIRECTORY);
+        EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
+    }
+
     TEST(ArchiveWriterTest, UnsafeOrDuplicatedPathsAreRejectedAndLeaveTheArchiveUntouched)
     {
         const RecordingLogger logger;
