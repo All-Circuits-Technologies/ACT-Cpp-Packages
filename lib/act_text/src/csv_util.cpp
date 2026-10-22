@@ -260,4 +260,31 @@ std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::str
     return values;
 }
 
+std::vector<std::optional<std::size_t>> FindColumns(const std::vector<std::string> &headerValues,
+                                                    const std::vector<std::string> &titles)
+{
+    std::vector<std::optional<std::size_t>> positions;
+    positions.reserve(titles.size());
+    for (const std::string &title : titles)
+    {
+        const std::string trimmedTitle{StringUtil::TrimCopy(title)};
+        std::optional<std::size_t> position;
+        std::size_t matchCount{0};
+        for (std::size_t index{0}; index < headerValues.size(); ++index)
+        {
+            if (StringUtil::AreStringEqualNoCase(StringUtil::TrimCopy(headerValues[index]),
+                                                 trimmedTitle))
+            {
+                position = index;
+                ++matchCount;
+            }
+        }
+
+        /* A title found several times is ambiguous: it is not found either */
+        positions.push_back((matchCount == 1) ? position : std::nullopt);
+    }
+
+    return positions;
+}
+
 } // namespace act::text::CsvUtil

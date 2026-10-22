@@ -6,7 +6,9 @@
 
 #include "act_files/file_util.hpp"
 
+#include <cstddef>
 #include <cstdio>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -105,4 +107,16 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent,
  */
 std::vector<std::string> ParseCsvLine(const std::string &csvLine,
                                       const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Find columns of a CSV header line by their title
+ * @note The titles are compared trimmed and without case.
+ * @note A title found several times in the header line is ambiguous: it is not found either.
+ * @param headerValues The values of the header line, as @ref ParseCsvLine gives them
+ * @param titles The titles of the columns to find
+ * @return For each title, in the order of the titles, the position of its column among the header
+ *         values, std::nullopt if no header value, or several ones, have this title
+ */
+std::vector<std::optional<std::size_t>> FindColumns(const std::vector<std::string> &headerValues,
+                                                    const std::vector<std::string> &titles);
 } // namespace act::text::CsvUtil
