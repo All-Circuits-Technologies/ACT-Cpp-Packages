@@ -8,8 +8,9 @@
  *
  * Covers writing ZIP archives in memory and reading them back: the empty archive, files and
  * directories, binary and empty contents, the per entry compression, nested archives, non ASCII
- * names under the "C" locale, the rejected paths, the operations after finalizing, a failing
- * sink and an abandoned writer; the separators and the trailing separator of a directory.
+ * names under the "C" locale, the rejected paths, quoted in the logs with their control characters
+ * escaped, the operations after finalizing, a failing sink and an abandoned writer; the separators
+ * and the trailing separator of a directory.
  */
 
 #include "act_archive/reader/archive_reader.hpp"
@@ -22,6 +23,7 @@
 
 #include <climits>
 #include <clocale>
+#include <locale.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -68,6 +70,16 @@ namespace
         const auto low = static_cast<unsigned char>(zip[header + offset]);
         const auto high = static_cast<unsigned char>(zip[header + offset + 1]);
         return ((low | (high << CHAR_BIT)) & UTF8_NAME_FLAG) != 0;
+    }
+
+    /** @brief True if the calling thread uses the global locale, as when no locale is switched */
+    bool IsThreadOnTheGlobalLocale()
+    {
+#if defined(_WIN32)
+        return true;
+#else
+        return uselocale(static_cast<locale_t>(nullptr)) == LC_GLOBAL_LOCALE;
+#endif
     }
 
     /** @brief Sink failing every write */
@@ -209,6 +221,7 @@ namespace
     TEST(ArchiveWriterTest, NonAsciiNamesSurviveTheCLocaleWhichStaysUntouched)
     {
         const std::string processLocale = std::setlocale(LC_ALL, nullptr);
+        ASSERT_TRUE(IsThreadOnTheGlobalLocale());
         const std::string name =
             "Documents accentu\xC3\xA9s/R\xC3\xA9union \xC3\xA0 Gen\xC3\xA8ve.txt";
         const RecordingLogger logger;
@@ -228,11 +241,13 @@ namespace
         ASSERT_EQ(entries.size(), 1U);
         EXPECT_EQ(entries[0].path, name);
         EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
+        EXPECT_TRUE(IsThreadOnTheGlobalLocale());
     }
 
     TEST(ArchiveWriterTest, NonAsciiDirectoryNamesAreFlaggedAsUtf8UnderTheCLocale)
     {
         const std::string processLocale = std::setlocale(LC_ALL, nullptr);
+        ASSERT_TRUE(IsThreadOnTheGlobalLocale());
         const std::string name = "Dossier \xC3\xA9t\xC3\xA9";
         const RecordingLogger logger;
         StringArchiveSink sink;
@@ -251,6 +266,7 @@ namespace
         EXPECT_EQ(entries[0].path, name);
         EXPECT_EQ(entries[0].type, EntryType::DIRECTORY);
         EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
+        EXPECT_TRUE(IsThreadOnTheGlobalLocale());
     }
 
     TEST(ArchiveWriterTest, UnsafeOrDuplicatedPathsAreRejectedAndLeaveTheArchiveUntouched)
@@ -278,6 +294,23 @@ namespace
         ASSERT_EQ(entries.size(), 1U);
         EXPECT_EQ(entries[0].content, "kept");
         EXPECT_GT(logger.count(LogsLevel::ERR), 0U);
+    }
+
+    TEST(ArchiveWriterTest, EscapesTheControlCharactersOfTheLoggedPaths)
+    {
+        const RecordingLogger logger;
+        StringArchiveSink sink;
+        std::unique_ptr<ArchiveWriter> writer =
+            ArchiveWriter::Create({.format = ArchiveFormat::ZIP}, sink, logger);
+        ASSERT_NE(writer, nullptr);
+
+        EXPECT_FALSE(writer->addFileFromMemory("evil\n[ERROR] forged line.txt", "x"));
+        EXPECT_TRUE(
+            logger.contains(LogsLevel::ERR, "'evil\\x0A[ERROR] forged line.txt' is not safe"));
+        for (const RecordingLogger::Entry &entry : logger.getEntries())
+        {
+            EXPECT_EQ(entry.message.find('\n'), std::string::npos) << entry.message;
+        }
     }
 
     TEST(ArchiveWriterTest, BackslashesAreWrittenAsSlashes)

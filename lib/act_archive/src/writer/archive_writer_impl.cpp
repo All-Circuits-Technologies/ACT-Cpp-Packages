@@ -7,6 +7,7 @@
 #include "act_archive/utilities/archive_path_util.hpp"
 #include "act_archive/writer/abs_archive_sink.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_text/string_util.hpp"
 #include "utilities/libarchive_util.hpp"
 
 #include <archive.h>
@@ -146,22 +147,23 @@ bool ArchiveWriter::Impl::checkNewEntry(const std::string &path)
 {
     if (m_state != State::OPEN)
     {
-        m_logger.errorStream() << "ArchiveWriter: cannot add '" << path
-                               << "' to an archive which is "
+        m_logger.errorStream() << "ArchiveWriter: cannot add " << QuotePath(path)
+                               << " to an archive which is "
                                << (m_state == State::FINALIZED ? "finalized" : "failed");
         return false;
     }
 
     if (!ArchivePathUtil::IsSafeEntryPath(path))
     {
-        m_logger.errorStream() << "ArchiveWriter: the entry path '" << path << "' is not safe";
+        m_logger.errorStream() << "ArchiveWriter: the entry path " << QuotePath(path)
+                               << " is not safe";
         return false;
     }
 
     if (!m_paths.insert(path).second)
     {
-        m_logger.errorStream() << "ArchiveWriter: the entry path '" << path
-                               << "' is already in the archive";
+        m_logger.errorStream() << "ArchiveWriter: the entry path " << QuotePath(path)
+                               << " is already in the archive";
         return false;
     }
 
@@ -187,7 +189,7 @@ bool ArchiveWriter::Impl::writeEntry(const std::string &path,
                                                                                &archive_entry_free);
     if (entry == nullptr)
     {
-        return fail("create the entry '" + path + "'");
+        return fail("create the entry " + QuotePath(path));
     }
 
     archive_entry_set_pathname_utf8(entry.get(), path.c_str());
@@ -202,13 +204,13 @@ bool ArchiveWriter::Impl::writeEntry(const std::string &path,
 
     if (archive_write_header(m_archive, entry.get()) != ARCHIVE_OK)
     {
-        return fail("write the header of '" + path + "'");
+        return fail("write the header of " + QuotePath(path));
     }
 
     if (!content.empty() && archive_write_data(m_archive, content.data(), content.size()) !=
                                 static_cast<la_ssize_t>(content.size()))
     {
-        return fail("write the content of '" + path + "'");
+        return fail("write the content of " + QuotePath(path));
     }
 
     return true;
@@ -224,6 +226,11 @@ bool ArchiveWriter::Impl::fail(const std::string &operation)
     // The archive is unusable: release the libarchive writer right away
     closeLibarchive();
     return false;
+}
+
+std::string ArchiveWriter::Impl::QuotePath(const std::string &path)
+{
+    return "'" + act::text::StringUtil::ToPrintableText(path) + "'";
 }
 
 la_ssize_t ArchiveWriter::Impl::WriteToSink(struct archive *archive,

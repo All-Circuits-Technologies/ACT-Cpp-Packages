@@ -127,6 +127,14 @@ class ArchiveWriter::Impl : private act::foundation::NotCopiableNotMovable
      */
     bool fail(const std::string &operation);
 
+    /**
+     * @brief Quote an entry path for a log, its control characters escaped (see
+     *        act::text::StringUtil::ToPrintableText): the path may come from an untrusted source
+     * @param path The entry path
+     * @return The quoted path
+     */
+    [[nodiscard]] static std::string QuotePath(const std::string &path);
+
   private:
     /**
      * @brief libarchive write callback, forwarding the archive bytes to the sink
