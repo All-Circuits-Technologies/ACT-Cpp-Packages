@@ -281,4 +281,15 @@ bool IsHexOnly(const std::string &data);
  */
 bool IsValidIpAddress(const std::string &ipAddress);
 
+/**
+ * @brief Make an untrusted text printable, to insert it in a log or an error message
+ * @details Each control character is written as `\xNN` (upper case hexadecimal digits), so that
+ *          the text can neither forge a line nor send a terminal escape sequence:
+ *          - the C0 controls (0x00 to 0x1F, tabulation and line feed included) and DEL (0x7F);
+ *          - the C1 controls (U+0080 to U+009F), whose two UTF-8 bytes are both escaped.
+ * @param text The text, in UTF-8 or not
+ * @return The text, its control characters escaped; the other bytes, `\` included, are kept
+ */
+std::string ToPrintableText(const std::string &text);
+
 } // namespace act::text::StringUtil

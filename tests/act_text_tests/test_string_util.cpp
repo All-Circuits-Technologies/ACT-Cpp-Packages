@@ -9,7 +9,7 @@
  * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
  * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * and the IPv4 address validation.
+ * the IPv4 address validation, and the escaping of the control characters.
  */
 
 #include "act_text/string_util.hpp"
@@ -375,6 +375,32 @@ namespace
         EXPECT_FALSE(IsValidIpAddress("1.02.3.4"));
         EXPECT_FALSE(IsValidIpAddress("1.2.3.010"));
         EXPECT_TRUE(IsValidIpAddress("100.20.3.0"));
+    }
+
+    TEST(StringUtilTest, ToPrintableTextEscapesTheC0ControlsAndDelete)
+    {
+        EXPECT_EQ(ToPrintableText("a\nb"), "a\\x0Ab");
+        EXPECT_EQ(ToPrintableText("\t\r\x1B[31m"), "\\x09\\x0D\\x1B[31m");
+        EXPECT_EQ(ToPrintableText(std::string("a\0b", 3)), "a\\x00b");
+        EXPECT_EQ(ToPrintableText("\x1F\x7F"), "\\x1F\\x7F");
+    }
+
+    TEST(StringUtilTest, ToPrintableTextEscapesTheC1ControlsInUtf8)
+    {
+        // U+009B is the 8 bits introducer of the terminal escape sequences, U+0080 and U+009F the
+        // bounds of the C1 controls
+        EXPECT_EQ(ToPrintableText("a\xC2\x9B[31m"), "a\\xC2\\x9B[31m");
+        EXPECT_EQ(ToPrintableText("\xC2\x80\xC2\x9F"), "\\xC2\\x80\\xC2\\x9F");
+    }
+
+    TEST(StringUtilTest, ToPrintableTextKeepsThePrintableText)
+    {
+        EXPECT_EQ(ToPrintableText(""), "");
+        EXPECT_EQ(ToPrintableText("dir\\file ~ 'a'.txt"), "dir\\file ~ 'a'.txt");
+        // Accented letters, U+00A0 (C2 A0) next to the C1 controls, and a lone C2 byte at the end
+        EXPECT_EQ(ToPrintableText("\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC"),
+                  "\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC");
+        EXPECT_EQ(ToPrintableText("a\xC2"), "a\xC2");
     }
 
 } // namespace
