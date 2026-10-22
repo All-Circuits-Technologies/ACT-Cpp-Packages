@@ -7,6 +7,7 @@
 #include "act_archive/writer/abs_archive_sink.hpp"
 
 #include <string>
+#include <string_view>
 
 namespace act::archive
 {
@@ -15,7 +16,7 @@ class StringArchiveSink : public AbsArchiveSink
 {
   public:
     /** @copydoc AbsArchiveSink::write */
-    [[nodiscard]] bool write(const std::string &chunk) override;
+    [[nodiscard]] bool write(std::string_view chunk) override;
 
     /**
      * @brief Give the bytes written so far, and empty the sink

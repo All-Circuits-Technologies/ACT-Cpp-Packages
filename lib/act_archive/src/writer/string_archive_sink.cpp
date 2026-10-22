@@ -8,9 +8,9 @@
 
 namespace act::archive
 {
-bool StringArchiveSink::write(const std::string &chunk)
+bool StringArchiveSink::write(std::string_view chunk)
 {
-    m_data += chunk;
+    m_data.append(chunk);
     return true;
 }
 

@@ -6,7 +6,7 @@
 
 #include "act_foundation/not_copiable_not_movable.hpp"
 
-#include <string>
+#include <string_view>
 
 namespace act::archive
 {
@@ -20,9 +20,11 @@ class AbsArchiveSink : private act::foundation::NotCopiableNotMovable
   public:
     /**
      * @brief Append bytes of the archive
-     * @param chunk The bytes to append, in order
+     * @param chunk The bytes to append, in order; they are only valid during the call
      * @return True on success, false otherwise; the archive being written then fails
+     * @note It should not throw: an exception is caught by ArchiveWriter, which fails the archive
+     *       as if false was returned.
      */
-    [[nodiscard]] virtual bool write(const std::string &chunk) = 0;
+    [[nodiscard]] virtual bool write(std::string_view chunk) = 0;
 };
 } // namespace act::archive

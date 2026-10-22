@@ -9,8 +9,8 @@
  * Covers writing ZIP archives in memory and reading them back: the empty archive, files and
  * directories, binary and empty contents, the per entry compression, nested archives, non ASCII
  * names under the "C" locale, the rejected paths, quoted in the logs with their control characters
- * escaped, the operations after finalizing, a failing sink and an abandoned writer; the separators
- * and the trailing separator of a directory.
+ * escaped, the operations after finalizing, a failing or throwing sink and an abandoned writer;
+ * the separators and the trailing separator of a directory.
  */
 
 #include "act_archive/reader/archive_reader.hpp"
@@ -26,7 +26,9 @@
 #include <locale.h>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace act::archive
@@ -86,9 +88,19 @@ namespace
     class FailingSink : public AbsArchiveSink
     {
       public:
-        [[nodiscard]] bool write(const std::string & /*chunk*/) override
+        [[nodiscard]] bool write(std::string_view /*chunk*/) override
         {
             return false;
+        }
+    };
+
+    /** @brief Sink throwing on every write */
+    class ThrowingSink : public AbsArchiveSink
+    {
+      public:
+        [[nodiscard]] bool write(std::string_view /*chunk*/) override
+        {
+            throw std::runtime_error("disk full");
         }
     };
 
@@ -382,6 +394,26 @@ namespace
         EXPECT_FALSE(writer->addFileFromMemory("other.txt", "x"));
         EXPECT_FALSE(writer->finalize());
         EXPECT_GT(logger.count(LogsLevel::ERR), 0U);
+    }
+
+    TEST(ArchiveWriterTest, ThrowingSinkMakesTheWriterFailWithoutThrowing)
+    {
+        const RecordingLogger logger;
+        ThrowingSink sink;
+        std::unique_ptr<ArchiveWriter> writer =
+            ArchiveWriter::Create({.format = ArchiveFormat::ZIP}, sink, logger);
+        ASSERT_NE(writer, nullptr);
+
+        // libarchive buffers its output: the sink may only be called when finalizing
+        bool finalized = true;
+        EXPECT_NO_THROW({
+            const bool added = writer->addFileFromMemory("file.txt", "content");
+            finalized = added && writer->finalize();
+        });
+
+        EXPECT_FALSE(finalized);
+        EXPECT_TRUE(logger.contains(LogsLevel::ERR, "the archive sink threw: disk full"));
+        EXPECT_FALSE(writer->addFileFromMemory("other.txt", "x"));
     }
 
     TEST(ArchiveWriterTest, AbandonedWriterDoesNotCompleteTheArchive)

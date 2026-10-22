@@ -15,7 +15,9 @@
 
 #include <cerrno>
 #include <ctime>
+#include <exception>
 #include <set>
+#include <string_view>
 #include <utility>
 
 namespace act::archive
@@ -248,7 +250,25 @@ la_ssize_t ArchiveWriter::Impl::WriteToSink(struct archive *archive,
         return static_cast<la_ssize_t>(length);
     }
 
-    if (!impl->m_sink.write(std::string(static_cast<const char *>(buffer), length)))
+    // libarchive, written in C, calls this function: no exception may go through it, it would
+    // leave the libarchive writer inconsistent, or terminate the process where the C code has no
+    // unwind tables
+    bool isWritten = false;
+    try
+    {
+        isWritten = impl->m_sink.write(std::string_view(static_cast<const char *>(buffer), length));
+    }
+    catch (const std::exception &exception)
+    {
+        impl->m_logger.errorStream()
+            << "ArchiveWriter: the archive sink threw: " << exception.what();
+    }
+    catch (...)
+    {
+        impl->m_logger.errorStream() << "ArchiveWriter: the archive sink threw";
+    }
+
+    if (!isWritten)
     {
         archive_set_error(archive, EIO, "the archive sink failed");
         return -1;
