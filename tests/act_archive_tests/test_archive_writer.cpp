@@ -8,9 +8,9 @@
  *
  * Covers writing ZIP archives in memory and reading them back: the empty archive, files and
  * directories, binary and empty contents, the per entry compression, nested archives, non ASCII
- * names under the "C" locale, the rejected paths, quoted in the logs with their control characters
- * escaped, the operations after finalizing, a failing or throwing sink and an abandoned writer;
- * the separators and the trailing separator of a directory.
+ * names under the "C" locale, the rejected paths (unsafe, duplicated or not UTF-8), quoted in the
+ * logs with their control characters escaped, the operations after finalizing, a failing or
+ * throwing sink and an abandoned writer; the separators and the trailing separator of a directory.
  */
 
 #include "act_archive/reader/archive_reader.hpp"
@@ -279,6 +279,26 @@ namespace
         EXPECT_EQ(entries[0].type, EntryType::DIRECTORY);
         EXPECT_EQ(std::setlocale(LC_ALL, nullptr), processLocale);
         EXPECT_TRUE(IsThreadOnTheGlobalLocale());
+    }
+
+    TEST(ArchiveWriterTest, PathsWhichAreNotUtf8AreRejected)
+    {
+        const RecordingLogger logger;
+        StringArchiveSink sink;
+        std::unique_ptr<ArchiveWriter> writer =
+            ArchiveWriter::Create({.format = ArchiveFormat::ZIP}, sink, logger);
+        ASSERT_NE(writer, nullptr);
+
+        // "\xE9" is "é" in Latin-1, not in UTF-8
+        EXPECT_FALSE(writer->addFileFromMemory("caf\xE9.txt", "x"));
+        EXPECT_FALSE(writer->addDirectoryEntry("caf\xE9"));
+        EXPECT_TRUE(logger.contains(LogsLevel::ERR, "is not UTF-8"));
+        ASSERT_TRUE(writer->addFileFromMemory("caf\xC3\xA9.txt", "x"));
+        ASSERT_TRUE(writer->finalize());
+
+        const std::vector<ArchiveEntry> entries = ReadZip(sink.takeData());
+        ASSERT_EQ(entries.size(), 1U);
+        EXPECT_EQ(entries[0].path, "caf\xC3\xA9.txt");
     }
 
     TEST(ArchiveWriterTest, UnsafeOrDuplicatedPathsAreRejectedAndLeaveTheArchiveUntouched)

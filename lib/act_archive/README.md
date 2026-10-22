@@ -142,9 +142,9 @@ entry rejects the whole archive.
   to the `C.UTF-8` locale meanwhile, which must be installed on Linux (glibc provides it since 2.35,
   Debian's `libc-bin` ships it). Without it, the archives with non ASCII names are rejected.
 
-`ArchiveWriter` checks the same paths and rejects duplicates, so that it never writes an archive
-`ArchiveReader` would reject. It does not check that a name is valid on Windows: see
-`FilePathUtil::SanitizeFileName` in act_files.
+`ArchiveWriter` checks the same paths, rejects duplicates and the paths which are not UTF-8, so
+that it never writes an archive `ArchiveReader` would reject. It does not check that a name is
+valid on Windows: see `FilePathUtil::SanitizeFileName` in act_files.
 
 ## Adding a format or a filter
 
