@@ -11,9 +11,10 @@
  * - building a CSV line (with or without escaping its values),
  * - appending lines to a file (in a temporary directory removed after each test),
  * - splitting CSV content into lines (a line break between double quotes does not end one, a
- *   UTF-8 byte order mark at the beginning is skipped), and
+ *   UTF-8 byte order mark at the beginning is skipped),
  * - splitting a line into values (trimmed, or read as they are when they are between double
- *   quotes).
+ *   quotes), and
+ * - finding columns by their title (trimmed, without case, ambiguous when found several times).
  */
 
 #include "act_files/ext_file.hpp"
@@ -361,6 +362,26 @@ namespace
     }
 
     /** @brief Gives each test a temporary directory for the CSV files it writes */
+    TEST(CsvUtilTest, FindColumnsFindsTheTitlesInAnyOrder)
+    {
+        EXPECT_THAT(FindColumns({"b", "a", "c"}, {"a", "c", "b"}),
+                    ElementsAre(std::optional<std::size_t>{1}, 2, 0));
+    }
+
+    TEST(CsvUtilTest, FindColumnsComparesTheTitlesTrimmedAndWithoutCase)
+    {
+        EXPECT_THAT(FindColumns({" Profile NAME ", "x"}, {"profile name", " X"}),
+                    ElementsAre(std::optional<std::size_t>{0}, 1));
+    }
+
+    TEST(CsvUtilTest, FindColumnsDoesNotFindAMissingOrAnAmbiguousTitle)
+    {
+        EXPECT_THAT(FindColumns({"a", "b", "A"}, {"a", "z", "b"}),
+                    ElementsAre(std::nullopt, std::nullopt, std::optional<std::size_t>{1}));
+        EXPECT_THAT(FindColumns({}, {"a"}), ElementsAre(std::nullopt));
+        EXPECT_THAT(FindColumns({"a"}, {}), IsEmpty());
+    }
+
     class CsvUtilFileTest : public ::testing::Test
     {
       protected:
