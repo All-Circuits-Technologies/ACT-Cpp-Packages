@@ -79,6 +79,31 @@ struct SanitizeFileNameOptions
 [[nodiscard]] bool IsWindowsReservedName(const std::string &fileName);
 
 /**
+ * @brief Test if a file or directory name is one an operating system gives its own metadata
+ * @details Such entries are never user content. The names are:
+ *          - macOS, compared exactly, as written by macOS: `__MACOSX` (added by the Finder when
+ *            compressing), the AppleDouble files starting with `._` (extended attributes, next to
+ *            each file on non Apple file systems), `.DS_Store`, `.Spotlight-V100`, `.Trashes`,
+ *            `.fseventsd`;
+ *          - Windows, compared without case, as its file systems do: `Thumbs.db`, `ehthumbs.db`,
+ *            `desktop.ini`, `$RECYCLE.BIN`, `System Volume Information`.
+ * @param name The file or directory name, without separator
+ * @return True if the name is operating system metadata, false otherwise
+ * @note The hidden files in general (`.git`, `.env`...) are user content, and are not reported.
+ */
+[[nodiscard]] bool IsOperatingSystemMetadataName(const std::string &name);
+
+/**
+ * @brief Test if a path is operating system metadata, or lies under such an entry
+ * @details The path is split on `/` and `\`, then each component is tested with
+ *          @ref IsOperatingSystemMetadataName: `__MACOSX/folder/data.csv`, `folder/._data.csv` and
+ *          `C:\Users\Thumbs.db` are all reported.
+ * @param path The path, relative or absolute
+ * @return True if a component of the path is operating system metadata, false otherwise
+ */
+[[nodiscard]] bool IsOperatingSystemMetadataPath(const std::string &path);
+
+/**
  * @brief Turn any string into a file name which is valid on Linux and Windows file systems
  * @details The name is processed byte by byte:
  *          1. each run of bytes the character set forbids is replaced by a single
