@@ -29,8 +29,8 @@ namespace act::archive::LibarchiveUtil
 
 /**
  * @brief Set the format of a libarchive writer
- * @note The entry names are written in UTF-8 and flagged as such, whatever the locale (for ZIP,
- *       the hdrcharset option).
+ * @note The entry names are written in UTF-8, and flagged as such, under a UTF-8 locale only:
+ *       write them under ScopedUtf8Locale.
  * @param writer The libarchive writer, not opened yet
  * @param format The archive format
  * @return True on success, false otherwise (see archive_error_string())

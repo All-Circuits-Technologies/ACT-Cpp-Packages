@@ -7,10 +7,12 @@
 
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
+#include "act_text/vector_string_util.hpp"
 
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -30,6 +32,23 @@ constexpr char FIRST_PRINTABLE_ASCII = ' ';
 
 /** @brief Highest printable ASCII character, for the logs */
 constexpr char LAST_PRINTABLE_ASCII = '~';
+
+/** @brief Prefix of the AppleDouble files macOS writes next to each file, for its attributes */
+constexpr std::string_view APPLE_DOUBLE_PREFIX = "._";
+
+/** @brief Names macOS gives its metadata, compared exactly */
+constexpr std::array<std::string_view, 5> MACOS_METADATA_NAMES = {
+    "__MACOSX", ".DS_Store", ".Spotlight-V100", ".Trashes", ".fseventsd"};
+
+/** @brief Names Windows gives its metadata, compared without case */
+constexpr std::array<std::string_view, 5> WINDOWS_METADATA_NAMES = {
+    "Thumbs.db", "ehthumbs.db", "desktop.ini", "$RECYCLE.BIN", "System Volume Information"};
+
+/** @brief Path separator of the POSIX systems, Linux and macOS */
+constexpr char POSIX_PATH_SEPARATOR = '/';
+
+/** @brief Path separator of Windows, which also accepts the POSIX one */
+constexpr char WINDOWS_PATH_SEPARATOR = '\\';
 
 } // namespace
 
@@ -101,6 +120,27 @@ bool IsWindowsReservedName(const std::string &fileName)
     return std::ranges::any_of(WINDOWS_RESERVED_NAMES, [&stem](const std::string &reserved) {
         return act::text::StringUtil::AreStringEqualNoCase(stem, reserved);
     });
+}
+
+bool IsOperatingSystemMetadataName(const std::string &name)
+{
+    // An AppleDouble file has the name of the file it describes after its prefix
+    return name.starts_with(APPLE_DOUBLE_PREFIX) ||
+           std::ranges::find(MACOS_METADATA_NAMES, name) != MACOS_METADATA_NAMES.end() ||
+           std::ranges::any_of(WINDOWS_METADATA_NAMES, [&name](std::string_view metadataName) {
+               return act::text::StringUtil::AreStringEqualNoCase(name, std::string(metadataName));
+           });
+}
+
+bool IsOperatingSystemMetadataPath(const std::string &path)
+{
+    // Both separators are taken into account, whatever the system
+    std::string normalizedPath = path;
+    std::ranges::replace(normalizedPath, WINDOWS_PATH_SEPARATOR, POSIX_PATH_SEPARATOR);
+
+    return std::ranges::any_of(
+        act::text::VectorStringUtil::split(normalizedPath, std::string(1, POSIX_PATH_SEPARATOR)),
+        [](const std::string &component) { return IsOperatingSystemMetadataName(component); });
 }
 
 std::string SanitizeFileName(const std::string &name,

@@ -9,6 +9,7 @@
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "utilities/libarchive_util.hpp"
+#include "utilities/scoped_utf8_locale.hpp"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -59,12 +60,15 @@ bool ArchiveWriter::Impl::addDirectoryEntry(const std::string &path)
         normalizedPath.pop_back();
     }
 
-    if (!checkNewEntry(normalizedPath))
+    // libarchive converts the entry names according to the locale, when writing their headers:
+    // switch this thread to UTF-8 meanwhile, so that non ASCII names survive a process running
+    // under the "C" locale, and are flagged as UTF-8
+    const ScopedUtf8Locale utf8Locale(m_logger);
+    if (!checkWritableName(normalizedPath, utf8Locale) || !checkNewEntry(normalizedPath))
     {
         return false;
     }
 
-    // The entry names are flagged as UTF-8 whatever the locale, see LibarchiveUtil::SetWriterFormat
     return writeEntry(normalizedPath, AE_IFDIR, DIRECTORY_PERMISSIONS, {});
 }
 
@@ -73,7 +77,10 @@ bool ArchiveWriter::Impl::addFileFromMemory(const std::string &path,
                                             const EntryOptions &options)
 {
     const std::string normalizedPath = ArchivePathUtil::NormalizeEntrySeparators(path);
-    if (!checkNewEntry(normalizedPath))
+
+    // Entry names in UTF-8, whatever the process locale (see addDirectoryEntry())
+    const ScopedUtf8Locale utf8Locale(m_logger);
+    if (!checkWritableName(normalizedPath, utf8Locale) || !checkNewEntry(normalizedPath))
     {
         return false;
     }
@@ -143,6 +150,19 @@ void ArchiveWriter::Impl::closeLibarchive()
 
     archive_write_free(m_archive);
     m_archive = nullptr;
+}
+
+bool ArchiveWriter::Impl::checkWritableName(const std::string &path,
+                                            const ScopedUtf8Locale &utf8Locale) const
+{
+    if (act::text::StringUtil::IsAscii(path) || utf8Locale.isActive())
+    {
+        return true;
+    }
+
+    m_logger.errorStream() << "ArchiveWriter: the entry path " << QuotePath(path)
+                           << " is not ASCII and no UTF-8 locale is available";
+    return false;
 }
 
 bool ArchiveWriter::Impl::checkNewEntry(const std::string &path)
