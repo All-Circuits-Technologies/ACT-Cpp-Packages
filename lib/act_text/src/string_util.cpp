@@ -32,6 +32,9 @@ constexpr unsigned char LAST_C0_CONTROL_CHAR{0x1FU};
 /** @brief The DEL control character */
 constexpr unsigned char DELETE_CHAR{0x7FU};
 
+/** @brief Largest ASCII character code */
+constexpr unsigned char ASCII_MAX_CHAR{0x7FU};
+
 /** @brief First byte of the UTF-8 encoding of the C1 control characters (U+0080 to U+009F) */
 constexpr unsigned char C1_CONTROL_LEAD_BYTE{0xC2U};
 
@@ -318,6 +321,13 @@ bool IsValidUtf8(const std::string &str)
     }
 
     return true;
+}
+
+bool IsAscii(const std::string &str)
+{
+    return std::ranges::all_of(str, [](char byte) {
+        return static_cast<unsigned char>(byte) <= ASCII_MAX_CHAR;
+    });
 }
 
 } // namespace act::text::StringUtil

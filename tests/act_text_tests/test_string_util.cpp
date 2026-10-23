@@ -9,8 +9,8 @@
  * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
  * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * the IPv4 address validation, the UTF-8 validation, the UTF-8 byte order mark removal, and the
- * escaping of the control characters.
+ * the IPv4 address validation, the UTF-8 and ASCII validations, the UTF-8 byte order mark removal,
+ * and the escaping of the control characters.
  */
 
 #include "act_text/string_util.hpp"
@@ -447,6 +447,25 @@ namespace
         EXPECT_FALSE(IsValidUtf8("\xED\xBF\xBF"));     // U+DFFF
         EXPECT_TRUE(IsValidUtf8("\xED\x9F\xBF"));      // U+D7FF, just before the surrogates
         EXPECT_FALSE(IsValidUtf8("\xF4\x90\x80\x80")); // U+110000
+    }
+
+    TEST(StringUtilTest, IsAsciiAcceptsThePrintableAscii)
+    {
+        EXPECT_TRUE(IsAscii(""));
+        EXPECT_TRUE(IsAscii("Profile A/props.csv ~ 'a;b'"));
+    }
+
+    TEST(StringUtilTest, IsAsciiAcceptsTheControlCharacters)
+    {
+        EXPECT_TRUE(IsAscii(std::string("a\0b\n\t\x1B\x7F", 7)));
+    }
+
+    TEST(StringUtilTest, IsAsciiRejectsTheBytesAbove0x7F)
+    {
+        EXPECT_FALSE(IsAscii("\x80"));
+        EXPECT_FALSE(IsAscii("\xC3\xA9t\xC3\xA9")); // "été" in UTF-8
+        EXPECT_FALSE(IsAscii("10 \xE2\x82\xAC"));   // "10 €" in UTF-8
+        EXPECT_FALSE(IsAscii("caf\xE9"));           // "café" in Latin-1
     }
 
     TEST(StringUtilTest, RemoveUtf8ByteOrderMarkRemovesTheOneStartingTheString)

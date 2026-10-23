@@ -335,4 +335,13 @@ std::string ToPrintableText(const std::string &text);
  */
 bool IsValidUtf8(const std::string &str);
 
+/**
+ * @brief Test if a string is pure ASCII: none of its bytes is above 0x7F
+ * @note The control characters are ASCII: this doesn't tell that a string is printable, see
+ *       ToPrintableText. An empty string is ASCII.
+ * @param str The string to test
+ * @return true if the string is pure ASCII, false otherwise
+ */
+bool IsAscii(const std::string &str);
+
 } // namespace act::text::StringUtil
