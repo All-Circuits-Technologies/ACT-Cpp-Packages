@@ -28,6 +28,26 @@ class AbsArchiveSink;
  */
 class ArchiveWriter::Impl : private act::foundation::NotCopiableNotMovable
 {
+  private:
+    /** @brief States of the writer */
+    enum class State
+    {
+        /** @brief Entries can be added */
+        OPEN,
+
+        /** @brief The archive is complete */
+        FINALIZED,
+
+        /** @brief Writing failed: the archive is unusable */
+        FAILED,
+    };
+
+    /**
+     * @brief Type of the libarchive permissions: mode_t on Linux, but mode_t does not exist with
+     *        MSVC, and libarchive uses another type on Windows and from its version 4
+     */
+    using LibarchiveMode = decltype(AE_IFREG);
+
   public:
     /**
      * @brief Prepare the writer, see open()
@@ -57,26 +77,6 @@ class ArchiveWriter::Impl : private act::foundation::NotCopiableNotMovable
 
     /** @copydoc ArchiveWriter::finalize */
     [[nodiscard]] bool finalize();
-
-  private:
-    /** @brief States of the writer */
-    enum class State
-    {
-        /** @brief Entries can be added */
-        OPEN,
-
-        /** @brief The archive is complete */
-        FINALIZED,
-
-        /** @brief Writing failed: the archive is unusable */
-        FAILED,
-    };
-
-    /**
-     * @brief Type of the libarchive permissions: mode_t on Linux, but mode_t does not exist with
-     *        MSVC, and libarchive uses another type on Windows and from its version 4
-     */
-    using LibarchiveMode = decltype(AE_IFREG);
 
   private:
     /**
