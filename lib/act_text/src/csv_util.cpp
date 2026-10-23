@@ -5,11 +5,11 @@
 #include "act_text/csv_util.hpp"
 
 #include "act_files/ext_file.hpp"
-#include "act_files/file_util.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <fstream>
@@ -43,7 +43,11 @@ std::string EscapeCsvValue(const std::string &value, const std::string &separato
     /* An empty separator is found at every position: there is no separator to protect */
     const bool hasSeparator {!separator.empty() && (value.find(separator) != std::string::npos)};
     const bool hasQuotingTriggerChars {value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) != std::string::npos};
-    if (!hasSeparator && !hasQuotingTriggerChars)
+    /* ParseCsvLine trims the values which are not quoted: a surrounding whitespace has to be */
+    const bool hasSurroundingWhitespace{!value.empty() &&
+                                        (std::isspace(static_cast<unsigned char>(value.front())) ||
+                                         std::isspace(static_cast<unsigned char>(value.back())))};
+    if (!hasSeparator && !hasQuotingTriggerChars && !hasSurroundingWhitespace)
     {
         return value;
     }
@@ -118,7 +122,7 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
     bool isValueStart{true};
 
     /* A UTF-8 byte order mark at the very beginning is not a part of the content */
-    using act::files::FileUtil::UTF8_BYTE_ORDER_MARK;
+    using act::text::StringUtil::UTF8_BYTE_ORDER_MARK;
     std::size_t position{csvContent.starts_with(UTF8_BYTE_ORDER_MARK) ? UTF8_BYTE_ORDER_MARK.size()
                                                                       : 0};
     while (position < csvContent.size())
@@ -140,6 +144,13 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
                     isInQuotes = false;
                 }
             }
+        }
+        else if ((character == '\r') && ((position + 1) < csvContent.size()) &&
+                 (csvContent[position + 1] == '\n'))
+        {
+            /* The carriage return of a CRLF line break is not a part of the line */
+            ++position;
+            continue;
         }
         else if (character == '\n')
         {
@@ -176,6 +187,14 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
     }
 
     return lines;
+}
+
+void RemoveBlankLines(std::vector<std::string> &lines, const std::string &separator)
+{
+    std::erase_if(lines, [&separator](const std::string &line) {
+        const std::vector<std::string> values{ParseCsvLine(line, separator)};
+        return std::ranges::all_of(values, [](const std::string &value) { return value.empty(); });
+    });
 }
 
 std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::string &separator)
@@ -258,6 +277,33 @@ std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::str
     }
 
     return values;
+}
+
+std::vector<std::optional<std::size_t>> FindColumns(const std::vector<std::string> &headerValues,
+                                                    const std::vector<std::string> &titles)
+{
+    std::vector<std::optional<std::size_t>> positions;
+    positions.reserve(titles.size());
+    for (const std::string &title : titles)
+    {
+        const std::string trimmedTitle{StringUtil::TrimCopy(title)};
+        std::optional<std::size_t> position;
+        std::size_t matchCount{0};
+        for (std::size_t index{0}; index < headerValues.size(); ++index)
+        {
+            if (StringUtil::AreStringEqualNoCase(StringUtil::TrimCopy(headerValues[index]),
+                                                 trimmedTitle))
+            {
+                position = index;
+                ++matchCount;
+            }
+        }
+
+        /* A title found several times is ambiguous: it is not found either */
+        positions.push_back((matchCount == 1) ? position : std::nullopt);
+    }
+
+    return positions;
 }
 
 } // namespace act::text::CsvUtil

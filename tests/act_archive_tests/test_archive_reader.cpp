@@ -9,11 +9,11 @@
  * Covers opening and reading, once only, the ZIP archives of other tools (7-Zip, Windows 11,
  * Info-ZIP, Python), nested ones included, under the "C" locale; the empty archive; the paths given
  * with `/` separators, and quoted in the logs with their control characters escaped; the data
- * which cannot be a temporary; and every reason to reject an archive: no allowed format, other
+ * which cannot be a temporary; every reason to reject an archive: no allowed format, other
  * format, damaged data, unsafe or duplicated paths, links, encrypted entries, the entry count,
  * entry size (zip bomb, on its announced size or while decompressing) and total size (on the
  * announced sizes or while decompressing) limits, and an entry whose size differs from the
- * announced one.
+ * announced one; and the rejection reason given after a rejected reading.
  */
 
 #include "act_archive/reader/archive_reader.hpp"
@@ -230,6 +230,39 @@ namespace
         EXPECT_FALSE(reader->readAllEntries().has_value());
         EXPECT_FALSE(reader->readAllEntries().has_value());
         EXPECT_TRUE(logger.contains(LogsLevel::WARNING, "already read"));
+    }
+
+    TEST(ArchiveReaderTest, TellsWhyTheEntriesWereRejected)
+    {
+        const std::string zip =
+            RawArchiveBuilder().addFile("zeros.bin", std::string(MEBIBYTE, '\0')).build();
+        ArchiveReaderOptions options = ZIP_ONLY;
+        options.limits.maxEntrySize = KIBIBYTE;
+        const RecordingLogger logger;
+        std::unique_ptr<ArchiveReader> reader = ArchiveReader::OpenFromMemory(zip, options, logger);
+        ASSERT_NE(reader, nullptr);
+
+        EXPECT_FALSE(reader->readAllEntries().has_value());
+        EXPECT_EQ(reader->getRejectionReason(),
+                  "the entry 'zeros.bin' exceeds 1024 bytes (announced size)");
+        EXPECT_TRUE(logger.contains(LogsLevel::WARNING, reader->getRejectionReason()));
+
+        // A further reading is rejected too, for its own reason
+        EXPECT_FALSE(reader->readAllEntries().has_value());
+        EXPECT_EQ(reader->getRejectionReason(), "its entries were already read");
+    }
+
+    TEST(ArchiveReaderTest, HasNoRejectionReasonUnlessTheEntriesAreRejected)
+    {
+        const std::string data = ZipFixtures::ToString(ZipFixtures::INFO_ZIP_BYTES);
+        const RecordingLogger logger;
+        std::unique_ptr<ArchiveReader> reader =
+            ArchiveReader::OpenFromMemory(data, ZIP_ONLY, logger);
+        ASSERT_NE(reader, nullptr);
+
+        EXPECT_TRUE(reader->getRejectionReason().empty());
+        EXPECT_TRUE(reader->readAllEntries().has_value());
+        EXPECT_TRUE(reader->getRejectionReason().empty());
     }
 
     TEST(ArchiveReaderTest, OpenFailsOnAnUnrecognizedArchive)

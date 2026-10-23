@@ -155,6 +155,15 @@ bool ArchiveWriter::Impl::checkNewEntry(const std::string &path)
         return false;
     }
 
+    // libarchive writes a path which is not UTF-8 as is, flagged as UTF-8: no tool, ArchiveReader
+    // included, could read it back
+    if (!act::text::StringUtil::IsValidUtf8(path))
+    {
+        m_logger.errorStream() << "ArchiveWriter: the entry path " << QuotePath(path)
+                               << " is not UTF-8";
+        return false;
+    }
+
     if (!ArchivePathUtil::IsSafeEntryPath(path))
     {
         m_logger.errorStream() << "ArchiveWriter: the entry path " << QuotePath(path)

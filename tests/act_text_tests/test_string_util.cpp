@@ -9,7 +9,8 @@
  * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
  * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * the IPv4 address validation, and the escaping of the control characters.
+ * the IPv4 address validation, the UTF-8 validation, the UTF-8 byte order mark removal, and the
+ * escaping of the control characters.
  */
 
 #include "act_text/string_util.hpp"
@@ -401,6 +402,73 @@ namespace
         EXPECT_EQ(ToPrintableText("\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC"),
                   "\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC");
         EXPECT_EQ(ToPrintableText("a\xC2"), "a\xC2");
+    }
+
+    TEST(StringUtilTest, IsValidUtf8AcceptsValidSequences)
+    {
+        EXPECT_TRUE(IsValidUtf8(""));
+        EXPECT_TRUE(IsValidUtf8("plain ASCII"));
+        EXPECT_TRUE(IsValidUtf8("Temp\xC3\xA9rature"));   // U+00E9, 2 bytes
+        EXPECT_TRUE(IsValidUtf8("\xE2\x82\xAC"));         // U+20AC, 3 bytes
+        EXPECT_TRUE(IsValidUtf8("\xEF\xBF\xBF"));         // U+FFFF
+        EXPECT_TRUE(IsValidUtf8("\xF0\x9F\x98\x80"));     // U+1F600, 4 bytes
+        EXPECT_TRUE(IsValidUtf8("\xF4\x8F\xBF\xBF"));     // U+10FFFF, the last one
+        EXPECT_TRUE(IsValidUtf8(std::string("a\0b", 3))); // a null byte is ASCII
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsOtherEncodings)
+    {
+        EXPECT_FALSE(IsValidUtf8("Temp\xE9rature")); // Latin-1 or Windows-1252
+        EXPECT_FALSE(IsValidUtf8("\xFF\xFE"));       // UTF-16 byte order mark
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsMalformedSequences)
+    {
+        EXPECT_FALSE(IsValidUtf8("\x80"));                 // continuation byte without lead byte
+        EXPECT_FALSE(IsValidUtf8("\xC3"));                 // truncated 2 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xE2\x82"));             // truncated 3 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xF0\x9F\x98"));         // truncated 4 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xC3\x28"));             // lead byte followed by ASCII
+        EXPECT_FALSE(IsValidUtf8("\xF8\x88\x80\x80\x80")); // 5 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xFE"));
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsOverlongEncodings)
+    {
+        EXPECT_FALSE(IsValidUtf8("\xC0\xAF")); // '/' on 2 bytes
+        EXPECT_FALSE(IsValidUtf8("\xC1\xBF"));
+        EXPECT_FALSE(IsValidUtf8("\xE0\x80\xAF"));     // '/' on 3 bytes
+        EXPECT_FALSE(IsValidUtf8("\xF0\x80\x80\xAF")); // '/' on 4 bytes
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsSurrogatesAndCodePointsBeyondUnicode)
+    {
+        EXPECT_FALSE(IsValidUtf8("\xED\xA0\x80"));     // U+D800
+        EXPECT_FALSE(IsValidUtf8("\xED\xBF\xBF"));     // U+DFFF
+        EXPECT_TRUE(IsValidUtf8("\xED\x9F\xBF"));      // U+D7FF, just before the surrogates
+        EXPECT_FALSE(IsValidUtf8("\xF4\x90\x80\x80")); // U+110000
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkRemovesTheOneStartingTheString)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+        std::string text{byteOrderMark + "text"};
+
+        EXPECT_EQ(&RemoveUtf8ByteOrderMark(text), &text);
+        EXPECT_EQ(text, "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark), "");
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkKeepsWhatIsNotABeginningByteOrderMark)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(""), "");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("text"), "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("a" + byteOrderMark), "a" + byteOrderMark);
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark + byteOrderMark + "a"),
+                  byteOrderMark + "a");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("\xEF\xBB\xBE"), "\xEF\xBB\xBE");
     }
 
 } // namespace

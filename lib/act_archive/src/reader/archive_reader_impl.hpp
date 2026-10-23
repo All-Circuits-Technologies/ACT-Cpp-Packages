@@ -68,6 +68,9 @@ class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
     /** @copydoc ArchiveReader::readAllEntries */
     [[nodiscard]] std::optional<std::vector<ArchiveEntry>> readAllEntries();
 
+    /** @copydoc ArchiveReader::getRejectionReason */
+    [[nodiscard]] const std::string &getRejectionReason() const;
+
   private:
     /**
      * @brief Create the libarchive reader, and enable the allowed formats only
@@ -118,11 +121,11 @@ class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
     [[nodiscard]] std::optional<std::string> readContent(const std::string &path);
 
     /**
-     * @brief Log why the archive is rejected
+     * @brief Log and keep why the archive is rejected
      * @param reason The reason
      * @return Always std::nullopt, to be returned by the caller
      */
-    [[nodiscard]] std::nullopt_t reject(const std::string &reason) const;
+    [[nodiscard]] std::nullopt_t reject(const std::string &reason);
 
     /**
      * @brief Quote an entry path for a rejection reason, its control characters escaped (see
@@ -178,5 +181,8 @@ class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
 
     /** @brief Paths read so far, with `/` separators, to reject duplicates */
     std::set<std::string> m_paths;
+
+    /** @brief Why the archive is rejected, empty while it is not */
+    std::string m_rejectionReason;
 };
 } // namespace act::archive

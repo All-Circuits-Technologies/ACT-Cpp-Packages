@@ -35,4 +35,9 @@ std::optional<std::vector<ArchiveEntry>> ArchiveReader::readAllEntries()
 {
     return m_impl->readAllEntries();
 }
+
+const std::string &ArchiveReader::getRejectionReason() const
+{
+    return m_impl->getRejectionReason();
+}
 } // namespace act::archive
