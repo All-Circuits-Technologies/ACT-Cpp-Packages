@@ -9,6 +9,7 @@
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "utilities/libarchive_util.hpp"
+#include "utilities/scoped_utf8_locale.hpp"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -64,7 +65,10 @@ bool ArchiveWriter::Impl::addDirectoryEntry(const std::string &path)
         return false;
     }
 
-    // The entry names are flagged as UTF-8 whatever the locale, see LibarchiveUtil::SetWriterFormat
+    // libarchive converts the entry names according to the locale, when writing their headers:
+    // switch this thread to UTF-8 meanwhile, so that non ASCII names survive a process running
+    // under the "C" locale, and are flagged as UTF-8
+    const ScopedUtf8Locale utf8Locale(m_logger);
     return writeEntry(normalizedPath, AE_IFDIR, DIRECTORY_PERMISSIONS, {});
 }
 
@@ -78,6 +82,8 @@ bool ArchiveWriter::Impl::addFileFromMemory(const std::string &path,
         return false;
     }
 
+    // Entry names in UTF-8, whatever the process locale (see addDirectoryEntry())
+    const ScopedUtf8Locale utf8Locale(m_logger);
     return selectCompression(options.compression) &&
            writeEntry(normalizedPath, AE_IFREG, FILE_PERMISSIONS, content);
 }

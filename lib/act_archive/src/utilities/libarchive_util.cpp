@@ -14,15 +14,6 @@ namespace
 /** @brief Message given when libarchive has no error message */
 constexpr const char *UNKNOWN_ERROR_MESSAGE = "unknown error";
 
-/** @brief Name of the libarchive ZIP format, for its options */
-constexpr const char *ZIP_FORMAT_NAME = "zip";
-
-/** @brief libarchive option giving the character set of the entry names */
-constexpr const char *HEADER_CHARSET_OPTION = "hdrcharset";
-
-/** @brief The UTF-8 character set, for the hdrcharset option */
-constexpr const char *UTF8_CHARSET = "UTF-8";
-
 } // namespace
 
 namespace act::archive::LibarchiveUtil
@@ -46,17 +37,11 @@ bool SetWriterFormat(struct archive *writer, ArchiveFormat format)
     switch (format)
     {
         case ArchiveFormat::ZIP:
+            // No hdrcharset option: without iconv, libarchive only accepts it under a UTF-8 locale,
+            // under which it writes the entry names in UTF-8 and flags them anyway (general
+            // purpose bit 11). The names are thus written under a UTF-8 locale, see
+            // ScopedUtf8Locale
             result = archive_write_set_format_zip(writer);
-            if (result == ARCHIVE_OK)
-            {
-                // Entry names in UTF-8, flagged as such (general purpose bit 11), whatever the
-                // locale: without it, libarchive only flags them under a UTF-8 locale. Reading
-                // needs more, see ScopedUtf8Locale
-                result = archive_write_set_format_option(writer,
-                                                         ZIP_FORMAT_NAME,
-                                                         HEADER_CHARSET_OPTION,
-                                                         UTF8_CHARSET);
-            }
             break;
     }
 

@@ -138,9 +138,11 @@ entry rejects the whole archive.
 - **Sizes:** the entry count, the size of each entry and the total size are limited
   (`ArchiveReaderLimits`). The sizes are checked while decompressing, without trusting the archive.
 - **Names:** non ASCII names are read and written in UTF-8, even when the process runs under the
-  `C` locale. Writing flags them as UTF-8 whatever the locale; reading switches the calling thread
-  to the `C.UTF-8` locale meanwhile, which must be installed on Linux (glibc provides it since 2.35,
-  Debian's `libc-bin` ships it). Without it, the archives with non ASCII names are rejected.
+  `C` locale: writing and reading switch the calling thread to the `C.UTF-8` locale meanwhile,
+  under which libarchive converts the names to and from UTF-8, even when built without iconv.
+  This locale must be installed on Linux (glibc provides it since 2.35, Debian's `libc-bin` ships
+  it). Without it, the archives with non ASCII names are rejected, and such names can't be
+  written.
 
 `ArchiveWriter` checks the same paths, rejects duplicates and the paths which are not UTF-8, so
 that it never writes an archive `ArchiveReader` would reject. It does not check that a name is
