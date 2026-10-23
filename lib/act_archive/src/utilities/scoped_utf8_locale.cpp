@@ -5,12 +5,19 @@
 #include "utilities/scoped_utf8_locale.hpp"
 
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_text/string_util.hpp"
 
 namespace act::archive
 {
 #if defined(_WIN32)
 
-ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger & /*logger*/)
+ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
+    : ScopedUtf8Locale(logger, UTF8_LOCALE_NAMES)
+{
+}
+
+ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger & /*logger*/,
+                                   std::span<const char *const> /*localeNames*/)
 {
 }
 
@@ -23,22 +30,43 @@ bool ScopedUtf8Locale::isActive() const
 
 #else
 
-// The locale is built from scratch: its categories other than the character types are the "C"
+ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
+    : ScopedUtf8Locale(logger, UTF8_LOCALE_NAMES)
+{
+}
+
+// Each locale is built from scratch: its categories other than the character types are the "C"
 // ones, not the ones of the process. This is harmless, the libarchive calls made in its scope only
 // depend on the character types
-ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
-    : m_utf8Locale(newlocale(LC_CTYPE_MASK, "C.UTF-8", static_cast<locale_t>(nullptr)))
+ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger,
+                                   std::span<const char *const> localeNames)
 {
-    if (m_utf8Locale == static_cast<locale_t>(nullptr))
+    /* Take the first available locale */
+    const char *usedLocaleName = nullptr;
+    for (const char *localeName : localeNames)
     {
-        // errno is not reported: glibc may leave it unset when this locale is missing
-        logger.warningStream()
-            << "act_archive: the C.UTF-8 locale is not available, the calling thread keeps its "
-               "locale: the non ASCII text converted meanwhile may be rejected or altered; "
-               "install the C.UTF-8 locale";
+        m_utf8Locale = newlocale(LC_CTYPE_MASK, localeName, static_cast<locale_t>(nullptr));
+        if (m_utf8Locale != static_cast<locale_t>(nullptr))
+        {
+            usedLocaleName = localeName;
+            break;
+        }
+    }
+
+    if (!isActive())
+    {
+        // errno is not reported: glibc may leave it unset when such a locale is missing
+        logger.warningStream() << "act_archive: no UTF-8 locale available ("
+                               << act::text::StringUtil::IterableToString(localeNames, ", ")
+                               << "): non ASCII names unsupported";
         return;
     }
 
+    if (usedLocaleName != localeNames.front())
+    {
+        logger.debugStream() << "act_archive: the " << localeNames.front()
+                             << " locale is not available, using " << usedLocaleName;
+    }
     m_previousLocale = uselocale(m_utf8Locale);
 }
 
