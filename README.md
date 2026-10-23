@@ -34,6 +34,7 @@ general-purpose applications developed by All-Circuits Technologies.
 
 | Library                                                    | Description                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [`act_archive`](lib/act_archive/README.md)                 | Archive writing and reading (ZIP in memory, nested archives), with safe paths and limits.    |
 | [`act_db_core`](lib/act_db_core/README.md)                 | Database engine-agnostic core with connection management, query execution, and transactions. |
 | [`act_db_sqlite`](lib/act_db_sqlite/README.md)             | SQLite database management with abstraction layer.                                           |
 | [`act_files`](lib/act_files/README.md)                     | File system operations and file management utilities.                                        |

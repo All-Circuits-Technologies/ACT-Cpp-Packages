@@ -7,5 +7,6 @@
 # Install dependencies for ACT C++ packages
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
+    libarchive-dev \
     libgpiod-dev \
     libsqlitecpp-dev

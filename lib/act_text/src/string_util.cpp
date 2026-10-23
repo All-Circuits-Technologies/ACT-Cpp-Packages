@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <optional>
 #include <regex>
+#include <string_view>
 #include <system_error>
 
 namespace
@@ -24,6 +25,19 @@ namespace
  */
 constexpr std::size_t DOUBLE_TEXT_BUFFER_SIZE{400U};
 
+/** @brief Last C0 control character, the ones before it being control characters too */
+constexpr unsigned char LAST_C0_CONTROL_CHAR{0x1FU};
+
+/** @brief The DEL control character */
+constexpr unsigned char DELETE_CHAR{0x7FU};
+
+/** @brief First byte of the UTF-8 encoding of the C1 control characters (U+0080 to U+009F) */
+constexpr unsigned char C1_CONTROL_LEAD_BYTE{0xC2U};
+
+/** @brief Range of the second byte of the UTF-8 encoding of the C1 control characters */
+constexpr unsigned char FIRST_C1_CONTROL_TRAIL_BYTE{0x80U};
+constexpr unsigned char LAST_C1_CONTROL_TRAIL_BYTE{0x9FU};
+
 /**
  * @brief IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some
  *        parsers (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10
@@ -31,6 +45,18 @@ constexpr std::size_t DOUBLE_TEXT_BUFFER_SIZE{400U};
  */
 const std::regex IP_ADDRESS_PATTERN(R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
                                     R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
+
+/** @brief Append a byte as `\xNN`, with upper case hexadecimal digits */
+void AppendEscapedByte(std::string &text, unsigned char byte)
+{
+    constexpr std::string_view HEX_DIGITS{"0123456789ABCDEF"};
+    constexpr unsigned int NIBBLE_BITS{4U};
+    constexpr unsigned int NIBBLE_MASK{0x0FU};
+
+    text += "\\x";
+    text += HEX_DIGITS[byte >> NIBBLE_BITS];
+    text += HEX_DIGITS[byte & NIBBLE_MASK];
+}
 
 } // namespace
 
@@ -141,6 +167,38 @@ bool IsHexOnly(const std::string &data)
 bool IsValidIpAddress(const std::string &ipAddress)
 {
     return std::regex_match(ipAddress, IP_ADDRESS_PATTERN);
+}
+
+std::string ToPrintableText(const std::string &text)
+{
+    std::string printableText;
+    printableText.reserve(text.size());
+
+    for (std::size_t index{0}; index < text.size(); ++index)
+    {
+        const auto byte = static_cast<unsigned char>(text[index]);
+        if (byte <= LAST_C0_CONTROL_CHAR || byte == DELETE_CHAR)
+        {
+            AppendEscapedByte(printableText, byte);
+            continue;
+        }
+
+        const bool isC1Control =
+            byte == C1_CONTROL_LEAD_BYTE && (index + 1) < text.size() &&
+            static_cast<unsigned char>(text[index + 1]) >= FIRST_C1_CONTROL_TRAIL_BYTE &&
+            static_cast<unsigned char>(text[index + 1]) <= LAST_C1_CONTROL_TRAIL_BYTE;
+        if (isC1Control)
+        {
+            AppendEscapedByte(printableText, byte);
+            ++index;
+            AppendEscapedByte(printableText, static_cast<unsigned char>(text[index]));
+            continue;
+        }
+
+        printableText += text[index];
+    }
+
+    return printableText;
 }
 
 } // namespace act::text::StringUtil
