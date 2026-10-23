@@ -141,8 +141,8 @@ entry rejects the whole archive.
   `C` locale: writing and reading switch the calling thread to the `C.UTF-8` locale meanwhile,
   under which libarchive converts the names to and from UTF-8, even when built without iconv.
   This locale must be installed on Linux (glibc provides it since 2.35, Debian's `libc-bin` ships
-  it). Without it, the archives with non ASCII names are rejected, and such names can't be
-  written.
+  it). Without it, the archives with non ASCII names are rejected, and such names are refused
+  when writing, as libarchive built without iconv crashes on them; ASCII names are not affected.
 
 `ArchiveWriter` checks the same paths, rejects duplicates and the paths which are not UTF-8, so
 that it never writes an archive `ArchiveReader` would reject. It does not check that a name is

@@ -21,6 +21,7 @@ class AbsLogger;
 namespace act::archive
 {
 class AbsArchiveSink;
+class ScopedUtf8Locale;
 
 /**
  * @brief Implementation of ArchiveWriter, wrapping a libarchive writer, freed by the destructor
@@ -99,6 +100,17 @@ class ArchiveWriter::Impl : private act::foundation::NotCopiableNotMovable
      * @return True if the entry can be added, false otherwise
      */
     [[nodiscard]] bool checkNewEntry(const std::string &path);
+
+    /**
+     * @brief Check that the name of an entry can be written under the current locale
+     * @details Without a UTF-8 locale, a non ASCII name is refused: libarchive built without iconv
+     *          crashes when writing it.
+     * @param path The entry path
+     * @param utf8Locale The UTF-8 locale switch of the calling thread
+     * @return True if the name can be written, false otherwise (the reason is logged)
+     */
+    [[nodiscard]] bool checkWritableName(const std::string &path,
+                                         const ScopedUtf8Locale &utf8Locale) const;
 
     /**
      * @brief Select the compression of the next entry
