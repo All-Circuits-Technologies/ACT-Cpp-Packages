@@ -8,9 +8,10 @@
  * @brief Unit tests of FilePathUtil.
  *
  * Covers comparing paths (files living in a temporary directory removed after each test),
- * extracting file names, detecting Windows reserved names, and sanitizing file names: allowed and
- * forbidden characters, ends of the name, hidden files, empty results, Windows reserved names,
- * truncation, of the fallback name too, and the options, valid or not.
+ * extracting file names, detecting Windows reserved names and operating system metadata (names,
+ * and paths component by component), and sanitizing file names: allowed and forbidden
+ * characters, ends of the name, hidden files, empty results, Windows reserved names, truncation,
+ * of the fallback name too, and the options, valid or not.
  */
 
 #include "act_files/file_path_util.hpp"
@@ -151,6 +152,91 @@ namespace
                                        "com\xC2\xB4"})
         {
             EXPECT_FALSE(IsWindowsReservedName(name)) << name;
+        }
+    }
+
+    TEST(FilePathUtilMetadataTest, IsOperatingSystemMetadataNameReportsTheMacOsNamesExactly)
+    {
+        for (const std::string name : {"__MACOSX",
+                                       ".DS_Store",
+                                       ".Spotlight-V100",
+                                       ".Trashes",
+                                       ".fseventsd",
+                                       "._data.csv",
+                                       "._bundle.zip",
+                                       "._.DS_Store",
+                                       "._"})
+        {
+            EXPECT_TRUE(IsOperatingSystemMetadataName(name)) << name;
+        }
+
+        // macOS writes these names as they are
+        EXPECT_FALSE(IsOperatingSystemMetadataName("__macosx"));
+        EXPECT_FALSE(IsOperatingSystemMetadataName(".ds_store"));
+    }
+
+    TEST(FilePathUtilMetadataTest, IsOperatingSystemMetadataNameReportsTheWindowsNamesWithoutCase)
+    {
+        for (const std::string name : {"Thumbs.db",
+                                       "thumbs.db",
+                                       "THUMBS.DB",
+                                       "ehthumbs.db",
+                                       "desktop.ini",
+                                       "Desktop.ini",
+                                       "$RECYCLE.BIN",
+                                       "$Recycle.Bin",
+                                       "System Volume Information"})
+        {
+            EXPECT_TRUE(IsOperatingSystemMetadataName(name)) << name;
+        }
+    }
+
+    TEST(FilePathUtilMetadataTest, IsOperatingSystemMetadataNameRejectsTheOtherNames)
+    {
+        for (const std::string name : {"",
+                                       "data.csv",
+                                       "my__MACOSX",
+                                       "__MACOSX2",
+                                       "a._b",
+                                       ".DS_Store2",
+                                       "Thumbs.db.bak",
+                                       "my desktop.ini",
+                                       ".git",
+                                       ".env",
+                                       ".bashrc",
+                                       ".",
+                                       ".."})
+        {
+            EXPECT_FALSE(IsOperatingSystemMetadataName(name)) << name;
+        }
+    }
+
+    TEST(FilePathUtilMetadataTest, IsOperatingSystemMetadataPathTestsEachComponent)
+    {
+        for (const std::string path : {"__MACOSX",
+                                       "__MACOSX/",
+                                       "__MACOSX/folder/._data.csv",
+                                       "archive/__MACOSX/._bundle.zip",
+                                       "folder/._data.csv",
+                                       "._bundle.zip",
+                                       "folder\\Thumbs.db",
+                                       "C:\\Users\\desktop.ini",
+                                       "/home/user/.DS_Store",
+                                       "folder/.Trashes/file"})
+        {
+            EXPECT_TRUE(IsOperatingSystemMetadataPath(path)) << path;
+        }
+
+        for (const std::string path : {"",
+                                       "/",
+                                       "folder/data.csv",
+                                       "my__MACOSX/data.csv",
+                                       "folder\\data.csv",
+                                       "a._b/c",
+                                       "Thumbs.db.bak/file",
+                                       ".git/config"})
+        {
+            EXPECT_FALSE(IsOperatingSystemMetadataPath(path)) << path;
         }
     }
 
