@@ -32,6 +32,17 @@ namespace act::archive
  */
 class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
 {
+  private:
+    /** @brief States of the reader */
+    enum class State
+    {
+        /** @brief The archive is opened, its entries not read yet */
+        OPEN,
+
+        /** @brief The entries were read, or their reading failed */
+        READ,
+    };
+
   public:
     /**
      * @brief Prepare the reading, see open()
@@ -56,17 +67,6 @@ class ArchiveReader::Impl : private act::foundation::NotCopiableNotMovable
 
     /** @copydoc ArchiveReader::readAllEntries */
     [[nodiscard]] std::optional<std::vector<ArchiveEntry>> readAllEntries();
-
-  private:
-    /** @brief States of the reader */
-    enum class State
-    {
-        /** @brief The archive is opened, its entries not read yet */
-        OPEN,
-
-        /** @brief The entries were read, or their reading failed */
-        READ,
-    };
 
   private:
     /**
