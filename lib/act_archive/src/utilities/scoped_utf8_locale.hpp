@@ -40,6 +40,13 @@ class ScopedUtf8Locale : private act::foundation::NotCopiableNotMovable
     /** @brief Restore the previous locale of the calling thread */
     ~ScopedUtf8Locale() override;
 
+  public:
+    /**
+     * @brief Tell whether the calling thread is switched to a UTF-8 locale
+     * @return True if it is (always on Windows), false if no UTF-8 locale is available
+     */
+    [[nodiscard]] bool isActive() const;
+
 #if !defined(_WIN32)
   private:
     /** @brief The UTF-8 locale, or 0 if it is not available */

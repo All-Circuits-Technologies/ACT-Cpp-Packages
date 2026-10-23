@@ -16,6 +16,11 @@ ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger & /*logger*/
 
 ScopedUtf8Locale::~ScopedUtf8Locale() = default;
 
+bool ScopedUtf8Locale::isActive() const
+{
+    return true;
+}
+
 #else
 
 // The locale is built from scratch: its categories other than the character types are the "C"
@@ -46,6 +51,11 @@ ScopedUtf8Locale::~ScopedUtf8Locale()
 
     uselocale(m_previousLocale);
     freelocale(m_utf8Locale);
+}
+
+bool ScopedUtf8Locale::isActive() const
+{
+    return m_utf8Locale != static_cast<locale_t>(nullptr);
 }
 
 #endif
