@@ -86,7 +86,7 @@ std::string GetFilename(const std::string &path)
         return "";
     }
 
-    std::filesystem::path fsPath(path);
+    const std::filesystem::path fsPath(path);
     return fsPath.filename().string();
 }
 

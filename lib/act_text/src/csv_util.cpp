@@ -33,6 +33,40 @@ bool IsSeparatorAt(const std::string &text, std::size_t position, const std::str
     return !separator.empty() && (text.compare(position, separator.size(), separator) == 0);
 }
 
+/**
+ * @brief Read a value between double quotes, a doubled double quote standing for one
+ * @param csvLine The line to read from
+ * @param position The position following the opening double quote; set past the closing double
+ * quote, or to the end of the line if there is none
+ * @return The value, without its surrounding double quotes
+ */
+std::string ReadQuotedValue(const std::string &csvLine, std::size_t &position)
+{
+    std::string value;
+    bool isClosed{false};
+    while ((position < csvLine.size()) && !isClosed)
+    {
+        if (csvLine[position] != act::text::CsvUtil::CSV_QUOTE_CHAR)
+        {
+            value += csvLine[position];
+            ++position;
+        }
+        else if (((position + 1) < csvLine.size()) &&
+                 (csvLine[position + 1] == act::text::CsvUtil::CSV_QUOTE_CHAR))
+        {
+            value += act::text::CsvUtil::CSV_QUOTE_CHAR;
+            position += 2;
+        }
+        else
+        {
+            isClosed = true;
+            ++position;
+        }
+    }
+
+    return value;
+}
+
 } // namespace
 
 namespace act::text::CsvUtil
@@ -45,9 +79,9 @@ std::string EscapeCsvValue(const std::string &value, const std::string &separato
     const bool hasQuotingTriggerChars{value.find_first_of(CSV_QUOTING_TRIGGER_CHARS) !=
                                       std::string::npos};
     /* ParseCsvLine trims the values which are not quoted: a surrounding whitespace has to be */
-    const bool hasSurroundingWhitespace{!value.empty() &&
-                                        (std::isspace(static_cast<unsigned char>(value.front())) ||
-                                         std::isspace(static_cast<unsigned char>(value.back())))};
+    const bool hasSurroundingWhitespace{
+        !value.empty() && ((std::isspace(static_cast<unsigned char>(value.front())) != 0) ||
+                           (std::isspace(static_cast<unsigned char>(value.back())) != 0))};
     if (!hasSeparator && !hasQuotingTriggerChars && !hasSurroundingWhitespace)
     {
         return value;
@@ -173,7 +207,7 @@ std::vector<std::string> ParseCsvFile(const std::string &csvContent, const std::
             position += separator.size();
             continue;
         }
-        else if (!std::isspace(static_cast<unsigned char>(character)))
+        else if (std::isspace(static_cast<unsigned char>(character)) == 0)
         {
             isValueStart = false;
         }
@@ -213,7 +247,7 @@ std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::str
         /* The whitespace before a value is skipped, but for the one the separator is made of */
         std::size_t valueStart{position};
         while ((valueStart < csvLine.size()) &&
-               std::isspace(static_cast<unsigned char>(csvLine[valueStart])) &&
+               (std::isspace(static_cast<unsigned char>(csvLine[valueStart])) != 0) &&
                !IsSeparatorAt(csvLine, valueStart, separator))
         {
             ++valueStart;
@@ -225,26 +259,7 @@ std::vector<std::string> ParseCsvLine(const std::string &csvLine, const std::str
             /* A value between double quotes is read as it is: it ends at the double quote which
              * is not doubled, or at the end of the line if there is none */
             position = valueStart + 1;
-            bool isClosed{false};
-            while ((position < csvLine.size()) && !isClosed)
-            {
-                if (csvLine[position] != CSV_QUOTE_CHAR)
-                {
-                    value += csvLine[position];
-                    ++position;
-                }
-                else if (((position + 1) < csvLine.size()) &&
-                         (csvLine[position + 1] == CSV_QUOTE_CHAR))
-                {
-                    value += CSV_QUOTE_CHAR;
-                    position += 2;
-                }
-                else
-                {
-                    isClosed = true;
-                    ++position;
-                }
-            }
+            value = ReadQuotedValue(csvLine, position);
 
             /* What follows the closing double quote, up to the next separator, is kept but for
              * its surrounding whitespace */

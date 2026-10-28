@@ -262,23 +262,28 @@ bool IsValidUtf8(const std::string &str)
             continue;
         }
 
-        /* The lead byte tells the sequence length, and gives the first bits of the code point */
+        /* The lead byte tells the sequence length, and gives the first bits of the code point;
+         * each length has its own smallest code point, a smaller one is an overlong encoding */
         std::size_t length{0};
         char32_t codePoint{0};
+        char32_t minCodePoint{0};
         if ((leadByte & UTF8_TWO_BYTES_LEAD_MASK) == UTF8_TWO_BYTES_LEAD)
         {
             length = 2;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_TWO_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_TWO_BYTES_CODE_POINT;
         }
         else if ((leadByte & UTF8_THREE_BYTES_LEAD_MASK) == UTF8_THREE_BYTES_LEAD)
         {
             length = 3;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_THREE_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_THREE_BYTES_CODE_POINT;
         }
         else if ((leadByte & UTF8_FOUR_BYTES_LEAD_MASK) == UTF8_FOUR_BYTES_LEAD)
         {
             length = 4;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_FOUR_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_FOUR_BYTES_CODE_POINT;
         }
         else
         {
@@ -303,10 +308,6 @@ bool IsValidUtf8(const std::string &str)
                         (continuationByte & static_cast<unsigned char>(~UTF8_CONTINUATION_MASK));
         }
 
-        /* Each length has its own smallest code point: a smaller one is an overlong encoding */
-        const char32_t minCodePoint{(length == 2)   ? UTF8_MIN_TWO_BYTES_CODE_POINT
-                                    : (length == 3) ? UTF8_MIN_THREE_BYTES_CODE_POINT
-                                                    : UTF8_MIN_FOUR_BYTES_CODE_POINT};
         const bool isSurrogate{(codePoint >= UTF16_MIN_SURROGATE) &&
                                (codePoint <= UTF16_MAX_SURROGATE)};
         if ((codePoint < minCodePoint) || isSurrogate || (codePoint > UNICODE_MAX_CODE_POINT))
