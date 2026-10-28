@@ -23,6 +23,7 @@ jobs:
             git \
             ninja-build \
             pkg-config \
+            libarchive-dev \
             libgpiod-dev \
             libsqlitecpp-dev
 

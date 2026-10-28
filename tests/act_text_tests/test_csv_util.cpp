@@ -6,15 +6,24 @@
  * @file test_csv_util.cpp
  * @brief Unit tests of CsvUtil.
  *
- * Covers escaping a value, building a CSV line (with or without escaping its values), the UTF-8
- * byte order mark, appending lines to a file (in a temporary directory removed after each test),
- * splitting CSV content into lines, and splitting a line into trimmed values.
+ * Covers
+ * - escaping a value (quoted when it holds the separator, a double quote or a line break, or
+ *   starts or ends with whitespace),
+ * - building a CSV line (with or without escaping its values),
+ * - appending lines to a file (in a temporary directory removed after each test),
+ * - splitting CSV content into lines (a line ends with LF or CRLF, a line break between double
+ *   quotes does not end one, a UTF-8 byte order mark at the beginning is skipped),
+ * - removing the blank lines,
+ * - splitting a line into values (trimmed, or read as they are when they are between double
+ *   quotes), and
+ * - finding columns by their title (trimmed, without case, ambiguous when found several times).
  */
 
 #include "act_files/ext_file.hpp"
 #include "act_files/file_util.hpp"
 #include "act_test_common/recording_logger.hpp"
 #include "act_text/csv_util.hpp"
+#include "act_text/string_util.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,7 +42,11 @@ namespace
 {
 
     using ::testing::ElementsAre;
+    using ::testing::ElementsAreArray;
     using ::testing::IsEmpty;
+
+    /** @brief The UTF-8 byte order mark, as the text a CSV file may start with */
+    using act::text::StringUtil::UTF8_BYTE_ORDER_MARK;
 
     /**
      * @brief Read the fields of a CSV line as RFC 4180 describes them: the reverse of the escaping
@@ -86,8 +99,22 @@ namespace
     TEST(CsvUtilTest, EscapeCsvValueKeepsAPlainValue)
     {
         EXPECT_EQ(EscapeCsvValue("plain value"), "plain value");
-        EXPECT_EQ(EscapeCsvValue(" padded "), " padded ");
         EXPECT_EQ(EscapeCsvValue(""), "");
+    }
+
+    TEST(CsvUtilTest, EscapeCsvValueQuotesAValueStartingOrEndingWithWhitespace)
+    {
+        EXPECT_EQ(EscapeCsvValue(" padded "), "\" padded \"");
+        EXPECT_EQ(EscapeCsvValue(" leading"), "\" leading\"");
+        EXPECT_EQ(EscapeCsvValue("trailing\t"), "\"trailing\t\"");
+        EXPECT_EQ(EscapeCsvValue(" "), "\" \"");
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineReadsBackAValueStartingOrEndingWithWhitespace)
+    {
+        const std::vector<std::string> values = {" padded ", " leading", "trailing ", "plain"};
+
+        EXPECT_THAT(ParseCsvLine(CreateCsvLine(values, ";"), ";"), ElementsAreArray(values));
     }
 
     TEST(CsvUtilTest, EscapeCsvValueQuotesAValueHoldingTheSeparator)
@@ -180,6 +207,19 @@ namespace
         EXPECT_THAT(ParseCsvFile("a,b\nc,d"), ElementsAre("a,b", "c,d"));
     }
 
+    TEST(CsvUtilTest, ParseCsvFileEndsTheLinesWithCrlfOrLf)
+    {
+        EXPECT_THAT(ParseCsvFile("a,b\r\nc,d\r\n"), ElementsAre("a,b", "c,d"));
+        EXPECT_THAT(ParseCsvFile("a\r\nb\nc"), ElementsAre("a", "b", "c"));
+        EXPECT_THAT(ParseCsvFile("a\r\n\r\nb"), ElementsAre("a", "", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsACarriageReturnWhichIsNotAPartOfALineBreak)
+    {
+        EXPECT_THAT(ParseCsvFile("a\rb\nc\r"), ElementsAre("a\rb", "c\r"));
+        EXPECT_THAT(ParseCsvFile("\"x\r\ny\",b\r\nc"), ElementsAre("\"x\r\ny\",b", "c"));
+    }
+
     TEST(CsvUtilTest, ParseCsvFileKeepsEmptyLinesInTheMiddle)
     {
         EXPECT_THAT(ParseCsvFile("a\n\nb\n"), ElementsAre("a", "", "b"));
@@ -188,6 +228,101 @@ namespace
     TEST(CsvUtilTest, ParseCsvFileOfEmptyContentHasNoLine)
     {
         EXPECT_THAT(ParseCsvFile(""), IsEmpty());
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsTheLineBreaksOfAQuotedValueInOneLine)
+    {
+        EXPECT_THAT(ParseCsvFile("a,\"two\nlines\"\nc,d\n"),
+                    ElementsAre("a,\"two\nlines\"", "c,d"));
+        EXPECT_THAT(ParseCsvFile("\"cr\r\nlf\",b\nc"), ElementsAre("\"cr\r\nlf\",b", "c"));
+        EXPECT_THAT(ParseCsvFile("a, \"x\ny\"\nb"), ElementsAre("a, \"x\ny\"", "b"));
+        EXPECT_THAT(ParseCsvFile("a\n\"x\ny\"\nb"), ElementsAre("a", "\"x\ny\"", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsTheDoubledDoubleQuotesOfAQuotedValueInOneLine)
+    {
+        EXPECT_THAT(ParseCsvFile("\"say \"\"hi\"\"\nthere\"\nb"),
+                    ElementsAre("\"say \"\"hi\"\"\nthere\"", "b"));
+        EXPECT_THAT(ParseCsvFile("\"\"\nb"), ElementsAre("\"\"", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileLooksForTheQuotesAfterTheSeparatorItIsGiven)
+    {
+        EXPECT_THAT(ParseCsvFile("a;\"x\ny\"\nb;c", ";"), ElementsAre("a;\"x\ny\"", "b;c"));
+        EXPECT_THAT(ParseCsvFile("a;\"x\ny\"\nb;c"), ElementsAre("a;\"x", "y\"", "b;c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsADoubleQuoteWhichDoesNotStartAValue)
+    {
+        EXPECT_THAT(ParseCsvFile("5\" pipe,b\nc,d"), ElementsAre("5\" pipe,b", "c,d"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileTakesTheRestOfTheContentWhenAQuoteIsNotClosed)
+    {
+        EXPECT_THAT(ParseCsvFile("a,\"b\nc\nd"), ElementsAre("a,\"b\nc\nd"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileReversesCreateCsvLine)
+    {
+        const std::vector<std::string> first = {"plain", "two\nlines", "a;b", "say \"hi\""};
+        const std::vector<std::string> second = {"", "cr\r\nlf", "\"", "last"};
+
+        const std::vector<std::string> lines =
+            ParseCsvFile(CreateCsvLine(first, ";") + CreateCsvLine(second, ";"), ";");
+
+        ASSERT_EQ(lines.size(), 2U);
+        EXPECT_THAT(ParseCsvLine(lines[0], ";"), ElementsAreArray(first));
+        EXPECT_THAT(ParseCsvLine(lines[1], ";"), ElementsAreArray(second));
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileSkipsTheByteOrderMarkAtTheBeginning)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + "a,b\nc,d\n"), ElementsAre("a,b", "c,d"));
+        /* The quotes of a first value are read as such: its line break stays in its line */
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + "\"two\nlines\",b\nc,d\n"),
+                    ElementsAre("\"two\nlines\",b", "c,d"));
+        EXPECT_THAT(ParseCsvFile(byteOrderMark), IsEmpty());
+    }
+
+    TEST(CsvUtilTest, ParseCsvFileKeepsWhatIsNotTheByteOrderMarkAtTheBeginning)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+        const std::string lookAlike{"\xEF\xBB\xBE"};
+
+        EXPECT_THAT(ParseCsvFile("a\n" + byteOrderMark + "b\n"),
+                    ElementsAre("a", byteOrderMark + "b"));
+        EXPECT_THAT(ParseCsvFile(byteOrderMark + byteOrderMark + "a\n"),
+                    ElementsAre(byteOrderMark + "a"));
+        EXPECT_THAT(ParseCsvFile(lookAlike + "a,b\n"), ElementsAre(lookAlike + "a,b"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesRemovesTheLinesWithoutAnyValue)
+    {
+        std::vector<std::string> lines = {"a;b", "", "  ", ";;;", " ; \t", "\"\";", "c;d", "e"};
+
+        RemoveBlankLines(lines, ";");
+
+        EXPECT_THAT(lines, ElementsAre("a;b", "c;d", "e"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesUsesTheSeparatorItIsGiven)
+    {
+        std::vector<std::string> lines = {",,", ";;"};
+
+        RemoveBlankLines(lines);
+
+        EXPECT_THAT(lines, ElementsAre(";;"));
+    }
+
+    TEST(CsvUtilTest, RemoveBlankLinesOfNoLineHasNoLine)
+    {
+        std::vector<std::string> lines;
+
+        RemoveBlankLines(lines);
+
+        EXPECT_THAT(lines, IsEmpty());
     }
 
     TEST(CsvUtilTest, ParseCsvLineSplitsAndTrimsValues)
@@ -199,6 +334,8 @@ namespace
     TEST(CsvUtilTest, ParseCsvLineKeepsEmptyValues)
     {
         EXPECT_THAT(ParseCsvLine("a,,  ,b"), ElementsAre("a", "", "", "b"));
+        EXPECT_THAT(ParseCsvLine("a,"), ElementsAre("a", ""));
+        EXPECT_THAT(ParseCsvLine("\"a\",\"b\","), ElementsAre("a", "b", ""));
     }
 
     TEST(CsvUtilTest, ParseCsvLineOfEmptyLineHasNoValue)
@@ -213,7 +350,95 @@ namespace
         EXPECT_THAT(ParseCsvLine(line), ElementsAre("first", "second", "third"));
     }
 
+    TEST(CsvUtilTest, ParseCsvLineReadsAValueBetweenDoubleQuotes)
+    {
+        EXPECT_THAT(ParseCsvLine("a,\"b\",c"), ElementsAre("a", "b", "c"));
+        EXPECT_THAT(ParseCsvLine("\"a\";\"b\"", ";"), ElementsAre("a", "b"));
+        EXPECT_THAT(ParseCsvLine("\"\",b,\"\""), ElementsAre("", "b", ""));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsTheSeparatorOfAQuotedValue)
+    {
+        EXPECT_THAT(ParseCsvLine("\"a,b\",c"), ElementsAre("a,b", "c"));
+        EXPECT_THAT(ParseCsvLine("x;\"a;b;\";y", ";"), ElementsAre("x", "a;b;", "y"));
+        EXPECT_THAT(ParseCsvLine("\"a,b\";c", ";"), ElementsAre("a,b", "c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineUndoublesTheDoubleQuotesOfAQuotedValue)
+    {
+        EXPECT_THAT(ParseCsvLine("\"say \"\"hi\"\"\",b"), ElementsAre("say \"hi\"", "b"));
+        EXPECT_THAT(ParseCsvLine("\"\"\"\""), ElementsAre("\""));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsTheSpacesOfAQuotedValueAndSkipsTheOnesAroundIt)
+    {
+        EXPECT_THAT(ParseCsvLine(" \" a \" ,b"), ElementsAre(" a ", "b"));
+        EXPECT_THAT(ParseCsvLine("a,\"b\"\r\n"), ElementsAre("a", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsADoubleQuoteWhichDoesNotStartAValue)
+    {
+        EXPECT_THAT(ParseCsvLine("5\" pipe,b"), ElementsAre("5\" pipe", "b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineTakesTheRestOfALineWhenAQuoteIsNotClosed)
+    {
+        EXPECT_THAT(ParseCsvLine("a,\"b,c"), ElementsAre("a", "b,c"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsWhatFollowsTheClosingQuote)
+    {
+        EXPECT_THAT(ParseCsvLine("\"ab\"cd,e"), ElementsAre("abcd", "e"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineKeepsEmptyValuesOfAWhitespaceSeparator)
+    {
+        EXPECT_THAT(ParseCsvLine("a\t\tb", "\t"), ElementsAre("a", "", "b"));
+        EXPECT_THAT(ParseCsvLine("a\t\"b\tc\"", "\t"), ElementsAre("a", "b\tc"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineOfAnEmptySeparatorIsOneValue)
+    {
+        EXPECT_THAT(ParseCsvLine(" a,b ", ""), ElementsAre("a,b"));
+        EXPECT_THAT(ParseCsvLine("\"a,b\"", ""), ElementsAre("a,b"));
+    }
+
+    TEST(CsvUtilTest, ParseCsvLineReversesCreateCsvLine)
+    {
+        /* A value which has leading or trailing spaces is not quoted by EscapeCsvValue: it is
+         * trimmed */
+        const std::vector<std::string> values =
+            {"plain", "a,b", "a;b", "say \"hi\"", "two\nlines", "cr\r\nlf", "", "\"", "\"\""};
+
+        for (const std::string separator : {",", ";", "\t"})
+        {
+            EXPECT_THAT(ParseCsvLine(CreateCsvLine(values, separator), separator),
+                        ElementsAreArray(values))
+                << "separator: " << separator;
+        }
+    }
+
     /** @brief Gives each test a temporary directory for the CSV files it writes */
+    TEST(CsvUtilTest, FindColumnsFindsTheTitlesInAnyOrder)
+    {
+        EXPECT_THAT(FindColumns({"b", "a", "c"}, {"a", "c", "b"}),
+                    ElementsAre(std::optional<std::size_t>{1}, 2, 0));
+    }
+
+    TEST(CsvUtilTest, FindColumnsComparesTheTitlesTrimmedAndWithoutCase)
+    {
+        EXPECT_THAT(FindColumns({" Profile NAME ", "x"}, {"profile name", " X"}),
+                    ElementsAre(std::optional<std::size_t>{0}, 1));
+    }
+
+    TEST(CsvUtilTest, FindColumnsDoesNotFindAMissingOrAnAmbiguousTitle)
+    {
+        EXPECT_THAT(FindColumns({"a", "b", "A"}, {"a", "z", "b"}),
+                    ElementsAre(std::nullopt, std::nullopt, std::optional<std::size_t>{1}));
+        EXPECT_THAT(FindColumns({}, {"a"}), ElementsAre(std::nullopt));
+        EXPECT_THAT(FindColumns({"a"}, {}), IsEmpty());
+    }
+
     class CsvUtilFileTest : public ::testing::Test
     {
       protected:

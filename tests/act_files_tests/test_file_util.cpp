@@ -6,9 +6,8 @@
  * @file test_file_util.cpp
  * @brief Unit tests of FileUtil.
  *
- * Covers reading and writing whole files (text and integers), creating ExtFile handles with or
- * without opening them, comparing paths and extracting file names. Every file lives in a
- * temporary directory removed after each test.
+ * Covers reading and writing whole files (text and integers) and creating ExtFile handles with
+ * or without opening them. Every file lives in a temporary directory removed after each test.
  */
 
 #include "act_files/ext_file.hpp"
@@ -215,53 +214,6 @@ namespace
         file.reset();
 
         EXPECT_FALSE(std::filesystem::exists(path));
-    }
-
-    TEST_F(FileUtilTest, ArePathsEqualAcceptsIdenticalStrings)
-    {
-        // Identical strings are equal without touching the file system, even when nothing exists
-        EXPECT_TRUE(ArePathsEqual(getPath("missing.txt"), getPath("missing.txt"), getLogger()));
-    }
-
-    TEST_F(FileUtilTest, ArePathsEqualAcceptsTwoSpellingsOfTheSameFile)
-    {
-        const std::string path = getPath("same.txt");
-        ASSERT_TRUE(WriteFile(path, std::string("content"), getLogger()));
-        ASSERT_TRUE(std::filesystem::create_directory(getDirectory() / "sub"));
-        const std::string otherSpelling =
-            (getDirectory() / "." / "sub" / ".." / "same.txt").string();
-
-        EXPECT_TRUE(ArePathsEqual(path, otherSpelling, getLogger()));
-    }
-
-    TEST_F(FileUtilTest, ArePathsEqualRejectsDifferentFiles)
-    {
-        const std::string first = getPath("first.txt");
-        const std::string second = getPath("second.txt");
-        ASSERT_TRUE(WriteFile(first, std::string("content"), getLogger()));
-        ASSERT_TRUE(WriteFile(second, std::string("content"), getLogger()));
-
-        EXPECT_FALSE(ArePathsEqual(first, second, getLogger()));
-    }
-
-    TEST_F(FileUtilTest, ArePathsEqualRejectsMissingFilesAndWarns)
-    {
-        EXPECT_FALSE(ArePathsEqual(getPath("missing.txt"), getPath("./missing.txt"), getLogger()));
-        EXPECT_EQ(getLogger().count(LogsLevel::WARNING), 1U);
-    }
-
-    TEST(FileUtilFilenameTest, GetFilenameKeepsOnlyTheLastComponent)
-    {
-        EXPECT_EQ(GetFilename("/var/log/messages.log"), "messages.log");
-        EXPECT_EQ(GetFilename("relative/dir/archive.tar.gz"), "archive.tar.gz");
-        EXPECT_EQ(GetFilename("file.txt"), "file.txt");
-    }
-
-    TEST(FileUtilFilenameTest, GetFilenameIsEmptyForEmptyPathOrDirectoryPath)
-    {
-        EXPECT_EQ(GetFilename(""), "");
-        EXPECT_EQ(GetFilename("dir/sub/"), "");
-        EXPECT_EQ(GetFilename("/"), "");
     }
 
 } // namespace

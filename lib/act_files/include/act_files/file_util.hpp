@@ -11,7 +11,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 
 namespace act::foundation
 {
@@ -103,31 +102,4 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 std::shared_ptr<ExtFile> CreateFile(const std::string &path,
                                     const act::foundation::AbsLogger &logger,
                                     bool isTemp = false);
-
-/**
- * @brief Compare two file paths for equality
- * @param path1 The first file path
- * @param path2 The second file path
- * @param logger The logger to use for logging
- * @return True if the paths are equal, false otherwise
- */
-bool ArePathsEqual(const std::string &path1,
-                   const std::string &path2,
-                   const act::foundation::AbsLogger &logger);
-
-/**
- * @brief Extract the filename from a file path
- * @param path The file path (can be relative or absolute)
- * @return The filename (including extension) without directory components
- * @note Returns the full path if it has no directory components
- * @note Returns empty string for empty input or paths ending with '/'
- */
-std::string GetFilename(const std::string &path);
-
-/**
- * @brief Byte order mark an UTF-8 file may start with
- * @note ReadFileAsInt skips it. Put it at the beginning of a file which is meant to be opened in a
- *       software which reads UTF-8 text as a legacy 8-bit encoding without it.
- */
-constexpr std::string_view UTF8_BYTE_ORDER_MARK{"\xEF\xBB\xBF"};
 } /* namespace act::files::FileUtil */
