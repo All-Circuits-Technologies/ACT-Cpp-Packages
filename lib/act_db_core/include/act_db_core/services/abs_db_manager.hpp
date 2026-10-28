@@ -28,7 +28,7 @@ class AbsDbManager : public act::foundation::AbsManager
      *               scripts file names.
      *               Slug should be lowercase and hyphenated (e.g. "foo-bar"),
      *               without the "-db" suffix.
-     * @param migrationDataPath The path to the migration data directory, if any
+     * @param migrationDataDir The path to the migration data directory, if any
      * @param loggerManager The logger manager to use to create loggers
      */
     AbsDbManager(const std::string &dbSlug,

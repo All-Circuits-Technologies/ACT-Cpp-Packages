@@ -123,13 +123,13 @@ class PatternLedTriggerConfig : public AbsLedTriggerConfig
 
   private:
     /** @brief Name of the "pattern" trigger */
-    static constexpr const char *PATTERN_TRIGGER_NAME = "pattern";
+    static const std::string PATTERN_TRIGGER_NAME;
 
     /** @brief Name of the "pattern" file in sysfs */
-    static constexpr const char *PATTERN_FILE_NAME = "pattern";
+    static const std::string PATTERN_FILE_NAME;
 
     /** @brief Name of the "repeat" file in sysfs */
-    static constexpr const char *REPEAT_FILE_NAME = "repeat";
+    static const std::string REPEAT_FILE_NAME;
 
     /* ## Data members */
   private:

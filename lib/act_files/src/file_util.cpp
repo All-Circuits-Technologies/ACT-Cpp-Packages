@@ -8,6 +8,7 @@
 
 #include "act_files/ext_file.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_text/string_util.hpp"
 
 #include <cstddef>
 #include <exception>
@@ -20,17 +21,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-
-namespace
-{
-
-/** @brief Byte order mark an UTF-8 file may start with */
-constexpr std::string_view UTF8_BYTE_ORDER_MARK = "\xEF\xBB\xBF";
-
-/** @brief Whitespace characters, as std::isspace in the default locale */
-constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
-
-} // namespace
 
 namespace act::files::FileUtil
 {
@@ -64,15 +54,11 @@ std::optional<int> ReadFileAsInt(const std::string &path,
     }
 
     std::string content = std::move(optContent.value());
-    if (content.starts_with(UTF8_BYTE_ORDER_MARK))
-    {
-        content.erase(0, UTF8_BYTE_ORDER_MARK.size());
-    }
+    act::text::StringUtil::RemoveUtf8ByteOrderMark(content);
 
     // Trailing whitespace is accepted, as the line feed ending the files of sysfs; std::stoi
     // already skips the leading one
-    const auto lastNonSpace = content.find_last_not_of(WHITESPACE_CHARS);
-    content.erase((lastNonSpace == std::string::npos) ? 0 : (lastNonSpace + 1));
+    act::text::StringUtil::Rtrim(content);
 
     int value = 0;
     std::size_t parsedLength = 0;
@@ -147,40 +133,5 @@ std::shared_ptr<ExtFile> CreateFile(const std::string &path,
 {
     auto *extFile = new ExtFile(path, logger, isTemp);
     return std::shared_ptr<ExtFile>(extFile);
-}
-
-bool ArePathsEqual(const std::string &path1,
-                   const std::string &path2,
-                   const act::foundation::AbsLogger &logger)
-{
-    if (path1 == path2)
-    {
-        // No need to check further if the strings are identical
-        return true;
-    }
-
-    bool isEqual = false;
-    try
-    {
-        isEqual = std::filesystem::equivalent(path1, path2);
-    }
-    catch (const std::exception &e)
-    {
-        logger.warningStream() << "IsPathEqual: Exception occurred while comparing paths '" << path1
-                               << "' and '" << path2 << "': " << e.what();
-    }
-
-    return isEqual;
-}
-
-std::string GetFilename(const std::string &path)
-{
-    if (path.empty())
-    {
-        return "";
-    }
-
-    const std::filesystem::path fsPath(path);
-    return fsPath.filename().string();
 }
 } /* namespace act::files::FileUtil */

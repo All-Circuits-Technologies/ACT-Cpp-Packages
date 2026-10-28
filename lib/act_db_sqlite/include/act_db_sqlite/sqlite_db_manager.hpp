@@ -29,7 +29,7 @@ class ASqLiteDbManager : public act::db::core::AbsDbManager
      * @param dbFilePath The path to the SQLite database file to open/create
      * @param dbSlug The database slug used inside log traces.
      *               Slug should be lowercase and hyphenated (e.g. "foo-bar").
-     * @param migrationDataPath The path to the migration data directory, if any
+     * @param migrationDataDir The path to the migration data directory, if any
      * @param loggerManager The logger manager to use to create loggers
      */
     explicit ASqLiteDbManager(std::filesystem::path dbFilePath,

@@ -8,7 +8,7 @@
 
 #include <exception>
 
-// These macros return from the caller, which no function can do
+// These macros skip repetitive 7-lines `try`/`catch`, and nested `return` prevents use of function
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
 /**

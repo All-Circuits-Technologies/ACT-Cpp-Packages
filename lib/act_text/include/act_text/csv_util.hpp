@@ -4,8 +4,11 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdio>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace act::foundation
@@ -23,14 +26,48 @@ namespace act::text::CsvUtil
 /** @brief Default CSV separator character */
 const constexpr char *DefaultCsvSeparator = ",";
 
+/** @brief Character which encloses a CSV value which has to be quoted */
+constexpr char CSV_QUOTE_CHAR{'"'};
+
+/** @brief Characters which force a CSV value to be quoted, whatever the separator is */
+constexpr const char *CSV_QUOTING_TRIGGER_CHARS{"\"\r\n"};
+
 /**
- * @brief Create a CSV line from a vector of strings
- * @param values The values to include in the CSV line
+ * @brief Escape a value to be safely used as a field of a CSV line (RFC 4180)
+ * @note JoinCsvLine and AddCsvLine join the values as they are: call this function on each value
+ * which can hold free text, before joining them. CreateCsvLine escapes its values by itself.
+ * @param value The raw value
+ * @param separator The separator character of the CSV line (default is @ref DefaultCsvSeparator)
+ * @return The value unchanged if it holds neither the separator, a double quote nor a line break,
+ * and neither starts nor ends with whitespace, otherwise the value enclosed in double quotes,
+ * where the double quotes it contains are doubled
+ * @note A value starting or ending with whitespace is quoted, so that @ref ParseCsvLine, which
+ * trims the values which are not quoted, reads it back unchanged.
+ */
+std::string EscapeCsvValue(const std::string &value,
+                           const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Create a CSV line from a vector of strings, escaping each value (RFC 4180)
+ * @note This is JoinCsvLine applied to the values given by EscapeCsvValue: use it when the values
+ * can hold free text
+ * @param values The raw values to include in the CSV line
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
  * @return The created CSV line as a string
  */
 std::string CreateCsvLine(const std::vector<std::string> &values,
                           const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Create a CSV line from a vector of strings
+ * @note Each value should be already escaped using @ref EscapeCsvValue
+ * before being joined into the line.
+ * @param values The values to include in the CSV line
+ * @param separator The separator character (default is @ref DefaultCsvSeparator)
+ * @return The created CSV line as a string
+ */
+std::string JoinCsvLine(const std::vector<std::string> &values,
+                        const std::string &separator = DefaultCsvSeparator);
 
 /**
  * @brief Add a line to a CSV file
@@ -47,17 +84,53 @@ bool AddCsvLine(const std::vector<std::string> &values,
 
 /**
  * @brief Parse CSV content into lines
+ * @note A line ends with a line feed, or with a carriage return followed by a line feed (RFC 4180);
+ *       neither is part of the line.
+ * @note A line break between double quotes does not end the line,
+ *       see how @ref ParseCsvLine reads it.
+ *       A double quote which is never closed holds the rest of the content.
+ * @note A UTF-8 byte order mark at the very beginning of the content is skipped:
+ *       the first line, and its first value, are the same with and without it.
  * @param csvContent The CSV content as a string
+ * @param separator The separator character (default is @ref DefaultCsvSeparator), which tells
+ * where a value starts
  * @return A vector of strings, each representing a line from the CSV content
  */
-std::vector<std::string> ParseCsvFile(const std::string &csvContent);
+std::vector<std::string> ParseCsvFile(const std::string &csvContent,
+                                      const std::string &separator = DefaultCsvSeparator);
 
 /**
- * @brief Parse a single CSV line into values
+ * @brief Remove the blank lines of CSV lines, such as a spreadsheet may leave
+ * @note A line is blank when all its values are empty, as @ref ParseCsvLine reads them: an empty
+ *       line, a line of whitespace, or a line of separators only.
+ * @param lines The CSV lines, as given by @ref ParseCsvFile; the blank ones are removed, the
+ *        others keep their order
+ * @param separator The separator character (default is @ref DefaultCsvSeparator)
+ */
+void RemoveBlankLines(std::vector<std::string> &lines,
+                      const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Parse a single CSV line into values (RFC 4180)
+ * @note It reads what @ref EscapeCsvValue and @ref CreateCsvLine write.
+ * @note Any value starting with a double quote is read as it is up to the closing double quote,
+ * and within it doubled double quotes are single ones, separators and line breaks are allowed.
  * @param csvLine The CSV line as a string
  * @param separator The separator character (default is @ref DefaultCsvSeparator)
- * @return A vector of strings, each representing a value from the CSV line
+ * @return A vector of strings, each representing a value from the CSV line, none for an empty line
  */
 std::vector<std::string> ParseCsvLine(const std::string &csvLine,
                                       const std::string &separator = DefaultCsvSeparator);
+
+/**
+ * @brief Find columns of a CSV header line by their title
+ * @note The titles are compared trimmed and without case.
+ * @note A title found several times in the header line is ambiguous: it is not found either.
+ * @param headerValues The values of the header line, as @ref ParseCsvLine gives them
+ * @param titles The titles of the columns to find
+ * @return For each title, in the order of the titles, the position of its column among the header
+ *         values, std::nullopt if no header value, or several ones, have this title
+ */
+std::vector<std::optional<std::size_t>> FindColumns(const std::vector<std::string> &headerValues,
+                                                    const std::vector<std::string> &titles);
 } // namespace act::text::CsvUtil
