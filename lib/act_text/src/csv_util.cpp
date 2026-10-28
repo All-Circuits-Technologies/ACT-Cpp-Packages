@@ -13,6 +13,7 @@
 #include <cctype>
 #include <cstddef>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>

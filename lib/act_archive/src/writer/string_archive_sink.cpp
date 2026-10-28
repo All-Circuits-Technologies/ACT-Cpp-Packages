@@ -4,6 +4,7 @@
 
 #include "act_archive/writer/string_archive_sink.hpp"
 
+#include <string_view>
 #include <utility>
 
 namespace act::archive

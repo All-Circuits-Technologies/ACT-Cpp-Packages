@@ -4,7 +4,12 @@
 
 #include "act_property_core/stored_value.hpp"
 
+#include "act_property_core/types/stored_type.hpp"
+
 #include <cmath>
+#include <cstdint>
+#include <optional>
+#include <string>
 #include <utility>
 #include <variant>
 

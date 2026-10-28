@@ -12,14 +12,12 @@
 
 #include <cstddef>
 #include <exception>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
-#include <string_view>
 #include <utility>
 
 namespace act::files::FileUtil

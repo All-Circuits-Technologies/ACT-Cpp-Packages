@@ -6,6 +6,7 @@
 
 #include "act_property_core/properties/abs_property_registry.hpp"
 
+#include <string>
 #include <utility>
 
 namespace act::property

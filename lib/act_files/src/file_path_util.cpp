@@ -5,13 +5,17 @@
 
 #include "act_files/file_path_util.hpp"
 
+#include "act_files/types/file_name_charset.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "act_text/vector_string_util.hpp"
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
+#include <exception>
 #include <filesystem>
+#include <string>
 #include <string_view>
 #include <vector>
 

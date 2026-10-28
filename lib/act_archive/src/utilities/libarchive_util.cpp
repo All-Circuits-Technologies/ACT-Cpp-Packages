@@ -4,9 +4,12 @@
 
 #include "utilities/libarchive_util.hpp"
 
+#include "act_archive/types/archive_format.hpp"
+#include "act_archive/types/entry_compression.hpp"
 #include "act_text/string_util.hpp"
 
 #include <archive.h>
+#include <string>
 
 namespace
 {

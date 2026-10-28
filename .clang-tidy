@@ -75,6 +75,9 @@ CheckOptions: {
         # StaticConstexprVariableCase arrive with clang-tidy 22 (--verify-config rejects them on 21):
         # add them with the version bump. Until then a static constexpr member is a class
         # constant and a function-local static constexpr a static constant, both UPPER_CASE.
+        # misc-include-cleaner: the internal headers of glibc, such as bits/types/locale_t.h, are
+        # never included directly, the public header that includes them is
+        misc-include-cleaner.IgnoreHeaders: "bits/.*",
         readability-identifier-naming.AbstractClassPrefix: "A",
         readability-identifier-naming.ClassCase: "CamelCase",
         readability-identifier-naming.ClassConstantCase: "UPPER_CASE",

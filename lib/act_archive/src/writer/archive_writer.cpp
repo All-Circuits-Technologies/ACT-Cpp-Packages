@@ -4,8 +4,12 @@
 
 #include "act_archive/writer/archive_writer.hpp"
 
+#include "act_archive/writer/archive_writer_options.hpp"
+#include "act_archive/writer/entry_options.hpp"
 #include "writer/archive_writer_impl.hpp"
 
+#include <memory>
+#include <string>
 #include <utility>
 
 namespace act::archive
