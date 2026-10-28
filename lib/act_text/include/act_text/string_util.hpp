@@ -9,6 +9,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 namespace act::foundation
 {
@@ -20,45 +21,114 @@ namespace act::text::StringUtil
 {
 /* ## Types */
 
+/* ## Constants */
+
+/**
+ * @brief The characters Ltrim, Rtrim, Trim and their copying variants remove: the whitespace
+ *        characters, as std::isspace in the default locale
+ * @note Declared before the methods, which use it.
+ */
+constexpr const char *WHITESPACE_CHARS = " \t\n\v\f\r";
+
+/**
+ * @brief Byte order mark an UTF-8 text may start with
+ * @note Put it at the beginning of a file which is meant to be opened in a software which reads
+ *       UTF-8 text as a legacy 8-bit encoding without it. RemoveUtf8ByteOrderMark removes it.
+ */
+constexpr std::string_view UTF8_BYTE_ORDER_MARK{"\xEF\xBB\xBF"};
+
 /* ## Methods (members, then non-members) */
 
 /**
- * @brief Trim from start (in place)
+ * @brief Trim the given characters from start (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
+ * @note Not an overload of Ltrim(), which could no longer be passed to std::for_each
+ */
+inline std::string &LtrimChars(std::string &s, const std::string &chars)
+{
+    s.erase(0, s.find_first_not_of(chars));
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from start (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Ltrim(std::string &s)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int c) { return !std::isspace(c); }));
+    return LtrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from end (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note The string is processed byte by byte, regardless of the locale: a multi-byte UTF-8
+ *       character is never altered as long as @p chars is ASCII.
+ * @note Not an overload of Rtrim(), which could no longer be passed to std::for_each
+ */
+inline std::string &RtrimChars(std::string &s, const std::string &chars)
+{
+    const std::size_t lastKept = s.find_last_not_of(chars);
+    s.erase(lastKept == std::string::npos ? 0 : lastKept + 1);
     return s;
 }
 
 /**
- * @brief Trim from end (in place)
+ * @brief Trim the whitespace from end (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Rtrim(std::string &s)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int c) { return !std::isspace(c); }).base(),
-            s.end());
+    return RtrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from both ends (in place)
+ * @param s The string to alter
+ * @param chars The characters to remove
+ * @return The trimmed string
+ * @note Not an overload of Trim(), which could no longer be passed to std::for_each
+ */
+inline std::string &TrimChars(std::string &s, const std::string &chars)
+{
+    RtrimChars(s, chars);
+    LtrimChars(s, chars);
     return s;
 }
 
 /**
- * @brief Trim from both ends (in place)
+ * @brief Trim the whitespace from both ends (in place)
  * @param s The string to alter
  * @return The trimmed string
  */
 inline std::string &Trim(std::string &s)
 {
-    Rtrim(s);
-    Ltrim(s);
+    return TrimChars(s, WHITESPACE_CHARS);
+}
+
+/**
+ * @brief Trim the given characters from the start (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the leading characters removed
+ * @note Not an overload of LtrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string LtrimCharsCopy(std::string s, const std::string &chars)
+{
+    LtrimChars(s, chars);
     return s;
 }
 
 /**
- * @brief Trim from the start (copying)
+ * @brief Trim the whitespace from the start (copying)
  * @param s The string to trim
  * @return A new string with the leading whitespace removed
  */
@@ -69,7 +139,20 @@ inline std::string LtrimCopy(std::string s)
 }
 
 /**
- * @brief Trim from the end (copying)
+ * @brief Trim the given characters from the end (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the trailing characters removed
+ * @note Not an overload of RtrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string RtrimCharsCopy(std::string s, const std::string &chars)
+{
+    RtrimChars(s, chars);
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from the end (copying)
  * @param s The string to trim
  * @return A new string with the trailing whitespace removed
  */
@@ -80,13 +163,52 @@ inline std::string RtrimCopy(std::string s)
 }
 
 /**
- * @brief Trim from both ends (copying)
+ * @brief Trim the given characters from both ends (copying)
+ * @param s The string to trim
+ * @param chars The characters to remove
+ * @return A new string with the leading and trailing characters removed
+ * @note Not an overload of TrimCopy(), which could no longer be passed to std::for_each
+ */
+inline std::string TrimCharsCopy(std::string s, const std::string &chars)
+{
+    TrimChars(s, chars);
+    return s;
+}
+
+/**
+ * @brief Trim the whitespace from both ends (copying)
  * @param s The string to trim
  * @return A new string with the whitespace removed
  */
 inline std::string TrimCopy(std::string s)
 {
     Trim(s);
+    return s;
+}
+
+/**
+ * @brief Remove the UTF-8 byte order mark starting a string, if any (in place)
+ * @note Only one byte order mark is removed, and only at the very beginning of the string.
+ * @param s The string
+ * @return A reference to the string, without byte order mark at its beginning
+ */
+inline std::string &RemoveUtf8ByteOrderMark(std::string &s)
+{
+    if (s.starts_with(UTF8_BYTE_ORDER_MARK))
+    {
+        s.erase(0, UTF8_BYTE_ORDER_MARK.size());
+    }
+    return s;
+}
+
+/**
+ * @brief Remove the UTF-8 byte order mark starting a string, if any (copying)
+ * @param s The string
+ * @return A new string, without byte order mark at its beginning
+ */
+inline std::string RemoveUtf8ByteOrderMarkCopy(std::string s)
+{
+    RemoveUtf8ByteOrderMark(s);
     return s;
 }
 
@@ -193,6 +315,33 @@ bool IsHexOnly(const std::string &data);
  */
 bool IsValidIpAddress(const std::string &ipAddress);
 
-/* ## Constants */
+/**
+ * @brief Make an untrusted text printable, to insert it in a log or an error message
+ * @details Each control character is written as `\xNN` (upper case hexadecimal digits), so that
+ *          the text can neither forge a line nor send a terminal escape sequence:
+ *          - the C0 controls (0x00 to 0x1F, tabulation and line feed included) and DEL (0x7F);
+ *          - the C1 controls (U+0080 to U+009F), whose two UTF-8 bytes are both escaped.
+ * @param text The text, in UTF-8 or not
+ * @return The text, its control characters escaped; the other bytes, `\` included, are kept
+ */
+std::string ToPrintableText(const std::string &text);
+
+/**
+ * @brief Test if a string is valid UTF-8 (RFC 3629)
+ * @note Strict: overlong encodings, UTF-16 surrogates (U+D800 to U+DFFF) and code points beyond
+ *       U+10FFFF are invalid. An empty string, and a pure ASCII one, are valid.
+ * @param str The string to test
+ * @return true if the string is valid UTF-8, false otherwise
+ */
+bool IsValidUtf8(const std::string &str);
+
+/**
+ * @brief Test if a string is pure ASCII: none of its bytes is above 0x7F
+ * @note The control characters are ASCII: this doesn't tell that a string is printable, see
+ *       ToPrintableText. An empty string is ASCII.
+ * @param str The string to test
+ * @return true if the string is pure ASCII, false otherwise
+ */
+bool IsAscii(const std::string &str);
 
 } // namespace act::text::StringUtil

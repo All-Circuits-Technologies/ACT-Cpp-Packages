@@ -35,6 +35,7 @@ general-purpose applications developed by All-Circuits Technologies.
 
 | Library                                                    | Description                                                                                  |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [`act_archive`](lib/act_archive/README.md)                 | Archive writing and reading (ZIP in memory, nested archives), with safe paths and limits.    |
 | [`act_db_core`](lib/act_db_core/README.md)                 | Database engine-agnostic core with connection management, query execution, and transactions. |
 | [`act_db_sqlite`](lib/act_db_sqlite/README.md)             | SQLite database management with abstraction layer.                                           |
 | [`act_files`](lib/act_files/README.md)                     | File system operations and file management utilities.                                        |
@@ -52,7 +53,7 @@ general-purpose applications developed by All-Circuits Technologies.
 
 - **C++ Standard:** C++20 or later
 - **CMake:** Version 3.23 or later (3.25 or later to use the presets)
-- **Compiler:** GCC 9+ or Clang 10+
+- **Compiler:** GCC 13+ or Clang 18+
 - **OS:** Linux (some libraries are Linux-specific)
 
 ### Dependencies
@@ -99,7 +100,8 @@ CTest. Each library has its own test executable, built from `tests/<module>_test
 The `dev` preset of [`CMakePresets.json`](CMakePresets.json) builds the libraries and the tests in
 `build/dev/`. It fetches a pinned GoogleTest release through the dependency provider of
 [`cmake/dependencies/fetch_provider.cmake`](cmake/dependencies/fetch_provider.cmake), so only the
-dependencies of the libraries themselves need to be installed (see `tools/install_deps.sh`):
+dependencies of the libraries themselves need to be installed (see the package dependencies of
+[`.devcontainer/image/Dockerfile`](.devcontainer/image/Dockerfile)):
 
 ```bash
 cmake --preset dev

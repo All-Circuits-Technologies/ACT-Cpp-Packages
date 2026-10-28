@@ -8,12 +8,14 @@
 # File I/O, path manipulation, and file management utilities.
 # Provides file operations and extended file abstractions.
 #
-# Dependencies: act_foundation, act_logger
+# Dependencies: act_foundation, act_logger, act_text
 # -----------------------------------------------------------------------------
 
 add_library(act_files STATIC
     src/ext_file.cpp
+    src/file_path_util.cpp
     src/file_util.cpp
+    src/types/file_name_charset.cpp
 )
 
 # Public headers are exposed via include/<module_name>/
@@ -31,6 +33,7 @@ target_link_libraries(act_files
     PUBLIC
     act_foundation
     act_logger
+    act_text
 )
 
 # Install targets

@@ -70,6 +70,8 @@ RUN echo "deb [trusted=yes] http://apt.llvm.org/trixie/ llvm-toolchain-trixie-21
 # =============================================================================
 # What the packages link against. The only layer a new dependency should touch.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # act_archive
+    libarchive-dev \
     # act_linux_io
     libgpiod-dev \
     # act_db_sqlite

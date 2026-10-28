@@ -6,6 +6,8 @@
 act_add_unit_test(act_files_tests
     SOURCES
     test_ext_file.cpp
+    test_file_name_charset.cpp
+    test_file_path_util.cpp
     test_file_util.cpp
     LIBS
     act_files

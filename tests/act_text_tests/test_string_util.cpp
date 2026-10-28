@@ -6,15 +6,18 @@
  * @file test_string_util.cpp
  * @brief Unit tests of StringUtil.
  *
- * Covers trimming (in place and copying), case conversion and case insensitive comparison, the
+ * Covers trimming (in place and copying, whitespace or given characters, multi-byte characters
+ * kept, usable by the standard algorithms), case conversion and case insensitive comparison, the
  * iterable to string and the double to string conversions, the hexadecimal conversions and checks,
- * and the IPv4 address validation.
+ * the IPv4 address validation, the UTF-8 and ASCII validations, the UTF-8 byte order mark removal,
+ * and the escaping of the control characters.
  */
 
 #include "act_text/string_util.hpp"
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <list>
@@ -76,6 +79,81 @@ namespace
         EXPECT_EQ(source, "  value  ");
     }
 
+    TEST(StringUtilTest, TrimCharsRemovesOnlyTheGivenCharacters)
+    {
+        std::string value = "._ a. b_ ._";
+
+        TrimChars(value, "._ ");
+
+        EXPECT_EQ(value, "a. b");
+    }
+
+    TEST(StringUtilTest, LtrimCharsAndRtrimCharsHonourTheGivenCharacters)
+    {
+        std::string leading = "--value--";
+        std::string trailing = "--value--";
+
+        LtrimChars(leading, "-");
+        RtrimChars(trailing, "-");
+
+        EXPECT_EQ(leading, "value--");
+        EXPECT_EQ(trailing, "--value");
+    }
+
+    TEST(StringUtilTest, TrimCharsCopiesHonourTheGivenCharacters)
+    {
+        const std::string source = "**value**";
+
+        EXPECT_EQ(LtrimCharsCopy(source, "*"), "value**");
+        EXPECT_EQ(RtrimCharsCopy(source, "*"), "**value");
+        EXPECT_EQ(TrimCharsCopy(source, "*"), "value");
+    }
+
+    TEST(StringUtilTest, TrimCharsOfOnlyGivenCharactersGivesAnEmptyString)
+    {
+        std::string value = "..__..";
+
+        TrimChars(value, "._");
+
+        EXPECT_TRUE(value.empty());
+    }
+
+    TEST(StringUtilTest, TrimCharsWithoutCharactersLeavesTheStringUntouched)
+    {
+        std::string value = "  value  ";
+
+        TrimChars(value, "");
+
+        EXPECT_EQ(value, "  value  ");
+    }
+
+    TEST(StringUtilTest, TrimHelpersCanBePassedToAlgorithms)
+    {
+        std::vector<std::string> values{" a ", "b\t"};
+        const std::vector<std::string> sources{" c", "d "};
+        std::vector<std::string> copies(sources.size());
+
+        std::for_each(values.begin(), values.end(), Trim);
+        std::transform(sources.begin(), sources.end(), copies.begin(), TrimCopy);
+
+        EXPECT_EQ(values, (std::vector<std::string>{"a", "b"}));
+        EXPECT_EQ(copies, (std::vector<std::string>{"c", "d"}));
+    }
+
+    TEST(StringUtilTest, TrimKeepsTheBytesOfMultiByteCharacters)
+    {
+        // U+00E0 is C3 A0 in UTF-8; A0 is a no-break space in Latin-1, which std::isspace could
+        // remove under such a locale. U+00A0 is C2 A0 in UTF-8.
+        std::string accented = " \xC3\xA0 ";
+        std::string noBreakSpaces = "\xC2\xA0value\xC2\xA0";
+
+        Trim(accented);
+        Trim(noBreakSpaces);
+
+        EXPECT_EQ(accented, "\xC3\xA0");
+        EXPECT_EQ(noBreakSpaces, "\xC2\xA0value\xC2\xA0");
+    }
+
     TEST(StringUtilTest, ToUpperConvertsOnlyLetters)
     {
         EXPECT_EQ(ToUpper("Hello, World 42!"), "HELLO, WORLD 42!");
@@ -113,6 +191,13 @@ namespace
         EXPECT_TRUE(AreStringEqualNoCase("", ""));
         EXPECT_FALSE(AreStringEqualNoCase("value", "values"));
         EXPECT_FALSE(AreStringEqualNoCase("value", "valve"));
+    }
+
+    TEST(StringUtilTest, AreStringEqualNoCaseComparesNonAsciiBytes)
+    {
+        // "COM¹", the superscript one being C2 B9 in UTF-8
+        EXPECT_TRUE(AreStringEqualNoCase("com\xC2\xB9", "COM\xC2\xB9"));
+        EXPECT_FALSE(AreStringEqualNoCase("COM\xC2\xB9", "COM\xC2\xB2"));
     }
 
     TEST(StringUtilTest, IterableToStringJoinsElementsWithTheDelimiter)
@@ -291,6 +376,118 @@ namespace
         EXPECT_FALSE(IsValidIpAddress("1.02.3.4"));
         EXPECT_FALSE(IsValidIpAddress("1.2.3.010"));
         EXPECT_TRUE(IsValidIpAddress("100.20.3.0"));
+    }
+
+    TEST(StringUtilTest, ToPrintableTextEscapesTheC0ControlsAndDelete)
+    {
+        EXPECT_EQ(ToPrintableText("a\nb"), "a\\x0Ab");
+        EXPECT_EQ(ToPrintableText("\t\r\x1B[31m"), "\\x09\\x0D\\x1B[31m");
+        EXPECT_EQ(ToPrintableText(std::string("a\0b", 3)), "a\\x00b");
+        EXPECT_EQ(ToPrintableText("\x1F\x7F"), "\\x1F\\x7F");
+    }
+
+    TEST(StringUtilTest, ToPrintableTextEscapesTheC1ControlsInUtf8)
+    {
+        // U+009B is the 8 bits introducer of the terminal escape sequences, U+0080 and U+009F the
+        // bounds of the C1 controls
+        EXPECT_EQ(ToPrintableText("a\xC2\x9B[31m"), "a\\xC2\\x9B[31m");
+        EXPECT_EQ(ToPrintableText("\xC2\x80\xC2\x9F"), "\\xC2\\x80\\xC2\\x9F");
+    }
+
+    TEST(StringUtilTest, ToPrintableTextKeepsThePrintableText)
+    {
+        EXPECT_EQ(ToPrintableText(""), "");
+        EXPECT_EQ(ToPrintableText("dir\\file ~ 'a'.txt"), "dir\\file ~ 'a'.txt");
+        // Accented letters, U+00A0 (C2 A0) next to the C1 controls, and a lone C2 byte at the end
+        EXPECT_EQ(ToPrintableText("\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC"),
+                  "\xC3\xA9t\xC3\xA9\xC2\xA0\xE2\x82\xAC");
+        EXPECT_EQ(ToPrintableText("a\xC2"), "a\xC2");
+    }
+
+    TEST(StringUtilTest, IsValidUtf8AcceptsValidSequences)
+    {
+        EXPECT_TRUE(IsValidUtf8(""));
+        EXPECT_TRUE(IsValidUtf8("plain ASCII"));
+        EXPECT_TRUE(IsValidUtf8("Temp\xC3\xA9rature"));   // U+00E9, 2 bytes
+        EXPECT_TRUE(IsValidUtf8("\xE2\x82\xAC"));         // U+20AC, 3 bytes
+        EXPECT_TRUE(IsValidUtf8("\xEF\xBF\xBF"));         // U+FFFF
+        EXPECT_TRUE(IsValidUtf8("\xF0\x9F\x98\x80"));     // U+1F600, 4 bytes
+        EXPECT_TRUE(IsValidUtf8("\xF4\x8F\xBF\xBF"));     // U+10FFFF, the last one
+        EXPECT_TRUE(IsValidUtf8(std::string("a\0b", 3))); // a null byte is ASCII
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsOtherEncodings)
+    {
+        EXPECT_FALSE(IsValidUtf8("Temp\xE9rature")); // Latin-1 or Windows-1252
+        EXPECT_FALSE(IsValidUtf8("\xFF\xFE"));       // UTF-16 byte order mark
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsMalformedSequences)
+    {
+        EXPECT_FALSE(IsValidUtf8("\x80"));                 // continuation byte without lead byte
+        EXPECT_FALSE(IsValidUtf8("\xC3"));                 // truncated 2 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xE2\x82"));             // truncated 3 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xF0\x9F\x98"));         // truncated 4 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xC3\x28"));             // lead byte followed by ASCII
+        EXPECT_FALSE(IsValidUtf8("\xF8\x88\x80\x80\x80")); // 5 bytes sequence
+        EXPECT_FALSE(IsValidUtf8("\xFE"));
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsOverlongEncodings)
+    {
+        EXPECT_FALSE(IsValidUtf8("\xC0\xAF")); // '/' on 2 bytes
+        EXPECT_FALSE(IsValidUtf8("\xC1\xBF"));
+        EXPECT_FALSE(IsValidUtf8("\xE0\x80\xAF"));     // '/' on 3 bytes
+        EXPECT_FALSE(IsValidUtf8("\xF0\x80\x80\xAF")); // '/' on 4 bytes
+    }
+
+    TEST(StringUtilTest, IsValidUtf8RejectsSurrogatesAndCodePointsBeyondUnicode)
+    {
+        EXPECT_FALSE(IsValidUtf8("\xED\xA0\x80"));     // U+D800
+        EXPECT_FALSE(IsValidUtf8("\xED\xBF\xBF"));     // U+DFFF
+        EXPECT_TRUE(IsValidUtf8("\xED\x9F\xBF"));      // U+D7FF, just before the surrogates
+        EXPECT_FALSE(IsValidUtf8("\xF4\x90\x80\x80")); // U+110000
+    }
+
+    TEST(StringUtilTest, IsAsciiAcceptsThePrintableAscii)
+    {
+        EXPECT_TRUE(IsAscii(""));
+        EXPECT_TRUE(IsAscii("Profile A/props.csv ~ 'a;b'"));
+    }
+
+    TEST(StringUtilTest, IsAsciiAcceptsTheControlCharacters)
+    {
+        EXPECT_TRUE(IsAscii(std::string("a\0b\n\t\x1B\x7F", 7)));
+    }
+
+    TEST(StringUtilTest, IsAsciiRejectsTheBytesAbove0x7F)
+    {
+        EXPECT_FALSE(IsAscii("\x80"));
+        EXPECT_FALSE(IsAscii("\xC3\xA9t\xC3\xA9")); // "été" in UTF-8
+        EXPECT_FALSE(IsAscii("10 \xE2\x82\xAC"));   // "10 €" in UTF-8
+        EXPECT_FALSE(IsAscii("caf\xE9"));           // "café" in Latin-1
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkRemovesTheOneStartingTheString)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+        std::string text{byteOrderMark + "text"};
+
+        EXPECT_EQ(&RemoveUtf8ByteOrderMark(text), &text);
+        EXPECT_EQ(text, "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark), "");
+    }
+
+    TEST(StringUtilTest, RemoveUtf8ByteOrderMarkKeepsWhatIsNotABeginningByteOrderMark)
+    {
+        const std::string byteOrderMark{UTF8_BYTE_ORDER_MARK};
+
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(""), "");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("text"), "text");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("a" + byteOrderMark), "a" + byteOrderMark);
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy(byteOrderMark + byteOrderMark + "a"),
+                  byteOrderMark + "a");
+        EXPECT_EQ(RemoveUtf8ByteOrderMarkCopy("\xEF\xBB\xBE"), "\xEF\xBB\xBE");
     }
 
 } // namespace
