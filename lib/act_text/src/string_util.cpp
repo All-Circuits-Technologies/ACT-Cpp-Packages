@@ -12,6 +12,7 @@
 #include <charconv>
 #include <cstddef>
 #include <iomanip>
+#include <iterator>
 #include <optional>
 #include <regex>
 #include <string_view>
@@ -117,9 +118,7 @@ namespace act::text::StringUtil
 
 void ToUpperInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::toupper(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::toupper(c); });
 }
 
 std::string ToUpper(const std::string &str)
@@ -131,9 +130,7 @@ std::string ToUpper(const std::string &str)
 
 void ToLowerInPlace(std::string &str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-        return std::tolower(c);
-    });
+    std::ranges::transform(str, str.begin(), [](unsigned char c) { return std::tolower(c); });
 }
 
 std::string ToLower(const std::string &str)
@@ -162,10 +159,11 @@ std::string DoubleToString(double value)
 {
     std::array<char, DOUBLE_TEXT_BUFFER_SIZE> buffer{};
 
-    const std::to_chars_result result = std::to_chars(buffer.data(),
-                                                      buffer.data() + buffer.size(),
-                                                      value,
-                                                      std::chars_format::fixed);
+    const std::to_chars_result result =
+        std::to_chars(buffer.data(),
+                      std::next(buffer.data(), DOUBLE_TEXT_BUFFER_SIZE),
+                      value,
+                      std::chars_format::fixed);
     if (result.ec != std::errc())
     {
         /* Can't happen: the buffer is longer than the longest text of a double */
@@ -181,9 +179,9 @@ std::string BinToHex(const std::string &bin)
 
     /* configure hex output; the width is reset by each insertion, so it is set for every byte */
     hex << std::hex << std::setfill('0');
-    for (unsigned char c : bin)
+    for (const unsigned char c : bin)
     {
-        hex << std::setw(2) << (int)c;
+        hex << std::setw(2) << static_cast<int>(c);
     }
     return hex.str();
 }
@@ -200,8 +198,8 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
     for (size_t i{0}; i + 1 < hex.length(); i += act::foundation::HexConstants::HEX_CHARS_PER_BYTE)
     {
-        std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
-        char byte{static_cast<char>(
+        const std::string hexByte{hex.substr(i, act::foundation::HexConstants::HEX_CHARS_PER_BYTE)};
+        const char byte{static_cast<char>(
             std::stoul(hexByte, nullptr, act::foundation::HexConstants::HEXADECIMAL_BASE))};
         binaryString.push_back(byte);
     }
@@ -211,9 +209,8 @@ std::optional<std::string> HexToBin(const std::string &hex)
 
 bool IsHexOnly(const std::string &data)
 {
-    return std::all_of(data.begin(), data.end(), [](char c) {
-        return std::isxdigit(static_cast<unsigned char>(c));
-    });
+    return std::ranges::all_of(data,
+                               [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); });
 }
 
 bool IsValidIpAddress(const std::string &ipAddress)
@@ -265,23 +262,28 @@ bool IsValidUtf8(const std::string &str)
             continue;
         }
 
-        /* The lead byte tells the sequence length, and gives the first bits of the code point */
+        /* The lead byte tells the sequence length, and gives the first bits of the code point;
+         * each length has its own smallest code point, a smaller one is an overlong encoding */
         std::size_t length{0};
         char32_t codePoint{0};
+        char32_t minCodePoint{0};
         if ((leadByte & UTF8_TWO_BYTES_LEAD_MASK) == UTF8_TWO_BYTES_LEAD)
         {
             length = 2;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_TWO_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_TWO_BYTES_CODE_POINT;
         }
         else if ((leadByte & UTF8_THREE_BYTES_LEAD_MASK) == UTF8_THREE_BYTES_LEAD)
         {
             length = 3;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_THREE_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_THREE_BYTES_CODE_POINT;
         }
         else if ((leadByte & UTF8_FOUR_BYTES_LEAD_MASK) == UTF8_FOUR_BYTES_LEAD)
         {
             length = 4;
             codePoint = leadByte & static_cast<unsigned char>(~UTF8_FOUR_BYTES_LEAD_MASK);
+            minCodePoint = UTF8_MIN_FOUR_BYTES_CODE_POINT;
         }
         else
         {
@@ -306,10 +308,6 @@ bool IsValidUtf8(const std::string &str)
                         (continuationByte & static_cast<unsigned char>(~UTF8_CONTINUATION_MASK));
         }
 
-        /* Each length has its own smallest code point: a smaller one is an overlong encoding */
-        const char32_t minCodePoint{(length == 2)   ? UTF8_MIN_TWO_BYTES_CODE_POINT
-                                    : (length == 3) ? UTF8_MIN_THREE_BYTES_CODE_POINT
-                                                    : UTF8_MIN_FOUR_BYTES_CODE_POINT};
         const bool isSurrogate{(codePoint >= UTF16_MIN_SURROGATE) &&
                                (codePoint <= UTF16_MAX_SURROGATE)};
         if ((codePoint < minCodePoint) || isSurrogate || (codePoint > UNICODE_MAX_CODE_POINT))

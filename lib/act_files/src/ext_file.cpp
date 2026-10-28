@@ -96,7 +96,7 @@ ExtFile *ExtFile::CreateFileAndTryToOpenIt(const std::string &filePath,
                                            const act::foundation::AbsLogger &logger,
                                            bool isTemp)
 {
-    auto fstream = new std::fstream();
+    auto *fstream = new std::fstream();
     auto openResult = OpenFile(*fstream, filePath, mode, logger);
     if (!openResult)
     {

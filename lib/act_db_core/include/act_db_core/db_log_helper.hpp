@@ -4,6 +4,9 @@
 
 #pragma once
 
+// These macros skip repetitive 7-lines `try`/`catch`, and nested `return` prevents use of function
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 /**
  * @brief Macros to help handling database not opened and exceptions
  * @param caller The caller function name
@@ -13,7 +16,8 @@
 #define XXX_IF_NO_DB(caller, logger, xxx)                                                          \
     if (!isOpened())                                                                               \
     {                                                                                              \
-        logger->errorStream() << "Database is not opened, cannot perform operation: " << #caller;  \
+        (logger)->errorStream() << "Database is not opened, cannot perform operation: "            \
+                                << #caller;                                                        \
         return xxx;                                                                                \
     }
 
@@ -31,7 +35,7 @@
     }                                                                                              \
     catch (const std::exception &e)                                                                \
     {                                                                                              \
-        logger->errorStream() << "Error occurred: " << e.what() << " upon " #name;                 \
+        (logger)->errorStream() << "Error occurred: " << e.what() << " upon " #name;               \
         return xxx;                                                                                \
     }
 
@@ -79,3 +83,5 @@
  * @param cmd The command to execute
  */
 #define ZERO_IF_THROW(name, logger, cmd) XXX_IF_THROW(name, cmd, logger, 0);
+
+// NOLINTEND(cppcoreguidelines-macro-usage)

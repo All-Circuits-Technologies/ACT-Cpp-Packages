@@ -11,8 +11,7 @@ namespace act::logger
 {
 
 LoggerManager::LoggerManager(act::foundation::LogsLevel::Enum minLevelToPrintToStdErr)
-    : AbsLoggerManager(),
-      m_minLevelToPrintToStdErr{minLevelToPrintToStdErr}
+    : m_minLevelToPrintToStdErr{minLevelToPrintToStdErr}
 {
 }
 

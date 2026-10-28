@@ -9,7 +9,7 @@
 
 namespace act::archive
 {
-#if defined(_WIN32)
+#ifdef _WIN32
 
 ScopedUtf8Locale::ScopedUtf8Locale(const act::foundation::AbsLogger &logger)
     : ScopedUtf8Locale(logger, UTF8_LOCALE_NAMES)

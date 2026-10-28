@@ -12,6 +12,8 @@ namespace act::system
 
 FILE *LinuxSystemManager::openPipe(const std::string &cmd)
 {
+    // Running a shell command is the purpose of this function
+    // NOLINTNEXTLINE(cert-env33-c)
     return popen(cmd.c_str(), "r");
 }
 

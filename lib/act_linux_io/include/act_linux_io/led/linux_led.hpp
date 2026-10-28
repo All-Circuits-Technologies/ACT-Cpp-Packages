@@ -292,7 +292,7 @@ class LinuxLed
     mutable unsigned int m_maxBrightnessCache{0};
 
     /** @brief Cache of current trigger name */
-    std::optional<std::string> m_currentTriggerCache{};
+    std::optional<std::string> m_currentTriggerCache;
 };
 
 } // namespace act::linux_io

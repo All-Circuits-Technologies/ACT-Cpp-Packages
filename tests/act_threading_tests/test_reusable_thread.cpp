@@ -15,7 +15,6 @@
 
 #include "act_threading/reusable_thread.hpp"
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "act_logger/helpers/logger_helper.hpp"
 #include "act_logger/printers/abs_external_logger.hpp"
 
@@ -29,6 +28,7 @@
 #include <thread>
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 namespace act::threading
 {
@@ -274,7 +274,7 @@ namespace
         std::thread observer([&thread, &done]() {
             while (!done.load())
             {
-                UNUSED(thread.isRunning());
+                std::ignore = thread.isRunning();
             }
         });
 

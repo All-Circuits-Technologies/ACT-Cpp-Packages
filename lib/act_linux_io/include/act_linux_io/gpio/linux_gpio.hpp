@@ -14,11 +14,14 @@ namespace act::logger
 class LoggerHelper;
 } // namespace act::logger
 
+// Forward declarations of libgpiod types, whose names follow libgpiod's style
+// NOLINTBEGIN(readability-identifier-naming)
 namespace gpiod
 {
 class chip;
 class line_settings;
 } // namespace gpiod
+// NOLINTEND(readability-identifier-naming)
 
 namespace act::linux_io
 {
@@ -130,6 +133,12 @@ class LinuxGpio
                                                    act::logger::LoggerHelper &parentLogger);
 
   private:
+    /**
+     * @brief Tells if the GPIO exists, and logs a warning when it does not
+     * @return True if the GPIO exists, false otherwise
+     */
+    [[nodiscard]] bool ensureExists() const;
+
     /**
      * @brief Open a GPIO chip device
      * @param chipPath Path of the chip device

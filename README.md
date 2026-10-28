@@ -20,6 +20,7 @@ applications developed by All-Circuits Technologies.
   - [Use Individual Libraries](#use-individual-libraries)
 - [Development](#development)
   - [Development Container](#development-container)
+  - [Continuous Integration](#continuous-integration)
   - [Code Style](#code-style)
 - [License](#license)
 - [Contributing](#contributing)
@@ -65,6 +66,9 @@ Common external dependencies:
 - SQLiteCpp (for `act_db_sqlite` and `act_property_sqlite`)
 - GoogleTest (for the unit tests only, see [Run the Tests](#run-the-tests))
 
+The Debian packages that provide them are listed in the toolchain image's
+[`Dockerfile`](.devcontainer/image/Dockerfile), under "Package dependencies".
+
 ## Building
 
 ### Build All Libraries
@@ -96,7 +100,8 @@ CTest. Each library has its own test executable, built from `tests/<module>_test
 The `dev` preset of [`CMakePresets.json`](CMakePresets.json) builds the libraries and the tests in
 `build/dev/`. It fetches a pinned GoogleTest release through the dependency provider of
 [`cmake/dependencies/fetch_provider.cmake`](cmake/dependencies/fetch_provider.cmake), so only the
-dependencies of the libraries themselves need to be installed (see `tools/install_deps.sh`):
+dependencies of the libraries themselves need to be installed (see the package dependencies of
+[`.devcontainer/image/Dockerfile`](.devcontainer/image/Dockerfile)):
 
 ```bash
 cmake --preset dev
@@ -122,8 +127,18 @@ target_link_libraries(your_target PRIVATE act_logger)
 
 ### Development Container
 
-A development container configuration is provided in [`.devcontainer/`](.devcontainer/) for VSCode
-with all required tools and dependencies pre-installed.
+The [dev container](.devcontainer/) runs the toolchain image the CI publishes,
+`ghcr.io/all-circuits-technologies/act-cpp-packages:dev`, built from
+[`.devcontainer/image/Dockerfile`](.devcontainer/image/Dockerfile): the C++ toolchain, LLVM 21
+(clang-format, clang-tidy, clangd), cpp-linter and the libraries the packages link against. Nothing
+is built on your machine, and a check that passes in the container passes in the CI. The image is
+refreshed before every start; offline, the container starts on the image you already have.
+
+### Continuous Integration
+
+Every push to `master` and every pull request runs [`ci.yml`](.github/workflows/ci.yml): it builds
+and publishes the toolchain image when its Dockerfile changed, then formats and analyzes every
+source inside it with cpp-linter. The findings are posted on the pull request.
 
 ### Code Style
 

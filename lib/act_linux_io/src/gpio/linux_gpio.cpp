@@ -12,18 +12,6 @@
 #include <system_error>
 #include <thread>
 
-/* # Macros */
-/** @brief Return X if GPIO not found */
-#define LINUXGPIO_RETURN_X_IF_NOT_FOUND(X)                                                         \
-    do                                                                                             \
-    {                                                                                              \
-        if (!found())                                                                              \
-        {                                                                                          \
-            m_logger->warning("GPIO not usable");                                                  \
-            return X;                                                                              \
-        }                                                                                          \
-    } while (0)
-
 namespace act::linux_io
 {
 
@@ -44,7 +32,7 @@ LinuxGpio::LinuxGpio(const std::string &chipName,
     std::string gpioLogName = chipName + ":" + std::to_string(lineNum);
     if (m_found)
     {
-        std::string lineName = getName();
+        const std::string lineName = getName();
         if (!lineName.empty())
         {
             gpioLogName = lineName;
@@ -63,9 +51,21 @@ LinuxGpio::LinuxGpio(const std::string &chipName,
 // and can't be freed from HPP. Default destructor still fits our needs.
 LinuxGpio::~LinuxGpio() = default;
 
+bool LinuxGpio::ensureExists() const
+{
+    if (!m_found)
+    {
+        m_logger->warning("GPIO not usable");
+    }
+    return m_found;
+}
+
 bool LinuxGpio::prepDirectionInput()
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     m_lineSettings->set_direction(::gpiod::line::direction::INPUT);
     m_lineSettings->set_edge_detection(::gpiod::line::edge::BOTH);
@@ -75,7 +75,10 @@ bool LinuxGpio::prepDirectionInput()
 
 bool LinuxGpio::prepBiasPullUp()
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     m_lineSettings->set_bias(::gpiod::line::bias::PULL_UP);
 
@@ -84,7 +87,10 @@ bool LinuxGpio::prepBiasPullUp()
 
 bool LinuxGpio::prepActiveLow()
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     m_lineSettings->set_active_low(true);
 
@@ -93,7 +99,10 @@ bool LinuxGpio::prepActiveLow()
 
 bool LinuxGpio::prepDebounce(std::chrono::milliseconds debounce)
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     m_lineSettings->set_debounce_period(debounce);
 
@@ -101,14 +110,20 @@ bool LinuxGpio::prepDebounce(std::chrono::milliseconds debounce)
 }
 std::string LinuxGpio::getName() const
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND({});
+    if (!ensureExists())
+    {
+        return {};
+    }
 
     return m_chip->get_line_info(m_lineNum).name();
 }
 
 bool LinuxGpio::getValue() const
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     auto request = m_chip->prepare_request()
                        .set_consumer("get-line-value")
@@ -120,7 +135,10 @@ bool LinuxGpio::getValue() const
 
 bool LinuxGpio::listenEvents(const std::function<void(bool)> &callback)
 {
-    LINUXGPIO_RETURN_X_IF_NOT_FOUND(false);
+    if (!ensureExists())
+    {
+        return false;
+    }
 
     if (callback == nullptr)
     {
@@ -152,7 +170,7 @@ bool LinuxGpio::listenEvents(const std::function<void(bool)> &callback)
 
             for (const auto &event : buffer)
             {
-                bool value = (event.type() == gpiod::edge_event::event_type::RISING_EDGE);
+                const bool value = (event.type() == gpiod::edge_event::event_type::RISING_EDGE);
                 m_logger->traceStream() << (value ? "Rising edge" : "Falling edge");
 
                 try

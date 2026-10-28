@@ -15,10 +15,10 @@ struct ArchiveReaderLimits
     static constexpr std::size_t DEFAULT_MAX_ENTRY_COUNT = 1000;
 
     /** @brief Default maximum size of an entry content, in bytes */
-    static constexpr std::size_t DEFAULT_MAX_ENTRY_SIZE = 16U * 1024U * 1024U;
+    static constexpr std::size_t DEFAULT_MAX_ENTRY_SIZE = std::size_t{16} * 1024U * 1024U;
 
     /** @brief Default maximum size of all the entry contents together, in bytes */
-    static constexpr std::size_t DEFAULT_MAX_TOTAL_SIZE = 64U * 1024U * 1024U;
+    static constexpr std::size_t DEFAULT_MAX_TOTAL_SIZE = std::size_t{64} * 1024U * 1024U;
 
     /** @brief Maximum number of entries, directories included */
     std::size_t maxEntryCount{DEFAULT_MAX_ENTRY_COUNT};

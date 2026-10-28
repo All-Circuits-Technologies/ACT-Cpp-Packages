@@ -14,7 +14,6 @@
  * The reboot is never asked: only its initial state is checked.
  */
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "act_logger/services/logger_manager.hpp"
 #include "act_system/abs_system_manager.hpp"
 
@@ -26,6 +25,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 namespace act::system
 {
@@ -93,7 +93,7 @@ namespace
 
             if (std::fputs(m_output.c_str(), pipe) < 0)
             {
-                UNUSED(std::fclose(pipe));
+                std::ignore = std::fclose(pipe);
                 return nullptr;
             }
             std::rewind(pipe);
@@ -102,7 +102,7 @@ namespace
 
         int closePipe(FILE *pipe) override
         {
-            UNUSED(std::fclose(pipe));
+            std::ignore = std::fclose(pipe);
             ++m_closedPipeCount;
             return m_exitCode;
         }

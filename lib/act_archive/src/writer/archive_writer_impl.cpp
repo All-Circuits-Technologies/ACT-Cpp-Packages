@@ -216,8 +216,9 @@ bool ArchiveWriter::Impl::writeEntry(const std::string &path,
                                      LibarchiveMode permissions,
                                      const std::string &content)
 {
-    std::unique_ptr<struct archive_entry, decltype(&archive_entry_free)> entry(archive_entry_new(),
-                                                                               &archive_entry_free);
+    const std::unique_ptr<struct archive_entry, decltype(&archive_entry_free)> entry(
+        archive_entry_new(),
+        &archive_entry_free);
     if (entry == nullptr)
     {
         return fail("create the entry " + QuotePath(path));
@@ -299,6 +300,7 @@ la_ssize_t ArchiveWriter::Impl::WriteToSink(struct archive *archive,
 
     if (!isWritten)
     {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg, hicpp-vararg): libarchive's C API
         archive_set_error(archive, EIO, "the archive sink failed");
         return -1;
     }

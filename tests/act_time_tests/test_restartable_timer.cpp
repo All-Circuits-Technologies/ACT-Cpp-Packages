@@ -15,7 +15,6 @@
  * generous deadlines and only assert lower bounds on the elapsed times.
  */
 
-#include "act_foundation/constants/def_soft.hpp"
 #include "act_logger/services/logger_manager.hpp"
 #include "act_time/restartable_timer.hpp"
 
@@ -28,6 +27,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <tuple>
 
 namespace act::time
 {
@@ -263,7 +263,7 @@ namespace
                                    ++expiryCount;
                                });
 
-        UNUSED(timer.startOrRestart());
+        std::ignore = timer.startOrRestart();
         const RestartableTimer::StartId lastStart = timer.startOrRestart(FAST_MS);
 
         ASSERT_TRUE(WaitUntil([&expiryCount]() { return expiryCount.load() == 1; }));

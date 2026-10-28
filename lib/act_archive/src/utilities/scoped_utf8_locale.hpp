@@ -9,7 +9,7 @@
 #include <array>
 #include <span>
 
-#if !defined(_WIN32)
+#ifndef _WIN32
 #include <locale.h>
 #endif
 
@@ -68,7 +68,7 @@ class ScopedUtf8Locale : private act::foundation::NotCopiableNotMovable
      */
     static constexpr std::array<const char *, 2> UTF8_LOCALE_NAMES{"C.UTF-8", "en_US.UTF-8"};
 
-#if !defined(_WIN32)
+#ifndef _WIN32
   private:
     /** @brief The UTF-8 locale, or 0 if it is not available */
     locale_t m_utf8Locale{};

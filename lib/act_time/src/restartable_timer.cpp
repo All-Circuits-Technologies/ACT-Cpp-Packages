@@ -26,7 +26,7 @@ RestartableTimer::RestartableTimer(const act::foundation::AbsLogger &logger,
 RestartableTimer::~RestartableTimer()
 {
     {
-        std::lock_guard<std::mutex> lock(m_timerMutex);
+        const std::scoped_lock lock(m_timerMutex);
         m_terminate = true;
     }
     m_timerCv.notify_all();
@@ -39,13 +39,13 @@ RestartableTimer::~RestartableTimer()
 
 RestartableTimer::StartId RestartableTimer::startOrRestart()
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
+    const std::scoped_lock lock(m_timerMutex);
     return startLocked();
 }
 
 RestartableTimer::StartId RestartableTimer::startOrRestart(unsigned int durationMs)
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
+    const std::scoped_lock lock(m_timerMutex);
     m_durationMs.store(durationMs);
     return startLocked();
 }
@@ -53,7 +53,7 @@ RestartableTimer::StartId RestartableTimer::startOrRestart(unsigned int duration
 void RestartableTimer::stop()
 {
     {
-        std::lock_guard<std::mutex> lock(m_timerMutex);
+        const std::scoped_lock lock(m_timerMutex);
         m_deadline.reset();
     }
     m_timerCv.notify_all();
@@ -61,7 +61,7 @@ void RestartableTimer::stop()
 
 bool RestartableTimer::isRunning() const
 {
-    std::lock_guard<std::mutex> lock(m_timerMutex);
+    const std::scoped_lock lock(m_timerMutex);
     return m_deadline.has_value();
 }
 
