@@ -10,12 +10,13 @@
 
 #include <SQLiteCpp/Column.h>
 #include <SQLiteCpp/Database.h>
+#include <sqlite3.h>
+
 #include <exception>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <regex>
-#include <sqlite3.h>
 #include <string>
 #include <utility>
 

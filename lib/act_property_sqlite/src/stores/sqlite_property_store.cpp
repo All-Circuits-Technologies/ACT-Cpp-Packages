@@ -15,6 +15,7 @@
 
 #include <SQLiteCpp/Column.h>
 #include <SQLiteCpp/Statement.h>
+
 #include <bit>
 #include <cmath>
 #include <cstdint>

@@ -76,7 +76,7 @@ CheckOptions: {
         # add them with the version bump. Until then a static constexpr member is a class
         # constant and a function-local static constexpr a static constant, both UPPER_CASE.
         # misc-include-cleaner: the internal headers of glibc, such as bits/types/locale_t.h, are
-        # never included directly, the public header that includes them is
+        # never included directly.
         misc-include-cleaner.IgnoreHeaders: "bits/.*",
         readability-identifier-naming.AbstractClassPrefix: "A",
         readability-identifier-naming.ClassCase: "CamelCase",

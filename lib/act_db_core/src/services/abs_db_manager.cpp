@@ -17,6 +17,8 @@
 #include <string>
 
 #ifndef _WIN32
+// NOLINTNEXTLINE(misc-include-cleaner): include-cleaner does not tie sync to its POSIX header
+#include <unistd.h> // sync
 #endif
 
 namespace act::db::core

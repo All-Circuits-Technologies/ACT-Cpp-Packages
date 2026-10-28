@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LicenseRef-ALLCircuits-ACT-1.1
 
 #include "act_time/action_delayer.hpp"
+
 #include "act_foundation/logger/abs_logger.hpp"
 
 #include <algorithm>
