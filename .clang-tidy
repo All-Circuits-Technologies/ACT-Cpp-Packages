@@ -60,6 +60,9 @@ Checks:
   - -misc-use-internal-linkage
   # Alias of cppcoreguidelines-special-member-functions, whose options would not apply to it
   - -hicpp-special-member-functions
+  # Static std::string and similar constants are kept: making them constexpr needs a constexpr
+  # concatenation (C++26) or a FixedString-like type per constant type. To reconsider with C++26
+  - -cert-err58-cpp
   # Excluded until the includes are cleaned up
   - -misc-include-cleaner
 CheckOptions: {

@@ -43,6 +43,14 @@ constexpr unsigned char C1_CONTROL_LEAD_BYTE{0xC2U};
 constexpr unsigned char FIRST_C1_CONTROL_TRAIL_BYTE{0x80U};
 constexpr unsigned char LAST_C1_CONTROL_TRAIL_BYTE{0x9FU};
 
+/**
+ * @brief IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some
+ *        parsers (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10
+ * @note Built once, at load time: compiling a regular expression is costly.
+ */
+const std::regex IP_ADDRESS_PATTERN(R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
+                                    R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
+
 /** @brief Largest code point UTF-8 writes on a single byte, which is ASCII */
 constexpr unsigned char UTF8_MAX_ONE_BYTE_CODE_POINT{0x7FU};
 
@@ -207,13 +215,6 @@ bool IsHexOnly(const std::string &data)
 
 bool IsValidIpAddress(const std::string &ipAddress)
 {
-    // IPv4 address in dotted decimal (0-255.0-255.0-255.0-255), without leading zeros: some parsers
-    // (inet_aton) read a byte with a leading zero as octal, so "010" would not mean 10. Built once,
-    // on first use: compiling a regular expression is costly, and a function-local static is
-    // initialized where an exception can be caught.
-    static const std::regex IP_ADDRESS_PATTERN(
-        R"(^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3})"
-        R"((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$)");
     return std::regex_match(ipAddress, IP_ADDRESS_PATTERN);
 }
 
