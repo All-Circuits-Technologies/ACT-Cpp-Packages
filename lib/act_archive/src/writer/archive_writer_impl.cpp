@@ -4,8 +4,12 @@
 
 #include "writer/archive_writer_impl.hpp"
 
+#include "act_archive/types/entry_compression.hpp"
 #include "act_archive/utilities/archive_path_util.hpp"
 #include "act_archive/writer/abs_archive_sink.hpp"
+#include "act_archive/writer/archive_writer.hpp"
+#include "act_archive/writer/archive_writer_options.hpp"
+#include "act_archive/writer/entry_options.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 #include "utilities/libarchive_util.hpp"
@@ -17,6 +21,7 @@
 #include <cerrno>
 #include <ctime>
 #include <exception>
+#include <memory>
 #include <set>
 #include <string_view>
 #include <utility>

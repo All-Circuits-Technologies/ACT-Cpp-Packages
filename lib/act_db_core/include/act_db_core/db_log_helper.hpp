@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include "act_logger/helpers/logger_helper.hpp"
+
+#include <exception>
+
 // These macros skip repetitive 7-lines `try`/`catch`, and nested `return` prevents use of function
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 

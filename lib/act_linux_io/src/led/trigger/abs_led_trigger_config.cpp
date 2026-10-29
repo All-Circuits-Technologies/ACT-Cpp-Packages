@@ -6,7 +6,11 @@
 
 #include "act_linux_io/led/linux_led.hpp"
 
+#include <functional>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace act::linux_io
 {

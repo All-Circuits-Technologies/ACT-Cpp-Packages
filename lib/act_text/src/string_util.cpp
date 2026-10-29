@@ -12,9 +12,12 @@
 #include <charconv>
 #include <cstddef>
 #include <iomanip>
+#include <ios>
 #include <iterator>
 #include <optional>
 #include <regex>
+#include <sstream>
+#include <string>
 #include <string_view>
 #include <system_error>
 

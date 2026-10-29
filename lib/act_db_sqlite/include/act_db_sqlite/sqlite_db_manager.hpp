@@ -7,6 +7,7 @@
 #include "act_db_core/services/abs_db_manager.hpp"
 
 #include <SQLiteCpp/Database.h>
+
 #include <filesystem>
 #include <memory>
 #include <optional>

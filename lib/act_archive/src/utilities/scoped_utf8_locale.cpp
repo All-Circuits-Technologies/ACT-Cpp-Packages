@@ -7,6 +7,14 @@
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 
+#include <span>
+
+#ifndef _WIN32
+// newlocale, uselocale and freelocale are POSIX: <clocale> need not declare them
+// NOLINTNEXTLINE(hicpp-deprecated-headers, modernize-deprecated-headers)
+#include <locale.h>
+#endif
+
 namespace act::archive
 {
 #ifdef _WIN32

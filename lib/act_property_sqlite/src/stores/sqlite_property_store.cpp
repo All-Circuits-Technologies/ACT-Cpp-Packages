@@ -8,13 +8,21 @@
 #include "act_db_sqlite/sqlite_db_manager.hpp"
 #include "act_db_sqlite/sqlite_db_protect_service.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
+#include "act_foundation/logger/logs_level.hpp"
+#include "act_property_core/stored_value.hpp"
+#include "act_property_core/types/stored_type.hpp"
+#include "act_property_sqlite/types/table_provisioning.hpp"
 
-#include <SQLiteCpp/SQLiteCpp.h>
+#include <SQLiteCpp/Column.h>
+#include <SQLiteCpp/Statement.h>
+
 #include <bit>
 #include <cmath>
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace act::property

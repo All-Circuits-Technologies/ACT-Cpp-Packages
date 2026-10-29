@@ -6,8 +6,13 @@
 
 #include "act_foundation/logger/abs_logger.hpp"
 
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <ios>
+#include <optional>
+#include <string>
+#include <utility>
 
 namespace act::files
 {

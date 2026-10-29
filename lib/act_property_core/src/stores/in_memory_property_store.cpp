@@ -4,7 +4,12 @@
 
 #include "act_property_core/stores/in_memory_property_store.hpp"
 
+#include "act_property_core/stored_value.hpp"
+
 #include <mutex>
+#include <optional>
+#include <shared_mutex>
+#include <string>
 
 namespace act::property
 {

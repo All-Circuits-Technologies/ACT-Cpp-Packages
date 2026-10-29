@@ -8,6 +8,11 @@
 #include "act_linux_io/led/trigger/abs_led_trigger_config.hpp"
 #include "act_logger/helpers/logger_helper.hpp"
 
+#include <algorithm>
+#include <optional>
+#include <string>
+#include <utility>
+
 namespace act::linux_io
 {
 

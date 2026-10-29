@@ -8,6 +8,9 @@
 #include "act_db_core/services/abs_db_manager.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 
+#include <string>
+#include <string_view>
+
 namespace act::db::core
 {
 DbTransaction::DbTransaction(AbsDbManager &db, const act::foundation::AbsLogger &logger)

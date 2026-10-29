@@ -4,9 +4,15 @@
 
 #include "act_archive/reader/archive_reader.hpp"
 
+#include "act_archive/reader/archive_reader_options.hpp"
+#include "act_archive/types/archive_entry.hpp"
 #include "reader/archive_reader_impl.hpp"
 
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace act::archive
 {

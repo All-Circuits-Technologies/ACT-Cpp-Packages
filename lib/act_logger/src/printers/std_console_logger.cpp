@@ -4,10 +4,14 @@
 
 #include "act_logger/printers/std_console_logger.hpp"
 
+#include "act_foundation/logger/logs_level.hpp"
 #include "act_logger/printers/abs_external_logger.hpp"
 #include "act_text/vector_string_util.hpp"
 
 #include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace act::logger
 {

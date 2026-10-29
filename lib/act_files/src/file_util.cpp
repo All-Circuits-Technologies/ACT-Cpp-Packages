@@ -10,9 +10,15 @@
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"
 
+#include <cstddef>
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <utility>
 
 namespace act::files::FileUtil
 {

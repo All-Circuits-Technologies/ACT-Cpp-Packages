@@ -4,6 +4,11 @@
 
 #include "act_linux_io/led/trigger/simple_led_trigger_config.hpp"
 
+#include "act_linux_io/led/trigger/abs_led_trigger_config.hpp"
+
+#include <string>
+#include <utility>
+
 namespace act::linux_io
 {
 

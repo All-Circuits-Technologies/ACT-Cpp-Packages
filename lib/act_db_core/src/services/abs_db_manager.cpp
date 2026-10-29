@@ -9,10 +9,15 @@
 #include "act_system/system_critical_section.hpp"
 #include "act_system/system_critical_section_guard.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <optional>
+#include <string>
 
 #ifndef _WIN32
+// NOLINTNEXTLINE(misc-include-cleaner): include-cleaner does not tie sync to its POSIX header
 #include <unistd.h> // sync
 #endif
 

@@ -7,6 +7,7 @@
 #include "act_text/vector_string_util.hpp"
 
 #include <algorithm>
+#include <string>
 #include <string_view>
 #include <vector>
 

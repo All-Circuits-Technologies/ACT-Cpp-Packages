@@ -4,6 +4,11 @@
 
 #include "reader/archive_reader_impl.hpp"
 
+#include "act_archive/reader/archive_reader.hpp"
+#include "act_archive/reader/archive_reader_options.hpp"
+#include "act_archive/types/archive_entry.hpp"
+#include "act_archive/types/archive_format.hpp"
+#include "act_archive/types/entry_type.hpp"
 #include "act_archive/utilities/archive_path_util.hpp"
 #include "act_foundation/logger/abs_logger.hpp"
 #include "act_text/string_util.hpp"

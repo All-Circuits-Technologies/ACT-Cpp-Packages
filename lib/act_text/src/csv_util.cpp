@@ -13,8 +13,10 @@
 #include <cctype>
 #include <cstddef>
 #include <fstream>
-#include <iostream>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace
 {

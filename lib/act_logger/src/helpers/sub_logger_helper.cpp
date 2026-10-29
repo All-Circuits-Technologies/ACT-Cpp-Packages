@@ -4,6 +4,12 @@
 
 #include "act_logger/helpers/sub_logger_helper.hpp"
 
+#include "act_foundation/logger/logs_level.hpp"
+#include "act_logger/helpers/logger_helper.hpp"
+
+#include <string>
+#include <vector>
+
 namespace act::logger
 {
 

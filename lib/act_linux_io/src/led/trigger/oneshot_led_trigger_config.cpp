@@ -6,6 +6,9 @@
 
 #include "act_linux_io/led/linux_led.hpp"
 
+#include <algorithm>
+#include <chrono>
+
 namespace act::linux_io
 {
 
