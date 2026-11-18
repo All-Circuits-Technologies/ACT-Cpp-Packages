@@ -324,6 +324,19 @@ bool IsValidUtf8(const std::string &str)
     return true;
 }
 
+std::optional<std::size_t> CountUtf8CodePoints(const std::string &str)
+{
+    if (!IsValidUtf8(str))
+    {
+        return std::nullopt;
+    }
+
+    /* Valid UTF-8: each code point has exactly one byte which is not a continuation byte */
+    return static_cast<std::size_t>(std::ranges::count_if(str, [](char byte) {
+        return (static_cast<unsigned char>(byte) & UTF8_CONTINUATION_MASK) != UTF8_CONTINUATION;
+    }));
+}
+
 bool IsAscii(const std::string &str)
 {
     return std::ranges::all_of(str, [](char byte) {

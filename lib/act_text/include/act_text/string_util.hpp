@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -334,6 +335,17 @@ std::string ToPrintableText(const std::string &text);
  * @return true if the string is valid UTF-8, false otherwise
  */
 bool IsValidUtf8(const std::string &str);
+
+/**
+ * @brief Count the Unicode code points of an UTF-8 string
+ * @note Code points, not graphemes (user-perceived characters): a precomposed "é" (U+00E9) or
+ *       "€" (U+20AC) counts 1, but a decomposed "é" (e followed by U+0301) counts 2, and so does
+ *       an emoji with a skin tone modifier. No Unicode normalization is done.
+ * @param str The string, in UTF-8
+ * @return The number of code points, std::nullopt if the string is not valid UTF-8 (see
+ *         IsValidUtf8)
+ */
+std::optional<std::size_t> CountUtf8CodePoints(const std::string &str);
 
 /**
  * @brief Test if a string is pure ASCII: none of its bytes is above 0x7F

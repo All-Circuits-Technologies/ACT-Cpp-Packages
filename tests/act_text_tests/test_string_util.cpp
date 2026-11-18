@@ -449,6 +449,38 @@ namespace
         EXPECT_FALSE(IsValidUtf8("\xF4\x90\x80\x80")); // U+110000
     }
 
+    TEST(StringUtilTest, CountUtf8CodePointsCountsAsciiBytes)
+    {
+        EXPECT_EQ(CountUtf8CodePoints(""), 0U);
+        EXPECT_EQ(CountUtf8CodePoints("plain ASCII"), 11U);
+        EXPECT_EQ(CountUtf8CodePoints(std::string("a\0b", 3)), 3U); // a null byte is ASCII
+    }
+
+    TEST(StringUtilTest, CountUtf8CodePointsCountsAMultiByteSequenceOnce)
+    {
+        EXPECT_EQ(CountUtf8CodePoints("\xC3\xA9"), 1U);            // U+00E9 "é", 2 bytes
+        EXPECT_EQ(CountUtf8CodePoints("\xE2\x82\xAC"), 1U);        // U+20AC "€", 3 bytes
+        EXPECT_EQ(CountUtf8CodePoints("\xF0\x9F\x98\x80"), 1U);    // U+1F600, 4 bytes
+        EXPECT_EQ(CountUtf8CodePoints("Temp\xC3\xA9rature"), 11U); // "Température"
+        EXPECT_EQ(CountUtf8CodePoints("10 \xE2\x82\xAC \xF0\x9F\x98\x80"), 6U);
+    }
+
+    TEST(StringUtilTest, CountUtf8CodePointsCountsCodePointsNotGraphemes)
+    {
+        EXPECT_EQ(CountUtf8CodePoints("e\xCC\x81"), 2U); // decomposed "é": e + U+0301
+        // Thumbs up U+1F44D followed by the skin tone modifier U+1F3FD
+        EXPECT_EQ(CountUtf8CodePoints("\xF0\x9F\x91\x8D\xF0\x9F\x8F\xBD"), 2U);
+    }
+
+    TEST(StringUtilTest, CountUtf8CodePointsRejectsInvalidUtf8)
+    {
+        EXPECT_EQ(CountUtf8CodePoints("\x80"), std::nullopt);           // lone continuation byte
+        EXPECT_EQ(CountUtf8CodePoints("abc\xE2\x82"), std::nullopt);    // truncated sequence
+        EXPECT_EQ(CountUtf8CodePoints("\xC0\xAF"), std::nullopt);       // overlong '/'
+        EXPECT_EQ(CountUtf8CodePoints("\xED\xA0\x80"), std::nullopt);   // surrogate U+D800
+        EXPECT_EQ(CountUtf8CodePoints("Temp\xE9rature"), std::nullopt); // Latin-1
+    }
+
     TEST(StringUtilTest, IsAsciiAcceptsThePrintableAscii)
     {
         EXPECT_TRUE(IsAscii(""));
