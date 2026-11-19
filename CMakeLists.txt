@@ -10,7 +10,7 @@
 #
 #   - db_core    : Core database management classes
 #   - foundation : Base classes and design patterns (no dependencies)
-#   - num        : Numeric utilities double values (no dependencies)
+#   - num        : Numeric utilities for float and double values (no dependencies)
 #   - logger     : Logging infrastructure and services
 #   - threading  : Threading utilities and synchronization
 #   - text       : String and text processing utilities

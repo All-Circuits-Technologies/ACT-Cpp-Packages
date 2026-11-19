@@ -5,13 +5,14 @@
 # -----------------------------------------------------------------------------
 # act_num - Numeric utilities
 # -----------------------------------------------------------------------------
-# Numeric utilities for double conversions.
-# Provides DoubleUtil.
+# Numeric utilities for float and double conversions.
+# Provides FloatUtil and DoubleUtil.
 #
 # Dependencies: none
 # -----------------------------------------------------------------------------
 
 add_library(act_num STATIC
+    src/float_util.cpp
 )
 
 # Public headers are exposed via include/<module_name>/

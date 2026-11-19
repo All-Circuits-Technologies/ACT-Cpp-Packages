@@ -8,10 +8,11 @@ Numeric utilities for ACT C++ modules.
 
 ## Description
 
-This module provides utilities for double conversions.
+This module provides utilities for float and double conversions.
 
 ## Contents
 
+- **FloatUtil:** Utilities for float conversions
 - **DoubleUtil:** Utilities for double conversions
 
 ## Dependencies
@@ -21,6 +22,7 @@ This module provides utilities for double conversions.
 ## Usage
 
 ```cpp
+#include "act_num/float_util.hpp"
 #include "act_num/double_util.hpp"
 ```
 
