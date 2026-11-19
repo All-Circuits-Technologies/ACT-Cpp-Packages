@@ -6,6 +6,7 @@
 act_add_unit_test(act_num_tests
     SOURCES
     test_double_util.cpp
+    test_float_util.cpp
     LIBS
     act_num
     act_test_common
