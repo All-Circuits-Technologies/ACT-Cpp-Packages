@@ -10,6 +10,7 @@
 #
 #   - db_core    : Core database management classes
 #   - foundation : Base classes and design patterns (no dependencies)
+#   - num        : Numeric utilities for float and double values (no dependencies)
 #   - logger     : Logging infrastructure and services
 #   - threading  : Threading utilities and synchronization
 #   - text       : String and text processing utilities
@@ -52,6 +53,7 @@ add_subdirectory(lib/act_files)
 add_subdirectory(lib/act_foundation)
 add_subdirectory(lib/act_linux_io)
 add_subdirectory(lib/act_logger)
+add_subdirectory(lib/act_num)
 add_subdirectory(lib/act_property_core)
 add_subdirectory(lib/act_property_sqlite)
 add_subdirectory(lib/act_db_sqlite)

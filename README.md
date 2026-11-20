@@ -42,6 +42,7 @@ general-purpose applications developed by All-Circuits Technologies.
 | [`act_foundation`](lib/act_foundation/README.md)           | Foundational base classes, constants, and design patterns (no dependencies).                 |
 | [`act_linux_io`](lib/act_linux_io/README.md)               | Linux-specific I/O for GPIO control and LED management.                                      |
 | [`act_logger`](lib/act_logger/README.md)                   | Logging infrastructure with flexible output backends.                                        |
+| [`act_num`](lib/act_num/README.md)                         | Numeric utilities for float and double conversions.                                          |
 | [`act_property_core`](lib/act_property_core/README.md)     | Engine-agnostic persistent configuration: typed properties, codecs, store interface.         |
 | [`act_property_sqlite`](lib/act_property_sqlite/README.md) | Property store backed by a key/value table of a SQLite database.                             |
 | [`act_system`](lib/act_system/README.md)                   | System-level utilities for multi-process synchronization, reboots, and command execution.    |
